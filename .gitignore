@@ -1,0 +1,20 @@
+# Secrets
+.env
+jobs.mof-eng.com/db.php
+jobs.mof-eng.com/config.php
+
+# User uploads (PII)
+jobs.mof-eng.com/uploads/
+jobs.mof-eng.com/uploads/**
+
+# Logs
+**/error_log
+**/error_log.txt
+*.log
+
+# Dependencies (optional but recommended for PHP composer)
+jobs.mof-eng.com/vendor/
+
+# OS junk
+Thumbs.db
+.DS_Store
