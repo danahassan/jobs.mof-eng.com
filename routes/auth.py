@@ -8,6 +8,9 @@ from models import (db, User, UserSkill, UserExperience, UserEducation,
                     UserLanguage, UserCertification, UserPortfolioItem,
                     Position, ROLE_USER, ROLE_EMPLOYER, LANG_LEVELS)
 from sqlalchemy import or_
+from helpers import (log_audit, send_email, generate_reset_token,
+                     verify_reset_token)
+from werkzeug.utils import secure_filename
 
 auth_bp = Blueprint('auth', __name__)
 
