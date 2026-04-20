@@ -5,7 +5,7 @@ from models import (db, Application, ApplicationHistory, Position, User, Message
                     Company, CompanyMember, CompanyFollow, CompanyPhoto,
                     UserSkill, UserExperience, UserEducation,
                     ALL_STATUSES, ROLE_SUPERVISOR, ROLE_ADMIN)
-from helpers import supervisor_or_admin_required, log_history, save_company_image, push_notification, send_email
+from helpers import supervisor_or_admin_required, log_history, save_company_image, push_notification, send_email, log_audit
 from flask_login import current_user
 
 supervisor_bp = Blueprint('supervisor', __name__)
@@ -342,6 +342,9 @@ def application_update(app_id):
         log_history(application, current_user, new_status=new_status, note=note or None, is_internal=True)
         application.status     = new_status
         application.updated_at = datetime.utcnow()
+        log_audit('supervisor.status_change',
+                  f'#{application.id} {application.position.title} → {new_status}',
+                  user_id=current_user.id)
         db.session.commit()
         _send_status_email(application)
         push_notification(
@@ -369,6 +372,7 @@ def application_delete(app_id):
     application.history.delete(synchronize_session=False)
     application.interviews.delete(synchronize_session=False)
     db.session.delete(application)
+    log_audit('supervisor.application_delete', f'#{app_id}', user_id=current_user.id)
     db.session.commit()
     flash('Application permanently deleted.', 'success')
     return redirect(url_for('supervisor.applications'))

@@ -8,7 +8,7 @@ from models import (db, Position, Application, ApplicationHistory, Interview,
                     SavedJob, CompanyFollow, Message, User, ROLE_ADMIN,
                     SOURCES, STATUS_NEW, STATUS_REVIEW, STATUS_INTERVIEW,
                     STATUS_OFFER, STATUS_HIRED, ALL_STATUSES)
-from helpers import save_cv, allowed_file, send_email, push_notification
+from helpers import save_cv, allowed_file, send_email, push_notification, log_audit
 from datetime import datetime
 
 user_bp = Blueprint('user', __name__)
@@ -135,6 +135,8 @@ def apply(pos_id):
             status          = STATUS_NEW,
         )
         db.session.add(application)
+        log_audit('user.apply', f'{current_user.full_name} → {pos.title}',
+                  user_id=current_user.id)
         db.session.commit()
 
         # In-app notification for admin(s)

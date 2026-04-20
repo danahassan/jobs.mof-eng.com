@@ -29,6 +29,10 @@
 .cat-pill.audit.active{background:#dc2626;color:#fff}
 .cat-pill.email{background:#f0f9ff;color:#0284c7;border-color:#bae6fd}
 .cat-pill.email.active{background:#0284c7;color:#fff}
+.cat-pill.supervisor{background:#fdf4ff;color:#9333ea;border-color:#e9d5ff}
+.cat-pill.supervisor.active{background:#9333ea;color:#fff}
+.cat-pill.user-action{background:#fff1f2;color:#e11d48;border-color:#fecdd3}
+.cat-pill.user-action.active{background:#e11d48;color:#fff}
 
 /* ── Table ───────────────────────────────────────────────── */
 .audit-tbl{width:100%;border-collapse:collapse}
@@ -53,6 +57,7 @@
 .act-badge.cat-auth{background:#fff7ed;color:#ea580c}
 .act-badge.cat-audit{background:#fef2f2;color:#dc2626}
 .act-badge.cat-email{background:#f0f9ff;color:#0284c7}
+.act-badge.cat-supervisor{background:#fdf4ff;color:#9333ea}
 .act-badge.cat-default{background:#f1f5f9;color:#64748b}
 
 /* ── Delete button ───────────────────────────────────────── */
@@ -110,6 +115,10 @@
     <div class="kpi-icon" style="background:#ede9fe;color:#7c3aed"><i class="bi bi-people-fill"></i></div>
     <div class="kpi-body"><div class="kpi-val">{{ kpi_users_active }}</div><div class="kpi-lbl">Active Users (7d)</div></div>
   </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#dcfce7;color:#16a34a"><i class="bi bi-wifi"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_online }}</div><div class="kpi-lbl">Online Now (30m)</div></div>
+  </div>
 </div>
 
 <!-- Page header -->
@@ -128,10 +137,11 @@
 <!-- Category quick-filters -->
 {% set cats = [
   ('all',         'All',          'grid-fill'),
-  ('user',        'User',         'person-fill'),
+  ('auth',        'Auth',         'key-fill'),
+  ('user',        'User / Admin', 'person-fill'),
+  ('supervisor',  'Supervisor',   'person-badge-fill'),
   ('position',    'Position',     'briefcase-fill'),
   ('application', 'Application',  'file-earmark-person-fill'),
-  ('auth',        'Auth',         'key-fill'),
   ('email',       'Email',        'envelope-fill'),
   ('audit',       'Audit',        'shield-fill'),
 ] %}
@@ -175,12 +185,16 @@
   'user.edit': 'pencil-fill',
   'user.delete': 'person-x-fill',
   'user.toggle': 'toggle-on',
+  'user.apply': 'file-earmark-arrow-up-fill',
+  'user.profile_update': 'person-gear',
   'position.create': 'briefcase-fill',
   'position.edit': 'pencil-fill',
   'position.delete': 'trash-fill',
   'application.status_change': 'arrow-repeat',
   'application.assign': 'person-check-fill',
   'application.delete': 'trash-fill',
+  'supervisor.status_change': 'arrow-repeat',
+  'supervisor.application_delete': 'trash-fill',
   'auth.register': 'person-plus-fill',
   'auth.login': 'box-arrow-in-right',
   'auth.forgot_password': 'key-fill',
@@ -238,7 +252,7 @@
             {% endif %}
           </td>
           <td>
-            <span class="act-badge cat-{{ cat if cat in ('user','position','application','auth','audit','email') else 'default' }}">
+            <span class="act-badge cat-{{ cat if cat in ('user','position','application','auth','audit','email','supervisor') else 'default' }}">
               <i class="bi bi-{{ act_icons.get(entry.action, 'circle-fill') }}" style="font-size:10px"></i>
               {{ entry.action }}
             </span>
@@ -283,7 +297,7 @@
   {% set cat = entry.action.split('.')[0] %}
   <div class="audit-card">
     <div class="audit-card-top">
-      <span class="act-badge cat-{{ cat if cat in ('user','position','application','auth','audit','email') else 'default' }}">
+      <span class="act-badge cat-{{ cat if cat in ('user','position','application','auth','audit','email','supervisor') else 'default' }}">
         <i class="bi bi-{{ act_icons.get(entry.action, 'circle-fill') }}" style="font-size:10px"></i>
         {{ entry.action }}
       </span>

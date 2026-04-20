@@ -64,6 +64,7 @@ class User(UserMixin, db.Model):
     is_active     = db.Column(db.Boolean, default=True)
     created_at    = db.Column(db.DateTime, default=datetime.utcnow)
     last_login    = db.Column(db.DateTime)
+    last_seen     = db.Column(db.DateTime)
     bio           = db.Column(db.Text)
     linkedin_url  = db.Column(db.String(200))
     github_url    = db.Column(db.String(200))

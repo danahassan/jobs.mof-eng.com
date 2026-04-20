@@ -53,6 +53,15 @@ def create_app(config_name=None):
     def load_user(user_id):
         return db.session.get(User, int(user_id))
 
+    @app.before_request
+    def update_last_seen():
+        if current_user.is_authenticated:
+            now = datetime.utcnow()
+            if (current_user.last_seen is None or
+                    (now - current_user.last_seen).total_seconds() > 60):
+                current_user.last_seen = now
+                db.session.commit()
+
     # Register blueprints
     from routes.auth          import auth_bp
     from routes.admin         import admin_bp
@@ -191,6 +200,7 @@ def _migrate_db(app):
         with db.engine.connect() as conn:
             _safe_add_column(conn, 'companies', 'contact_email', 'VARCHAR(200)')
             _safe_add_column(conn, 'companies', 'contact_phone', 'VARCHAR(100)')
+            _safe_add_column(conn, 'users', 'last_seen', 'DATETIME')
 
 
 def _safe_add_column(conn, table, column, col_type):

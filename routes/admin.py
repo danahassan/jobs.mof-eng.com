@@ -913,6 +913,9 @@ def audit_trail():
     kpi_users_active = db.session.query(
         db.func.count(db.func.distinct(AuditLog.user_id))
     ).filter(AuditLog.created_at >= datetime.utcnow() - timedelta(days=7)).scalar() or 0
+    online_cutoff = datetime.utcnow() - timedelta(minutes=30)
+    kpi_online = User.query.filter(
+        User.last_seen >= online_cutoff, User.is_active == True).count()
 
     return render_template('admin/audit.html',
                            audit_entries=audit_entries,
@@ -921,7 +924,8 @@ def audit_trail():
                            action_f=action_f,
                            kpi_total=kpi_total, kpi_today=kpi_today,
                            kpi_this_week=kpi_this_week,
-                           kpi_users_active=kpi_users_active)
+                           kpi_users_active=kpi_users_active,
+                           kpi_online=kpi_online)
 
 
 @admin_bp.route('/audit/export')
