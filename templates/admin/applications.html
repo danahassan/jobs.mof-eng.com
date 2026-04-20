@@ -127,8 +127,8 @@
           <td data-label="Position">{{ app.position.title }}</td>
           <td data-label="Source" class="text-muted">{{ app.source }}</td>
           <td data-label="Applied" class="text-muted" style="white-space:nowrap">
-            {{ app.applied_at.strftime('%b %d, %Y') }}<br>
-            <span style="font-size:11px;color:var(--text3)">{{ app.applied_at.strftime('%H:%M') }}</span>
+            {{ (app.applied_at | localdt).strftime('%b %d, %Y') }}<br>
+            <span style="font-size:11px;color:var(--text3)">{{ (app.applied_at | localdt).strftime('%H:%M') }}</span>
           </td>
           <td data-label="Status"><span class="badge badge-{{ app.status.lower().replace(' ','') }}">{{ app.status }}</span></td>
           <td data-label="Assigned" class="text-muted">{{ app.assigned_to.full_name if app.assigned_to else '—' }}</td>

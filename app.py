@@ -163,8 +163,9 @@ def create_app(config_name=None):
                 managed_companies = (CompanyMember.query
                                      .filter_by(user_id=current_user.id, role='manager')
                                      .all())
+        from zoneinfo import ZoneInfo as _ZI
         return dict(
-            now=datetime.utcnow(),
+            now=datetime.now(_ZI('Asia/Baghdad')),
             ROLE_ADMIN=ROLE_ADMIN,
             ROLE_SUPERVISOR=ROLE_SUPERVISOR,
             ROLE_USER=ROLE_USER,

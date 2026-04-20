@@ -352,7 +352,7 @@
         </div>
         <div class="ud-info-row">
           <span class="ud-info-lbl">Last Login</span>
-          <span class="ud-info-val">{{ user.last_login.strftime('%b %d, %Y') if user.last_login else 'Never' }}</span>
+          <span class="ud-info-val">{{ (user.last_login | localdt).strftime('%b %d, %Y') if user.last_login else 'Never' }}</span>
         </div>
         <div class="ud-info-row">
           <span class="ud-info-lbl">2FA</span>
@@ -405,7 +405,7 @@
         <a href="{{ url_for('admin.application_detail', app_id=app.id) }}" class="ud-app-row">
           <div style="flex:1;min-width:0">
             <div class="ud-app-pos">{{ app.position.title }}</div>
-            <div class="ud-app-meta">{{ app.applied_at.strftime('%b %d, %Y') }}</div>
+            <div class="ud-app-meta">{{ (app.applied_at | localdt).strftime('%b %d, %Y') }}</div>
           </div>
           <span class="badge badge-{{ 'active' if app.status in ('new', 'shortlisted') else 'inactive' }}"
                 style="font-size:10px;align-self:center;text-transform:capitalize">{{ app.status }}</span>

@@ -54,7 +54,7 @@ body{font-family:'DM Sans',Arial,sans-serif;background:#f4f6f8;margin:0;padding:
       </div>
       <div class="detail-row">
         <span class="detail-lbl">Submitted</span>
-        <span class="detail-val">{{ app.applied_at.strftime('%B %d, %Y') }}</span>
+        <span class="detail-val">{{ (app.applied_at | localdt).strftime('%B %d, %Y') }}</span>
       </div>
       <div class="detail-row">
         <span class="detail-lbl">Status</span>

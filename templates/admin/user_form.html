@@ -485,7 +485,7 @@
         </div>
         <div class="uf-stat">
           <span class="uf-stat-lbl">Last Login</span>
-          <span class="uf-stat-val">{{ user.last_login.strftime('%b %d, %Y') if user.last_login else '—' }}</span>
+          <span class="uf-stat-val">{{ (user.last_login | localdt).strftime('%b %d, %Y') if user.last_login else '—' }}</span>
         </div>
       </div>
 

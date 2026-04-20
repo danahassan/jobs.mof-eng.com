@@ -120,7 +120,7 @@
 
     {# Right panel #}
     <div class="ma-right">
-      <div class="ma-date"><i class="bi bi-calendar3"></i> {{ app.applied_at.strftime('%b %d, %Y') }}</div>
+      <div class="ma-date"><i class="bi bi-calendar3"></i> {{ (app.applied_at | localdt).strftime('%b %d, %Y') }}</div>
       {% if app.cv_filename %}
       <a href="{{ url_for('user.application_cv', app_id=app.id) }}" target="_blank"
          class="ma-cv-pill" title="View / download your CV">

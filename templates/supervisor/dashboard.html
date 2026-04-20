@@ -214,7 +214,7 @@
         {{ app.applicant.full_name }}
       </div>
       <div style="font-size:11px;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ app.position.title }}</div>
-      <div style="font-size:10px;color:var(--text3);margin-top:3px"><i class="bi bi-clock" style="font-size:9px"></i> {{ app.applied_at.strftime('%b %d') }}</div>
+      <div style="font-size:10px;color:var(--text3);margin-top:3px"><i class="bi bi-clock" style="font-size:9px"></i> {{ (app.applied_at | localdt).strftime('%b %d') }}</div>
     </a>
     {% else %}
     <div style="text-align:center;padding:16px 0;font-size:12px;color:var(--text3)">
@@ -255,7 +255,7 @@
             <div style="font-size:11px;color:var(--text3)"><i class="bi bi-building" style="margin-right:2px"></i>{{ app.position.company.name }}</div>
             {% endif %}
           </td>
-          <td data-label="Applied" class="text-muted">{{ app.applied_at.strftime('%b %d, %Y') }}</td>
+          <td data-label="Applied" class="text-muted">{{ (app.applied_at | localdt).strftime('%b %d, %Y') }}</td>
           <td data-label="Status"><span class="badge badge-{{ app.status.lower().replace(' ','') }}">{{ app.status }}</span></td>
           <td data-label="Action">
             <div style="display:flex;gap:6px">

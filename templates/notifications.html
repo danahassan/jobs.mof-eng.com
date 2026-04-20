@@ -75,7 +75,7 @@
         <div class="notif-msg-plain">{{ n.message }}</div>
         {% endif %}
         <div class="notif-time">
-          <i class="bi bi-clock" style="font-size:10px;margin-right:3px"></i>{{ n.created_at.strftime('%b %d, %Y · %H:%M') }}
+          <i class="bi bi-clock" style="font-size:10px;margin-right:3px"></i>{{ (n.created_at | localdt).strftime('%b %d, %Y · %H:%M') }}
         </div>
       </div>
       <div class="notif-dot"></div>

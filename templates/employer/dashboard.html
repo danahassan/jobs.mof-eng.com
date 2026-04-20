@@ -116,7 +116,7 @@
     <tr>
       <td data-label="Candidate"><b>{{ a.applicant.full_name }}</b><br><span style="font-size:11px;color:var(--text3)">{{ a.applicant.email }}</span></td>
       <td data-label="Position">{{ a.position.title }}</td>
-      <td data-label="Applied">{{ a.applied_at.strftime('%b %d, %Y') }}</td>
+      <td data-label="Applied">{{ (a.applied_at | localdt).strftime('%b %d, %Y') }}</td>
       <td data-label="Status"><span class="badge badge-{{ a.status.lower().replace(' ','') }}">{{ a.status }}</span></td>
       <td data-label="Action"><a href="{{ url_for('employer.applicant_detail', app_id=a.id) }}" class="btn btn-outline btn-sm">Review</a></td>
     </tr>

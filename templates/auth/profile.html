@@ -218,7 +218,7 @@
         <div class="ap-row"><span class="ap-row-label">Nationality</span><span class="ap-row-value">{{ current_user.nationality or 'Not set' }}</span></div>
         <div class="ap-row"><span class="ap-row-label">Date of Birth</span><span class="ap-row-value">{{ current_user.date_of_birth.strftime('%b %d, %Y') if current_user.date_of_birth else 'Not set' }}</span></div>
         <div class="ap-row"><span class="ap-row-label">Joined</span><span class="ap-row-value">{{ current_user.created_at.strftime('%B %d, %Y') }}</span></div>
-        <div class="ap-row"><span class="ap-row-label">Last Login</span><span class="ap-row-value">{{ current_user.last_login.strftime('%b %d, %Y %H:%M') if current_user.last_login else 'First session' }}</span></div>
+        <div class="ap-row"><span class="ap-row-label">Last Login</span><span class="ap-row-value">{{ (current_user.last_login | localdt).strftime('%b %d, %Y %H:%M') if current_user.last_login else 'First session' }}</span></div>
       </div>
 
       <div class="ap-card">
@@ -318,7 +318,7 @@
           <div class="ap-card-title"><i class="bi bi-info-circle-fill"></i> Account Details</div>
           <div class="ap-row"><span class="ap-row-label">Role</span><span class="ap-row-value">{{ current_user.role|capitalize }}</span></div>
           <div class="ap-row"><span class="ap-row-label">Joined</span><span class="ap-row-value">{{ current_user.created_at.strftime('%B %d, %Y') }}</span></div>
-          <div class="ap-row"><span class="ap-row-label">Last Login</span><span class="ap-row-value">{{ current_user.last_login.strftime('%b %d, %Y %H:%M') if current_user.last_login else 'First session' }}</span></div>
+          <div class="ap-row"><span class="ap-row-label">Last Login</span><span class="ap-row-value">{{ (current_user.last_login | localdt).strftime('%b %d, %Y %H:%M') if current_user.last_login else 'First session' }}</span></div>
           <div class="ap-row"><span class="ap-row-label">2FA</span><span class="ap-row-value">{{ 'Enabled' if current_user.totp_enabled else 'Disabled' }}</span></div>
         </div>
         <div class="ap-card">

@@ -213,7 +213,7 @@
         <span class="badge badge-{{ a.status.lower().replace(' ','') }}" style="white-space:nowrap;flex-shrink:0">{{ a.status }}</span>
       </div>
       <div class="up-app-meta">
-        <span class="up-app-meta-tag"><i class="bi bi-calendar3"></i> {{ a.applied_at.strftime('%b %d, %Y') }}</span>
+        <span class="up-app-meta-tag"><i class="bi bi-calendar3"></i> {{ (a.applied_at | localdt).strftime('%b %d, %Y') }}</span>
         {% if a.expected_salary %}<span class="up-app-meta-tag"><i class="bi bi-cash"></i> {{ a.expected_salary }}</span>{% endif %}
       </div>
       <a href="{{ url_for('supervisor.application_detail', app_id=a.id) }}"
@@ -384,7 +384,7 @@
           <span class="badge badge-{{ a.status.lower().replace(' ','') }}" style="white-space:nowrap;flex-shrink:0">{{ a.status }}</span>
         </div>
         <div class="up-app-meta">
-          <span class="up-app-meta-tag"><i class="bi bi-calendar3"></i> {{ a.applied_at.strftime('%b %d, %Y') }}</span>
+          <span class="up-app-meta-tag"><i class="bi bi-calendar3"></i> {{ (a.applied_at | localdt).strftime('%b %d, %Y') }}</span>
           {% if a.expected_salary %}<span class="up-app-meta-tag"><i class="bi bi-cash"></i> {{ a.expected_salary }}</span>{% endif %}
         </div>
         <a href="{{ url_for('supervisor.application_detail', app_id=a.id) }}"
@@ -411,7 +411,7 @@
         {% for msg in thread_messages %}
         <div class="chat-bubble {{ 'bubble-out' if msg.sender_id == current_user.id else 'bubble-in' }}">
           {{ msg.body }}
-          <div class="cmeta">{{ 'You' if msg.sender_id == current_user.id else msg.sender.full_name.split()[0] }} · {{ msg.created_at.strftime('%b %d, %H:%M') }}</div>
+          <div class="cmeta">{{ 'You' if msg.sender_id == current_user.id else msg.sender.full_name.split()[0] }} · {{ (msg.created_at | localdt).strftime('%b %d, %H:%M') }}</div>
         </div>
         {% endfor %}
       </div>

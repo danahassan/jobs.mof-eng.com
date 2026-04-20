@@ -256,7 +256,7 @@
           <div class="avatar" style="width:32px;height:32px;font-size:11px;flex-shrink:0">{{ app.applicant.initials }}</div>
           <div style="flex:1;min-width:0">
             <div class="pd-app-name">{{ app.applicant.full_name }}</div>
-            <div class="pd-app-meta">{{ app.applied_at.strftime('%b %d, %Y') }}</div>
+            <div class="pd-app-meta">{{ (app.applied_at | localdt).strftime('%b %d, %Y') }}</div>
           </div>
           <span class="badge badge-{{ 'active' if app.status in ('new', 'shortlisted') else 'inactive' }}"
                 style="font-size:10px;align-self:center;text-transform:capitalize">{{ app.status }}</span>

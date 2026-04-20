@@ -51,7 +51,7 @@
           <span class="badge badge-{{ conv.partner.role }} ml-1" style="font-size:10px">{{ conv.partner.role|capitalize }}</span>
         </span>
         <span style="font-size:11px;color:var(--text3);white-space:nowrap">
-          {{ conv.last_msg.created_at.strftime('%b %d, %H:%M') if conv.last_msg else '' }}
+          {{ conv.last_(msg.created_at | localdt).strftime('%b %d, %H:%M') if conv.last_msg else '' }}
         </span>
       </div>
       <div style="font-size:13px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:400px">
