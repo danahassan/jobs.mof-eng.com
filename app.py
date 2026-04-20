@@ -167,8 +167,8 @@ def create_app(config_name=None):
     # Create DB tables and seed admin on first run
     with app.app_context():
         db.create_all()
-        _seed_admin(app)
         _migrate_db(app)
+        _seed_admin(app)
         # Ensure all upload folders exist
         for folder_key in ('UPLOAD_FOLDER', 'AVATAR_FOLDER', 'PORTFOLIO_FOLDER', 'COMPANY_LOGO_FOLDER'):
             folder = app.config.get(folder_key)
