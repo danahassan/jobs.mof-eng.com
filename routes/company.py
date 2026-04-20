@@ -6,6 +6,7 @@ from flask_login import login_required, current_user
 
 from models import db, Company, CompanyFollow, CompanyPhoto, Position
 from sqlalchemy import func
+from helpers import log_audit
 
 company_bp = Blueprint('companies', __name__)
 
@@ -82,6 +83,7 @@ def toggle_follow(company_id):
         user_id=current_user.id, company_id=company_id).first()
     if existing:
         db.session.delete(existing)
+        log_audit('company.unfollow', company.name, user_id=current_user.id)
         db.session.commit()
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return jsonify({'following': False, 'followers': company.follower_count})
@@ -89,6 +91,7 @@ def toggle_follow(company_id):
         return redirect(request.referrer or url_for('companies.listing'))
     follow = CompanyFollow(user_id=current_user.id, company_id=company_id)
     db.session.add(follow)
+    log_audit('company.follow', company.name, user_id=current_user.id)
     db.session.commit()
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return jsonify({'following': True, 'followers': company.follower_count})

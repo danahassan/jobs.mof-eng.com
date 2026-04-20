@@ -199,9 +199,11 @@ def save_job(pos_id):
     existing = SavedJob.query.filter_by(user_id=current_user.id, position_id=pos_id).first()
     if existing:
         db.session.delete(existing)
+        log_audit('user.unsave_job', pos.title, user_id=current_user.id)
         db.session.commit()
         return jsonify({'saved': False})
     db.session.add(SavedJob(user_id=current_user.id, position_id=pos_id))
+    log_audit('user.save_job', pos.title, user_id=current_user.id)
     db.session.commit()
     return jsonify({'saved': True})
 

@@ -5,7 +5,7 @@ from flask import (Blueprint, render_template, redirect, url_for,
                    flash, request, abort, Response)
 from flask_login import login_required, current_user
 from models import db, User, Message, Application, ROLE_ADMIN, ROLE_SUPERVISOR, ROLE_USER
-from helpers import push_notification
+from helpers import push_notification, log_audit
 from sqlalchemy import or_, and_
 
 messages_bp = Blueprint('messages', __name__)
@@ -175,6 +175,8 @@ def send():
         url_for('messages.thread', partner_id=current_user.id),
         icon='bi-chat-dots-fill'
     )
+    log_audit('message.send', f'{current_user.full_name} → {receiver.full_name}',
+              user_id=current_user.id)
     db.session.commit()
     flash('Message sent.', 'success')
 

@@ -33,6 +33,10 @@
 .cat-pill.supervisor.active{background:#9333ea;color:#fff}
 .cat-pill.user-action{background:#fff1f2;color:#e11d48;border-color:#fecdd3}
 .cat-pill.user-action.active{background:#e11d48;color:#fff}
+.cat-pill.message{background:#f0fdfa;color:#0d9488;border-color:#99f6e4}
+.cat-pill.message.active{background:#0d9488;color:#fff}
+.cat-pill.company{background:#fefce8;color:#ca8a04;border-color:#fde68a}
+.cat-pill.company.active{background:#ca8a04;color:#fff}
 
 /* ── Table ───────────────────────────────────────────────── */
 .audit-tbl{width:100%;border-collapse:collapse}
@@ -58,6 +62,8 @@
 .act-badge.cat-audit{background:#fef2f2;color:#dc2626}
 .act-badge.cat-email{background:#f0f9ff;color:#0284c7}
 .act-badge.cat-supervisor{background:#fdf4ff;color:#9333ea}
+.act-badge.cat-message{background:#f0fdfa;color:#0d9488}
+.act-badge.cat-company{background:#fefce8;color:#ca8a04}
 .act-badge.cat-default{background:#f1f5f9;color:#64748b}
 
 /* ── Delete button ───────────────────────────────────────── */
@@ -143,6 +149,8 @@
   ('position',    'Position',     'briefcase-fill'),
   ('application', 'Application',  'file-earmark-person-fill'),
   ('email',       'Email',        'envelope-fill'),
+  ('message',     'Messages',     'chat-dots-fill'),
+  ('company',     'Company',      'building-fill'),
   ('audit',       'Audit',        'shield-fill'),
 ] %}
 <div class="cat-pills">
@@ -201,6 +209,11 @@
   'auth.reset_password': 'lock-fill',
   'auth.password_change': 'lock-fill',
   'email.sent': 'envelope-fill',
+  'user.save_job': 'bookmark-fill',
+  'user.unsave_job': 'bookmark-dash',
+  'company.follow': 'building-fill',
+  'company.unfollow': 'building-dash',
+  'message.send': 'chat-dots-fill',
   'audit.delete': 'shield-x',
   'audit.clear': 'shield-exclamation',
 } %}
@@ -252,7 +265,7 @@
             {% endif %}
           </td>
           <td>
-            <span class="act-badge cat-{{ cat if cat in ('user','position','application','auth','audit','email','supervisor') else 'default' }}">
+            <span class="act-badge cat-{{ cat if cat in ('user','position','application','auth','audit','email','supervisor','message','company') else 'default' }}">
               <i class="bi bi-{{ act_icons.get(entry.action, 'circle-fill') }}" style="font-size:10px"></i>
               {{ entry.action }}
             </span>
@@ -297,7 +310,7 @@
   {% set cat = entry.action.split('.')[0] %}
   <div class="audit-card">
     <div class="audit-card-top">
-      <span class="act-badge cat-{{ cat if cat in ('user','position','application','auth','audit','email','supervisor') else 'default' }}">
+      <span class="act-badge cat-{{ cat if cat in ('user','position','application','auth','audit','email','supervisor','message','company') else 'default' }}">
         <i class="bi bi-{{ act_icons.get(entry.action, 'circle-fill') }}" style="font-size:10px"></i>
         {{ entry.action }}
       </span>
