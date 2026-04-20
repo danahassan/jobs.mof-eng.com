@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script>if(localStorage.getItem('theme')==='dark')document.documentElement.classList.add('dark');</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <meta name="theme-color" content="#0f1923">
 <meta name="mobile-web-app-capable" content="yes">
@@ -425,6 +426,53 @@ select.form-control{cursor:pointer}
   .stat-num{font-size:17px}
   .quick-actions{grid-template-columns:repeat(3,1fr)}
 }
+
+/* ═══ DARK MODE ═══ */
+html.dark{
+  --text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;
+  --bg:#0f172a;--card:#1e293b;--border:#334155;--border2:#475569;
+  --green-light:#052e16;--green-mid:#14532d;
+  --shadow:0 1px 3px rgba(0,0,0,.3),0 4px 12px rgba(0,0,0,.2);
+  --shadow-md:0 4px 16px rgba(0,0,0,.35),0 1px 4px rgba(0,0,0,.2);
+  color-scheme:dark;
+}
+html.dark .topbar-btn:hover{background:#334155}
+html.dark .avatar-wrap:hover{background:#2d3f53}
+html.dark .table-head{background:var(--card);border-bottom-color:var(--border)}
+html.dark table.tbl th{background:#263548}
+html.dark table.tbl tbody tr:hover td{background:#263548}
+html.dark .form-control{background:#263548;color:var(--text)}
+html.dark .form-control:focus{background:#2d3f53;box-shadow:0 0 0 3px rgba(25,135,84,.15)}
+html.dark .btn-outline{background:var(--card);color:var(--text2)}
+html.dark .btn-outline:hover{background:#334155;color:var(--text)}
+html.dark .msd-btn{background:var(--card);color:var(--text)}
+html.dark .msd-btn:hover{background:#263548}
+html.dark .msd.msd-active .msd-btn{background:#1a3022}
+html.dark .msd-panel{background:var(--card)}
+html.dark .msd-opt:hover,html.dark .msd-option:hover{background:#1a3022}
+html.dark .msd-opt:has(input:checked),html.dark .msd-option:has(input:checked){background:#052e16;color:#4ade80}
+html.dark .pwa-guide-card{background:var(--card)}
+html.dark .pwa-guide-step{background:#263548;border-color:var(--border)}
+html.dark .quick-action:hover{background:#1a3022}
+html.dark .export-group{background:var(--card)}
+html.dark .export-group .btn-export.csv:hover{background:#052e16}
+html.dark .export-group .btn-export.xlsx:hover{background:#1e3a8a;color:#93c5fd}
+html.dark .alert-success{background:#052e16;color:#4ade80;border-color:#16a34a}
+html.dark .alert-danger{background:#450a0a;color:#fca5a5;border-color:#dc2626}
+html.dark .alert-warning{background:#422006;color:#fcd34d;border-color:#d97706}
+html.dark .alert-info{background:#1e3a8a;color:#93c5fd;border-color:#2563eb}
+html.dark .filter-chip{background:#052e16;color:#4ade80;border-color:#14532d}
+html.dark .filter-chip a{color:#4ade80}
+html.dark .badge-future,html.dark .badge-futureconsideration{background:#334155;color:#94a3b8}
+html.dark .badge-user{background:#334155;color:#94a3b8}
+html.dark .badge-underreview,html.dark .badge-review{background:#1e3a8a;color:#93c5fd}
+html.dark .badge-interview{background:#2e1065;color:#c4b5fd}
+html.dark .badge-offer{background:#451a03;color:#fcd34d}
+html.dark .badge-rejected{background:#450a0a;color:#fca5a5}
+html.dark .page-link{background:var(--card);border-color:var(--border);color:var(--text2)}
+html.dark .page-link:hover{background:#334155}
+html.dark .tl-dot{border-color:var(--bg)}
+html.dark select.form-control option{background:#1e293b}
 </style>
 {% block extra_css %}{% endblock %}
 </head>
@@ -534,6 +582,9 @@ select.form-control{cursor:pointer}
         <button class="pwa-install-btn js-pwa-install" onclick="installPWA()" title="Install as App">
           <i class="bi bi-box-arrow-down"></i> Install
         </button>
+        <button id="darkToggleBtn" class="topbar-btn" title="Switch to Dark Mode" aria-label="Toggle dark mode">
+          <i class="bi bi-moon-fill"></i>
+        </button>
         {% if current_user.is_authenticated %}
         <button id="pushEnableBtn" class="pwa-install-btn js-push-enable" title="Enable Push Notifications" style="display:none">
           <i class="bi bi-bell-slash"></i> Notify
@@ -607,6 +658,24 @@ select.form-control{cursor:pointer}
 
 {% block extra_js %}{% endblock %}
 <script>
+// Dark mode — runs first so icon reflects current state immediately
+(function(){
+  var btn = document.getElementById('darkToggleBtn');
+  function applyTheme(t) {
+    var dark = t === 'dark';
+    document.documentElement.classList.toggle('dark', dark);
+    if (btn) {
+      btn.innerHTML = dark ? '<i class="bi bi-sun-fill"></i>' : '<i class="bi bi-moon-fill"></i>';
+      btn.title = dark ? 'Switch to Light Mode' : 'Switch to Dark Mode';
+    }
+  }
+  applyTheme(localStorage.getItem('theme') || 'light');
+  if (btn) btn.addEventListener('click', function() {
+    var next = document.documentElement.classList.contains('dark') ? 'light' : 'dark';
+    localStorage.setItem('theme', next);
+    applyTheme(next);
+  });
+})();
 function toggleSidebar(){
   document.getElementById('sidebar').classList.toggle('open');
   document.getElementById('sidebarOverlay').classList.toggle('open');
