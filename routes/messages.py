@@ -97,11 +97,17 @@ def inbox():
     kpi_conversations  = len(conversations)
     kpi_unread         = total_unread
     kpi_today          = Message.query.filter(
-        or_(Message.sender_id == current_user.id, Message.receiver_id == current_user.id),
+        or_(
+            and_(Message.sender_id == current_user.id, Message.deleted_by_sender == False),
+            and_(Message.receiver_id == current_user.id, Message.deleted_by_receiver == False)
+        ),
         Message.created_at >= today_start
     ).count()
     kpi_total_msgs     = Message.query.filter(
-        or_(Message.sender_id == current_user.id, Message.receiver_id == current_user.id)
+        or_(
+            and_(Message.sender_id == current_user.id, Message.deleted_by_sender == False),
+            and_(Message.receiver_id == current_user.id, Message.deleted_by_receiver == False)
+        )
     ).count()
 
     return render_template('messages/inbox.html',
