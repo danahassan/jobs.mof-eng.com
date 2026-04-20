@@ -9,6 +9,11 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'change-this-in-production-use-random-string')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
+    # Web Push (VAPID)
+    VAPID_PRIVATE_KEY = os.environ.get('VAPID_PRIVATE_KEY', '').replace('\\n', '\n')
+    VAPID_PUBLIC_KEY  = os.environ.get('VAPID_PUBLIC_KEY', '')
+    VAPID_SUBJECT     = os.environ.get('VAPID_SUBJECT', 'mailto:admin@mof-eng.com')
+
     # Canonical public URL — used to build links in emails (never changes based on request host)
     SITE_URL = os.environ.get('SITE_URL', 'https://jobs.mof-eng.com')
 

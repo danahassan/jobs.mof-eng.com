@@ -534,6 +534,11 @@ select.form-control{cursor:pointer}
         <button class="pwa-install-btn js-pwa-install" onclick="installPWA()" title="Install as App">
           <i class="bi bi-box-arrow-down"></i> Install
         </button>
+        {% if current_user.is_authenticated %}
+        <button id="pushEnableBtn" class="pwa-install-btn js-push-enable" title="Enable Push Notifications" style="display:none">
+          <i class="bi bi-bell-slash"></i> Notify
+        </button>
+        {% endif %}
         <a href="{{ url_for('notifications.index') }}" class="topbar-btn" title="Notifications" style="position:relative">
           <i class="bi bi-bell-fill"></i>
           {% if unread_notifications %}
@@ -759,6 +764,61 @@ function installPWA() {
     openInstallGuide('android');
   }
 }
+{% if current_user.is_authenticated %}
+// ── Web Push subscription ────────────────────────────────────────────────────
+function _urlBase64ToUint8Array(b64) {
+  const pad = '='.repeat((4 - b64.length % 4) % 4);
+  const raw = atob((b64 + pad).replace(/-/g, '+').replace(/_/g, '/'));
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+(async function initPush() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  try {
+    const sw  = await navigator.serviceWorker.ready;
+    const btn = document.getElementById('pushEnableBtn');
+    const existing = await sw.pushManager.getSubscription();
+    async function doSubscribe() {
+      try {
+        const r = await fetch('/api/v1/push/vapid-public-key', {credentials:'same-origin'});
+        const { publicKey } = await r.json();
+        if (!publicKey) return;
+        const sub = await sw.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: _urlBase64ToUint8Array(publicKey),
+        });
+        await fetch('/api/v1/push/subscribe', {
+          method: 'POST', credentials: 'same-origin',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify(sub.toJSON()),
+        });
+        if (btn) btn.style.display = 'none';
+      } catch(e) { /* user denied or error — stay silent */ }
+    }
+    if (existing) {
+      // Re-sync existing subscription in case it changed
+      await fetch('/api/v1/push/subscribe', {
+        method: 'POST', credentials: 'same-origin',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(existing.toJSON()),
+      });
+      if (btn) btn.style.display = 'none';
+    } else {
+      if (Notification.permission === 'granted') {
+        await doSubscribe();
+      } else if (Notification.permission !== 'denied') {
+        if (btn) btn.style.display = 'inline-flex';
+      }
+    }
+    if (btn) {
+      btn.addEventListener('click', async () => {
+        const perm = await Notification.requestPermission();
+        if (perm === 'granted') await doSubscribe();
+        else btn.style.display = 'none';
+      });
+    }
+  } catch(e) {}
+})();
+{% endif %}
 </script>
 </body>
 </html>

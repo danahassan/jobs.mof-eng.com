@@ -178,7 +178,51 @@ def supervisor_or_admin_required(f):
 
 
 def push_notification(user_id, message, link=None, icon='bi-bell-fill'):
-    """Create an in-app notification. Caller must still db.session.commit()."""
+    """Create an in-app notification and send Web Push if subscriptions exist."""
     from models import Notification, db
     n = Notification(user_id=user_id, message=message, link=link, icon=icon)
     db.session.add(n)
+    _send_web_push(user_id, message, link)
+
+
+def _send_web_push(user_id, message, link=None):
+    """Fire-and-forget Web Push to all subscriptions for a user."""
+    try:
+        from models import PushSubscription, db as _db
+        from pywebpush import webpush, WebPushException
+        import json as _json
+        cfg = current_app.config
+        private_key = cfg.get('VAPID_PRIVATE_KEY', '')
+        if not private_key:
+            return
+        subs = PushSubscription.query.filter_by(user_id=user_id).all()
+        if not subs:
+            return
+        payload = _json.dumps({
+            'title': 'MOF Jobs',
+            'body':  message,
+            'url':   link or '/',
+        })
+        dead = []
+        for sub in subs:
+            try:
+                webpush(
+                    subscription_info={
+                        'endpoint': sub.endpoint,
+                        'keys': {'p256dh': sub.p256dh, 'auth': sub.auth},
+                    },
+                    data=payload,
+                    vapid_private_key=private_key,
+                    vapid_claims={'sub': cfg.get('VAPID_SUBJECT', 'mailto:admin@mof-eng.com')},
+                )
+            except WebPushException as exc:
+                if exc.response is not None and exc.response.status_code in (404, 410):
+                    dead.append(sub.id)
+            except Exception:
+                pass
+        if dead:
+            PushSubscription.query.filter(PushSubscription.id.in_(dead)).delete(
+                synchronize_session=False)
+            _db.session.commit()
+    except Exception:
+        pass
