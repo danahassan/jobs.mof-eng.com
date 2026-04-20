@@ -5,7 +5,7 @@ from flask import (Blueprint, render_template, redirect, url_for,
 from flask_login import login_required, current_user
 from sqlalchemy import or_, and_, func
 from models import (db, Position, Application, ApplicationHistory, Interview,
-                    SavedJob, CompanyFollow, Message, User, ROLE_ADMIN,
+                    SavedJob, CompanyFollow, Message, User, CompanyMember, ROLE_ADMIN,
                     SOURCES, STATUS_NEW, STATUS_REVIEW, STATUS_INTERVIEW,
                     STATUS_OFFER, STATUS_HIRED, ALL_STATUSES)
 from helpers import save_cv, allowed_file, send_email, push_notification, log_audit
@@ -162,12 +162,18 @@ def apply(pos_id):
         except Exception as e:
             current_app.logger.warning(f'Applicant confirmation email failed: {e}')
 
-        # 2. Notification email to all admins + supervisors with CV attachment
+        # 2. Notification email to all admins + supervisors managing this company
         site_url = current_app.config['SITE_URL']
         review_url = site_url + url_for('admin.application_detail', app_id=application.id)
         staff_recipients = list(admins)
-        # Also include active supervisors
-        supervisors = User.query.filter_by(role=ROLE_SUPERVISOR, is_active=True).all()
+        # Only supervisors who manage the company this position belongs to
+        if pos.company_id:
+            manager_ids = [m.user_id for m in CompanyMember.query.filter_by(
+                company_id=pos.company_id, role='manager').all()]
+            supervisors = User.query.filter(
+                User.id.in_(manager_ids), User.is_active == True).all() if manager_ids else []
+        else:
+            supervisors = []
         staff_recipients.extend(supervisors)
         for staff in staff_recipients:
             staff_review_url = review_url
