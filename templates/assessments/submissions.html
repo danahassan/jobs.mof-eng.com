@@ -1,0 +1,75 @@
+﻿{% extends 'base.html' %}
+{% block title %}Submissions — {{ assessment.title }} — MOF Jobs{% endblock %}
+{% block page_title %}Submissions{% endblock %}
+{% block page_breadcrumb %}{{ assessment.title }} Submissions{% endblock %}
+
+{% block content %}
+<div class="section-header" style="margin-bottom:20px">
+  <div>
+    <h2 style="font-size:18px;font-weight:600">{{ assessment.title }}</h2>
+    <div style="font-size:13px;color:var(--text3);margin-top:2px">{{ submissions | length }} submissions · {{ passed_count }} passed</div>
+  </div>
+  <a href="{{ url_for('assessments.edit', assessment_id=assessment.id) }}" class="btn btn-outline btn-sm"><i class="bi bi-pencil"></i> Edit Assessment</a>
+</div>
+
+<!-- Stats Row -->
+<div class="stats-grid" style="margin-bottom:20px">
+  <div class="stat-card"><div class="stat-card-inner">
+    <div class="stat-icon"><i class="bi bi-people"></i></div>
+    <div><div class="stat-num">{{ submissions | length }}</div><div class="stat-lbl">Total Attempts</div></div>
+  </div></div>
+  <div class="stat-card"><div class="stat-card-inner">
+    <div class="stat-icon" style="color:#22c55e"><i class="bi bi-check-circle"></i></div>
+    <div><div class="stat-num">{{ passed_count }}</div><div class="stat-lbl">Passed</div></div>
+  </div></div>
+  <div class="stat-card"><div class="stat-card-inner">
+    <div class="stat-icon" style="color:#ef4444"><i class="bi bi-x-circle"></i></div>
+    <div><div class="stat-num">{{ submissions | length - passed_count }}</div><div class="stat-lbl">Failed</div></div>
+  </div></div>
+  <div class="stat-card"><div class="stat-card-inner">
+    <div class="stat-icon" style="color:var(--primary)"><i class="bi bi-percent"></i></div>
+    <div><div class="stat-num">{{ avg_score | int }}%</div><div class="stat-lbl">Avg Score</div></div>
+  </div></div>
+</div>
+
+<div class="table-card">
+  <table style="width:100%;border-collapse:collapse;font-size:13px">
+    <thead>
+      <tr style="border-bottom:1px solid var(--border);color:var(--text3)">
+        <th style="padding:10px 14px;text-align:left;font-weight:500">Candidate</th>
+        <th style="padding:10px 14px;text-align:center;font-weight:500">Score</th>
+        <th style="padding:10px 14px;text-align:center;font-weight:500">%</th>
+        <th style="padding:10px 14px;text-align:center;font-weight:500">Result</th>
+        <th style="padding:10px 14px;text-align:left;font-weight:500">Submitted</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for sub in submissions %}
+    <tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:10px 14px">
+        <div style="font-weight:500">{{ sub.user.full_name }}</div>
+        <div style="font-size:12px;color:var(--text3)">{{ sub.user.email }}</div>
+      </td>
+      <td style="padding:10px 14px;text-align:center">{{ sub.score }}/{{ assessment.total_points }}</td>
+      <td style="padding:10px 14px;text-align:center">
+        <div style="display:flex;align-items:center;gap:6px">
+          <div style="flex:1;height:6px;background:var(--border);border-radius:10px;overflow:hidden">
+            <div style="height:100%;width:{{ sub.percentage | int }}%;background:{% if sub.passed %}#22c55e{% else %}#ef4444{% endif %};border-radius:10px"></div>
+          </div>
+          <span style="font-weight:500;min-width:36px;text-align:right">{{ sub.percentage | int }}%</span>
+        </div>
+      </td>
+      <td style="padding:10px 14px;text-align:center">
+        <span style="padding:2px 10px;border-radius:12px;font-size:11px;background:{% if sub.passed %}#dcfce7{% else %}#fee2e2{% endif %};color:{% if sub.passed %}#16a34a{% else %}#dc2626{% endif %}">
+          {{ 'PASS' if sub.passed else 'FAIL' }}
+        </span>
+      </td>
+      <td style="padding:10px 14px;color:var(--text3)">{{ sub.completed_at.strftime('%b %d, %Y %H:%M') if sub.completed_at else '—' }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5" style="padding:40px;text-align:center;color:var(--text3)">No submissions yet.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

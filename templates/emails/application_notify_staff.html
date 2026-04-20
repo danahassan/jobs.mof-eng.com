@@ -1,0 +1,80 @@
+﻿<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><style>
+body{font-family:'DM Sans',Arial,sans-serif;background:#f4f6f8;margin:0;padding:24px}
+.wrap{max-width:580px;margin:0 auto;background:#fff;border-radius:10px;overflow:hidden;border:1px solid #e0e0e0}
+.header{background:#1a2332;padding:24px 28px;display:flex;align-items:center;justify-content:space-between}
+.header-name{color:#fff;font-size:18px;font-weight:600}
+.header-badge{background:#198754;color:#fff;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;letter-spacing:.5px}
+.body{padding:28px}
+.section-title{font-size:11px;font-weight:700;color:#8a9aaa;letter-spacing:.8px;text-transform:uppercase;margin:20px 0 8px}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid #e8ecf0;border-radius:8px;overflow:hidden;margin-bottom:16px}
+.info-cell{padding:11px 14px;border-bottom:1px solid #e8ecf0;border-right:1px solid #e8ecf0}
+.info-cell:nth-child(2n){border-right:none}
+.info-cell:nth-last-child(-n+2){border-bottom:none}
+.info-lbl{font-size:11px;color:#8a9aaa;margin-bottom:2px}
+.info-val{font-size:13px;font-weight:600;color:#1a2332}
+.cover-box{background:#f8fafc;border:1px solid #e8ecf0;border-radius:8px;padding:14px;font-size:13px;color:#3a4a5a;line-height:1.6;white-space:pre-wrap}
+.cta{display:inline-block;margin-top:20px;background:#198754;color:#fff;text-decoration:none;padding:11px 22px;border-radius:8px;font-size:13px;font-weight:600}
+.footer{background:#f8f9fa;padding:16px 28px;font-size:12px;color:#8a9aaa;border-top:1px solid #e0e0e0;text-align:center}
+.cv-note{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 14px;font-size:12px;color:#1d4ed8;margin-top:14px}
+</style></head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div class="header-name">New Application Received</div>
+    <div class="header-badge">Application #{{ app.id }}</div>
+  </div>
+  <div class="body">
+    <p>Hi <strong>{{ recipient_name }}</strong>,</p>
+    <p style="margin-top:8px;color:#3a4a5a;font-size:14px">
+      A new application has been submitted for <strong>{{ pos.title }}</strong>. Please review the details below.
+    </p>
+
+    <div class="section-title">Position Details</div>
+    <div class="info-grid">
+      <div class="info-cell"><div class="info-lbl">Position</div><div class="info-val">{{ pos.title }}</div></div>
+      <div class="info-cell"><div class="info-lbl">Department</div><div class="info-val">{{ pos.department or '—' }}</div></div>
+      <div class="info-cell"><div class="info-lbl">Location</div><div class="info-val">{{ pos.location or '—' }}</div></div>
+      <div class="info-cell"><div class="info-lbl">Type</div><div class="info-val">{{ pos.type or '—' }}</div></div>
+    </div>
+
+    <div class="section-title">Applicant Details</div>
+    <div class="info-grid">
+      <div class="info-cell"><div class="info-lbl">Full Name</div><div class="info-val">{{ app.applicant.full_name }}</div></div>
+      <div class="info-cell"><div class="info-lbl">Email</div><div class="info-val">{{ app.applicant.email }}</div></div>
+      <div class="info-cell"><div class="info-lbl">Phone</div><div class="info-val">{{ app.applicant.phone or '—' }}</div></div>
+      <div class="info-cell"><div class="info-lbl">Applied Via</div><div class="info-val">{{ app.source or 'Website' }}</div></div>
+      {% if app.expected_salary %}
+      <div class="info-cell" style="grid-column:span 2"><div class="info-lbl">Expected Salary</div><div class="info-val">{{ app.expected_salary }}</div></div>
+      {% endif %}
+    </div>
+
+    {% if app.cover_letter %}
+    <div class="section-title">Cover Letter</div>
+    <div class="cover-box">{{ app.cover_letter }}</div>
+    {% endif %}
+
+    {% if app.cv_original %}
+    <div class="cv-note">
+      <strong>📎 CV attached:</strong> {{ app.cv_original }} — see the attachment in this email.
+    </div>
+    {% endif %}
+
+    <a href="{{ review_url }}" class="cta">Review Application →</a>
+
+    <p style="margin-top:24px;font-size:13px;color:#5a6a7a">
+      Best regards,<br>
+      <strong>MOF Engineering — Careers System</strong>
+    </p>
+  </div>
+  <div class="footer">
+    <img src="https://mof-eng.com/wp-content/uploads/2025/05/cropped-MOF-LOGO-transparent--100x46.png"
+         alt="MOF Engineering" width="72" style="display:block;margin:0 auto 10px;filter:brightness(0);opacity:.55"
+         onerror="this.style.display='none'">
+    This is an automated notification from MOF Jobs.<br>
+    MOF Engineering Company · Slemani, Iraq · <a href="https://mof-eng.com" style="color:#198754">mof-eng.com</a>
+  </div>
+</div>
+</body>
+</html>

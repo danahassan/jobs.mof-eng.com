@@ -1,0 +1,197 @@
+﻿{% extends 'base.html' %}
+{% block title %}Positions — MOF Jobs{% endblock %}
+{% block page_title %}Positions{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Show all columns on mobile for this page */
+.pos-table td:first-child { display: flex !important; }
+.pos-idx{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:28px;padding:0 8px;border-radius:999px;background:#edf7f0;color:var(--green);font-size:12px;font-weight:800}
+.pos-title-wrap{display:flex;flex-direction:column;gap:3px;min-width:0}
+.pos-title-link{font-weight:700;color:var(--text);text-decoration:none;line-height:1.3}
+.pos-title-link:hover{color:var(--green);text-decoration:underline}
+.pos-title-sub{font-size:11px;color:var(--text3)}
+.pos-actions .btn{justify-content:center}
+/* Actions cell: stack buttons on mobile */
+@media (max-width: 768px) {
+  .pos-table td[data-label="#"]{justify-content:flex-start !important}
+  .pos-table td[data-label="#"]::before{min-width:auto}
+  .pos-actions { flex-direction: column; align-items: stretch; gap: 6px !important; }
+  .pos-actions .btn, .pos-actions form { width: 100%; }
+  .pos-actions form .btn { width: 100%; justify-content: center; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+{# Build base query string for pagination (preserves all filter params) #}
+{% set qs = 'q=' + (q_str|urlencode) + '&status=' + (status_f or '') %}
+{% for t in types_f %}{% set qs = qs + '&type=' + (t|urlencode) %}{% endfor %}
+
+<!-- Filter Bar -->
+<form method="GET" class="filter-bar" id="filterForm">
+  <div class="filter-row">
+
+    <div class="filter-search">
+      <label>Search</label>
+      <div style="position:relative">
+        <i class="bi bi-search filter-search-icon"></i>
+        <input type="text" name="q" class="form-control" placeholder="Title or department…" value="{{ q_str }}">
+      </div>
+    </div>
+
+    <div class="msd" id="msd-type">
+      <label>Type</label>
+      <button type="button" class="msd-btn" onclick="toggleMSD('msd-type')">
+        Type <span class="msd-tag"></span><i class="bi bi-chevron-down msd-chevron"></i>
+      </button>
+      <div class="msd-panel">
+        {% for t in POSITION_TYPES %}
+        <label class="msd-opt">
+          <input type="checkbox" name="type" value="{{ t }}" {% if t in types_f %}checked{% endif %}>
+          <span>{{ t }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="filter-group">
+      <label>Status</label>
+      <select name="status" class="form-control">
+        <option value="">All statuses</option>
+        <option value="active"   {% if status_f == 'active'   %}selected{% endif %}>Active</option>
+        <option value="inactive" {% if status_f == 'inactive' %}selected{% endif %}>Inactive</option>
+      </select>
+    </div>
+
+    <div class="filter-actions">
+      <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-funnel"></i> Filter</button>
+      <a href="{{ url_for('supervisor.positions') }}" class="btn btn-outline btn-sm"><i class="bi bi-x"></i> Reset</a>
+    </div>
+
+  </div>
+</form>
+{% if q_str or types_f or status_f %}
+<div class="filter-chips">
+  {% if q_str %}<span class="filter-chip"><i class="bi bi-search"></i> {{ q_str }}</span>{% endif %}
+  {% for t in types_f %}<span class="filter-chip"><i class="bi bi-briefcase"></i> {{ t }}</span>{% endfor %}
+  {% if status_f %}<span class="filter-chip"><i class="bi bi-circle-fill" style="font-size:8px"></i> {{ status_f|capitalize }}</span>{% endif %}
+  <a href="{{ url_for('supervisor.positions') }}" class="filter-chip" style="background:#fee2e2;color:#991b1b;border-color:#fca5a5"><i class="bi bi-x-lg"></i> Clear all</a>
+</div>
+{% endif %}
+
+<!-- Section header -->
+<div class="section-header">
+  <span style="font-size:13px;color:var(--text3)">
+    {{ positions.total }} position{{ 's' if positions.total != 1 }}
+  </span>
+  {% if managed_companies %}
+  <div style="display:flex;flex-wrap:wrap;gap:8px">
+    {% for c in managed_companies %}
+    <a href="{{ url_for('supervisor.company_job_new', company_id=c.id) }}" class="btn btn-primary btn-sm">
+      <i class="bi bi-plus-lg"></i> New Job — {{ c.name }}
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+
+<!-- Table -->
+<div class="table-card">
+  <div class="table-responsive">
+    <table class="tbl pos-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Title</th>
+          <th>Company</th>
+          <th>Type</th>
+          <th>Apps</th>
+          <th>Closes</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for pos in positions.items %}
+        <tr>
+          <td data-label="#"><span class="pos-idx">{{ ((positions.page - 1) * positions.per_page) + loop.index }}</span></td>
+          <td data-label="Title" style="font-weight:500">
+            <div class="pos-title-wrap">
+              <a href="{{ url_for('jobs.detail', job_id=pos.id) }}" class="pos-title-link">{{ pos.title }}</a>
+              <div class="pos-title-sub">ID {{ pos.id }}{% if pos.department %} · {{ pos.department }}{% endif %}{% if pos.is_closing_soon %} · <span style="color:#d97706"><i class="bi bi-clock"></i> Closing soon</span>{% endif %}</div>
+            </div>
+          </td>
+          <td data-label="Company" style="color:var(--text3)">{{ pos.company.name if pos.company else '—' }}</td>
+          <td data-label="Type" style="color:var(--text3)">{{ pos.type or '—' }}</td>
+          <td data-label="Apps">
+            <span class="badge" style="background:#eff6ff;color:#1d4ed8">{{ pos.application_count }}</span>
+          </td>
+          <td data-label="Closes" style="color:var(--text3);font-size:12px">
+            {{ pos.closes_at.strftime('%b %d, %Y') if pos.closes_at else '—' }}
+          </td>
+          <td data-label="Status">
+            {% if pos.is_active %}
+            <span class="badge badge-hired">Active</span>
+            {% else %}
+            <span class="badge" style="background:#f1f5f9;color:#64748b">Inactive</span>
+            {% endif %}
+          </td>
+          <td data-label="Actions">
+            <div class="d-flex pos-actions" style="gap:6px;flex-wrap:wrap">
+                <a href="{{ url_for('jobs.detail', job_id=pos.id) }}"
+                 class="btn btn-outline btn-sm"><i class="bi bi-eye"></i> View</a>
+              <a href="{{ url_for('supervisor.company_job_edit', company_id=pos.company_id, pos_id=pos.id) }}"
+                 class="btn btn-outline btn-sm"><i class="bi bi-pencil"></i> Edit</a>
+              <form method="POST" action="{{ url_for('supervisor.position_toggle', pos_id=pos.id) }}" style="margin:0">
+                <button type="submit" class="btn btn-outline btn-sm">
+                  <i class="bi bi-toggle-{{ 'on text-success' if pos.is_active else 'off' }}"></i>
+                  {{ 'Deactivate' if pos.is_active else 'Activate' }}
+                </button>
+              </form>
+              <form method="POST" action="{{ url_for('supervisor.position_delete', pos_id=pos.id) }}"
+                    style="margin:0"
+                    onsubmit="return confirm('Delete \'{{ pos.title|e }}\'? This removes all {{ pos.application_count }} application(s).')">
+                <button type="submit" class="btn btn-danger btn-sm"><i class="bi bi-trash"></i></button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="8">
+            <div class="empty-state">
+              <i class="bi bi-briefcase"></i>
+              <p>No positions found.{% if q_str or types_f or status_f %} <a href="{{ url_for('supervisor.positions') }}">Clear filters</a>.{% endif %}</p>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Pagination -->
+{% if positions.pages > 1 %}
+<div class="pagination">
+  <a href="{{ url_for('supervisor.positions') }}?{{ qs }}&page={{ positions.prev_num }}"
+     class="page-link {% if not positions.has_prev %}disabled{% endif %}">
+    <i class="bi bi-chevron-left"></i>
+  </a>
+  {% for p in positions.iter_pages() %}
+    {% if p %}
+      <a href="{{ url_for('supervisor.positions') }}?{{ qs }}&page={{ p }}"
+         class="page-link {% if p == positions.page %}active{% endif %}">{{ p }}</a>
+    {% else %}
+      <span class="page-link" style="border:none;background:none">…</span>
+    {% endif %}
+  {% endfor %}
+  <a href="{{ url_for('supervisor.positions') }}?{{ qs }}&page={{ positions.next_num }}"
+     class="page-link {% if not positions.has_next %}disabled{% endif %}">
+    <i class="bi bi-chevron-right"></i>
+  </a>
+</div>
+{% endif %}
+
+{% endblock %}

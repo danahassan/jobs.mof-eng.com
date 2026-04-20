@@ -1,0 +1,553 @@
+﻿{% extends 'base.html' %}
+{% block title %}My Profile — MOF Jobs{% endblock %}
+{% block page_title %}My Profile{% endblock %}
+{% block page_breadcrumb %}Profile{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Shared ─────────────────────────────────────────────────── */
+.form-label{display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px;letter-spacing:.1px}
+.prof-layout{display:grid;grid-template-columns:270px 1fr;gap:20px;align-items:start}
+/* ── Sidebar ────────────────────────────────────────────────── */
+.prof-sidebar-card{padding:0;overflow:hidden}
+.prof-banner{height:80px;background:linear-gradient(135deg,var(--green) 0%,#0a5c36 100%)}
+.prof-sidebar-body{padding:0 20px 20px;text-align:center}
+.prof-avatar-wrap{width:88px;height:88px;border-radius:50%;overflow:hidden;margin:-44px auto 12px;border:4px solid var(--card);box-shadow:0 4px 14px rgba(0,0,0,.15);background:#e8f5ee}
+.prof-avatar-img{width:100%;height:100%;object-fit:cover;display:block}
+.prof-avatar-initials{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:700;color:var(--green)}
+.prof-name{font-size:17px;font-weight:700;color:var(--text);line-height:1.3}
+.prof-headline{font-size:12px;color:var(--text2);margin-top:5px;line-height:1.5}
+.prof-location{font-size:11px;color:var(--text3);margin-top:6px;display:flex;align-items:center;justify-content:center;gap:4px}
+.prof-actions{display:flex;flex-direction:column;gap:7px;margin-top:16px}
+.prof-action-btn{width:100%!important;display:block!important;text-align:center;text-decoration:none;cursor:pointer}
+.prof-strength-section{border-top:1px solid var(--border);padding:16px 20px;background:#fafbfc}
+.prof-strength-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.prof-strength-label{font-size:12px;font-weight:600;color:var(--text2)}
+.prof-strength-pct{font-size:14px;font-weight:700;color:var(--green)}
+.prof-strength-bar{height:8px;background:var(--border);border-radius:10px;overflow:hidden}
+.prof-strength-fill{height:100%;background:linear-gradient(90deg,var(--green),#0d8a50);border-radius:10px;transition:width .5s ease}
+.prof-strength-hint{font-size:11px;color:var(--text3);margin:8px 0 0;line-height:1.4}
+/* ── View mode ──────────────────────────────────────────────── */
+.pv-section{margin-bottom:22px}
+.pv-section:last-child{margin-bottom:0}
+.pv-section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text3);margin-bottom:12px;display:flex;align-items:center;gap:6px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.pv-bio{font-size:14px;color:var(--text2);line-height:1.8;white-space:pre-wrap}
+.pv-skill{display:inline-flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--border);padding:4px 12px;border-radius:20px;font-size:13px;margin:3px}
+.pv-skill-badge{font-size:10px;padding:1px 7px;border-radius:10px;font-weight:600}
+.pv-exp{padding:12px 0;border-bottom:1px solid var(--border)}
+.pv-exp:last-child{border-bottom:none;padding-bottom:0}
+.pv-exp-title{font-size:14px;font-weight:600;color:var(--text)}
+.pv-exp-company{font-size:13px;color:var(--green);font-weight:500;margin-top:1px}
+.pv-exp-dates{font-size:12px;color:var(--text3);margin-top:2px}
+.pv-exp-desc{font-size:13px;color:var(--text2);margin-top:6px;line-height:1.6}
+.pv-info-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;gap:8px}
+.pv-info-row:last-child{border-bottom:none;padding-bottom:0}
+.pv-info-lbl{color:var(--text3);white-space:nowrap;font-size:12px}
+.pv-info-val{font-weight:600;text-align:right;color:var(--text);word-break:break-word;max-width:60%}
+.pv-link-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:500;color:var(--text);text-decoration:none;transition:.15s}
+.pv-link-chip:hover{border-color:var(--green);color:var(--green)}
+/* ── Edit mode tabs ─────────────────────────────────────────── */
+.prof-tab-nav{display:flex;border-bottom:2px solid var(--border);margin-bottom:20px;overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none;-ms-overflow-style:none}
+.prof-tab-nav::-webkit-scrollbar{display:none}
+.prof-tab-link{padding:10px 16px;font-size:13px;font-weight:500;white-space:nowrap;text-decoration:none;border-bottom:2px solid transparent;margin-bottom:-2px;color:var(--text3);flex-shrink:0;transition:color .15s,border-color .15s}
+.prof-tab-link:hover{color:var(--green)}
+.prof-tab-link.active{border-bottom-color:var(--green);color:var(--green);font-weight:600}
+.cert-item{display:flex;align-items:flex-start;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);gap:12px}
+.alert-item{display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--bg);border-radius:8px;border:1px solid var(--border);margin-bottom:8px;gap:12px}
+/* ── Responsive ─────────────────────────────────────────────── */
+@media(max-width:900px){.prof-layout{grid-template-columns:230px 1fr}}
+.prof-right{min-width:0;overflow:hidden}
+.prof-right .card{overflow:hidden}
+@media(max-width:680px){
+  .prof-layout{grid-template-columns:1fr!important;gap:12px}
+  .prof-right .card{padding:16px!important}
+  .form-grid{grid-template-columns:1fr!important}
+  .prof-tab-link{padding:8px 10px!important;font-size:12px!important}
+  .prof-banner{height:60px}
+  .prof-avatar-wrap{width:76px;height:76px;margin-top:-38px}
+  .prof-avatar-initials{font-size:24px}
+  .prof-name{font-size:15px}
+  .cert-item{flex-direction:column;gap:8px}
+  .cert-item>form{align-self:flex-end;margin-top:-4px}
+  .alert-item{flex-direction:column;align-items:flex-start;gap:8px}
+  .alert-item>form{align-self:flex-end}
+  .prof-skills-form{flex-direction:column!important}
+  .prof-skills-form>div{min-width:0!important;width:100%!important}
+  .prof-skills-form>button{width:100%}
+  .pv-info-val{max-width:55%}
+  .pv-links{flex-wrap:wrap}
+}
+</style>
+{% endblock %}
+
+{% set mode = request.args.get('mode', 'view') %}
+{% set active_tab = request.args.get('tab', 'basic') %}
+
+{% block content %}
+<div class="prof-layout">
+
+  <!-- ── SIDEBAR (same for both modes) ── -->
+  <div>
+    <div class="card prof-sidebar-card">
+      <div class="prof-banner"></div>
+      <div class="prof-sidebar-body">
+        <div class="prof-avatar-wrap">
+          {% if current_user.avatar_filename %}
+            <img src="/static/uploads/avatars/{{ current_user.avatar_filename }}" class="prof-avatar-img">
+          {% else %}
+            <div class="prof-avatar-initials">{{ current_user.full_name[:1]|upper }}</div>
+          {% endif %}
+        </div>
+        <div>
+          <div class="prof-name">{{ current_user.full_name }}</div>
+          {% if current_user.headline %}<div class="prof-headline">{{ current_user.headline }}</div>{% endif %}
+          {% if current_user.location_city %}<div class="prof-location"><i class="bi bi-geo-alt-fill"></i> {{ current_user.location_city }}</div>{% endif %}
+        </div>
+        <div class="prof-actions">
+          <form method="post" action="/profile/photo" enctype="multipart/form-data">
+            <input type="file" name="photo" id="photoInput" accept="image/*" style="display:none" onchange="this.form.submit()">
+            <label for="photoInput" class="btn btn-outline btn-sm prof-action-btn"><i class="bi bi-camera"></i> Change Photo</label>
+          </form>
+          {% if mode == 'view' %}
+            <a href="?mode=edit" class="btn btn-primary btn-sm prof-action-btn"><i class="bi bi-pencil"></i> Edit Profile</a>
+          {% else %}
+            <a href="/profile" class="btn btn-outline btn-sm prof-action-btn"><i class="bi bi-eye"></i> View Profile</a>
+          {% endif %}
+          <a href="/profile/cv/download" class="btn btn-outline btn-sm prof-action-btn"><i class="bi bi-download"></i> Download CV</a>
+          <a href="{{ url_for('profile.cv_builder') }}" class="btn btn-light btn-sm prof-action-btn"><i class="bi bi-file-text"></i> Preview CV</a>
+        </div>
+      </div>
+      <div class="prof-strength-section">
+        <div class="prof-strength-header">
+          <span class="prof-strength-label"><i class="bi bi-bar-chart-fill" style="color:var(--green);margin-right:5px"></i>Profile Strength</span>
+          <span class="prof-strength-pct">{{ current_user.profile_strength }}%</span>
+        </div>
+        <div class="prof-strength-bar">
+          <div class="prof-strength-fill" style="width:{{ current_user.profile_strength }}%"></div>
+        </div>
+        {% if current_user.profile_strength < 100 %}
+          <p class="prof-strength-hint">Complete your profile to stand out to employers.</p>
+        {% else %}
+          <p class="prof-strength-hint" style="color:var(--green)"><i class="bi bi-check-circle-fill"></i> Profile complete!</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RIGHT COLUMN ── -->
+  <div class="prof-right">
+
+    {# ════════════════════════════════════════════════════════ #}
+    {# VIEW MODE                                                #}
+    {# ════════════════════════════════════════════════════════ #}
+    {% if mode == 'view' %}
+
+    <!-- About / Summary -->
+    {% if current_user.resume_headline or current_user.bio %}
+    <div class="card" style="margin-bottom:16px">
+      <div class="pv-section">
+        <div class="pv-section-title"><i class="bi bi-person-lines-fill"></i> About</div>
+        {% if current_user.resume_headline %}<p class="pv-bio">{{ current_user.resume_headline }}</p>{% endif %}
+        {% if current_user.bio and current_user.bio != current_user.resume_headline %}
+          <p class="pv-bio" style="margin-top:10px;font-size:13px">{{ current_user.bio }}</p>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Contact + Links -->
+    <div class="card" style="margin-bottom:16px">
+      <div class="pv-section">
+        <div class="pv-section-title"><i class="bi bi-info-circle-fill"></i> Contact &amp; Info</div>
+        {% if current_user.email %}
+        <div class="pv-info-row"><span class="pv-info-lbl"><i class="bi bi-envelope"></i> Email</span><a href="mailto:{{ current_user.email }}" class="pv-info-val">{{ current_user.email }}</a></div>
+        {% endif %}
+        {% if current_user.phone %}
+        <div class="pv-info-row"><span class="pv-info-lbl"><i class="bi bi-telephone"></i> Phone</span><span class="pv-info-val">{{ current_user.phone }}</span></div>
+        {% endif %}
+        {% if current_user.location_city %}
+        <div class="pv-info-row"><span class="pv-info-lbl"><i class="bi bi-geo-alt"></i> Location</span><span class="pv-info-val">{{ current_user.location_city }}</span></div>
+        {% endif %}
+        {% if current_user.nationality %}
+        <div class="pv-info-row"><span class="pv-info-lbl"><i class="bi bi-flag"></i> Nationality</span><span class="pv-info-val">{{ current_user.nationality }}</span></div>
+        {% endif %}
+        {% if current_user.date_of_birth %}
+        <div class="pv-info-row"><span class="pv-info-lbl"><i class="bi bi-calendar3"></i> Date of Birth</span><span class="pv-info-val">{{ current_user.date_of_birth.strftime('%b %d, %Y') }}</span></div>
+        {% endif %}
+        {% if current_user.gender %}
+        <div class="pv-info-row"><span class="pv-info-lbl"><i class="bi bi-person"></i> Gender</span><span class="pv-info-val">{{ current_user.gender|capitalize }}</span></div>
+        {% endif %}
+        <!-- Social links -->
+        {% if current_user.linkedin_url or current_user.github_url or current_user.portfolio_url %}
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px" class="pv-links">
+          {% if current_user.linkedin_url %}<a href="{{ current_user.linkedin_url }}" target="_blank" rel="noopener" class="pv-link-chip"><i class="bi bi-linkedin" style="color:#0077b5"></i> LinkedIn</a>{% endif %}
+          {% if current_user.github_url %}<a href="{{ current_user.github_url }}" target="_blank" rel="noopener" class="pv-link-chip"><i class="bi bi-github"></i> GitHub</a>{% endif %}
+          {% if current_user.portfolio_url %}<a href="{{ current_user.portfolio_url }}" target="_blank" rel="noopener" class="pv-link-chip"><i class="bi bi-globe2" style="color:var(--green)"></i> Portfolio</a>{% endif %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Skills -->
+    {% if skills %}
+    <div class="card" style="margin-bottom:16px">
+      <div class="pv-section">
+        <div class="pv-section-title"><i class="bi bi-tags-fill"></i> Skills</div>
+        <div>
+          {% for s in skills %}
+          <span class="pv-skill">
+            {{ s.name }}
+              <span class="pv-skill-badge" style="{% if s.proficiency=='expert' %}background:#dcfce7;color:#15803d{% elif s.proficiency=='intermediate' %}background:#dbeafe;color:#1d4ed8{% else %}background:#fef3c7;color:#92400e{% endif %}">{{ s.proficiency|capitalize }}</span>
+          </span>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Experience -->
+    {% if exps %}
+    <div class="card" style="margin-bottom:16px">
+      <div class="pv-section">
+        <div class="pv-section-title"><i class="bi bi-briefcase-fill"></i> Experience</div>
+        {% for exp in exps %}
+        <div class="pv-exp">
+          <div class="pv-exp-title">{{ exp.title }}</div>
+          {% if exp.company %}<div class="pv-exp-company">{{ exp.company }}</div>{% endif %}
+          <div class="pv-exp-dates">
+            {{ exp.start_date.strftime('%b %Y') if exp.start_date else '' }}
+            {% if exp.end_date %} — {{ exp.end_date.strftime('%b %Y') }}{% elif exp.start_date %} — Present{% endif %}
+          </div>
+          {% if exp.description %}<div class="pv-exp-desc">{{ exp.description }}</div>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Education -->
+    {% if edus %}
+    <div class="card" style="margin-bottom:16px">
+      <div class="pv-section">
+        <div class="pv-section-title"><i class="bi bi-mortarboard-fill"></i> Education</div>
+        {% for edu in edus %}
+        <div class="pv-exp">
+          <div class="pv-exp-title">{{ edu.degree }}{% if edu.field %} — {{ edu.field }}{% endif %}</div>
+          {% if edu.institution %}<div class="pv-exp-company">{{ edu.institution }}</div>{% endif %}
+          <div class="pv-exp-dates">
+            {{ edu.start_year }}{% if edu.end_year %} — {{ edu.end_year }}{% endif %}
+          </div>
+          
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {# Removed Languages & Certifications side by side (rollback) #}
+
+    <!-- Empty state -->
+    {% if not (current_user.resume_headline or current_user.bio or skills or exps or edus) %}
+    <div class="card">
+      <div style="text-align:center;padding:40px 20px;color:var(--text3)">
+        <i class="bi bi-person-plus" style="font-size:40px;display:block;margin-bottom:14px;opacity:.4"></i>
+        <div style="font-size:15px;font-weight:600;color:var(--text2);margin-bottom:6px">Your profile is empty</div>
+        <div style="font-size:13px;margin-bottom:18px">Add your experience, skills, and education to stand out.</div>
+        <a href="?mode=edit" class="btn btn-primary"><i class="bi bi-pencil"></i> Start Editing</a>
+      </div>
+    </div>
+    {% endif %}
+
+    {# ════════════════════════════════════════════════════════ #}
+    {# EDIT MODE                                                #}
+    {# ════════════════════════════════════════════════════════ #}
+    {% else %}
+
+    <!-- Tab Nav -->
+    <div class="prof-tab-nav">
+      {% for tab,label in [('basic','Basic Info'),('skills','Skills'),('experience','Experience'),('education','Education'),('alerts','Job Alerts'),('following','Following')] %}
+      <a href="?mode=edit&tab={{ tab }}" class="prof-tab-link{% if active_tab == tab %} active{% endif %}">{{ label }}</a>
+      {% endfor %}
+    </div>
+
+    <!-- Basic Info -->
+    {% if active_tab == 'basic' %}
+    <div class="card" style="padding:24px">
+      <h2 style="font-size:15px;font-weight:600;margin-bottom:18px">Basic Information</h2>
+      <form method="post" action="/profile/basic">
+        <div class="form-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div style="grid-column:1/-1">
+            <label class="form-label">Full Name</label>
+            <input type="text" name="full_name" class="form-control" value="{{ current_user.full_name }}" required>
+          </div>
+          <div style="grid-column:1/-1">
+            <label class="form-label">Headline <span style="color:var(--text3);font-weight:400">— shown under your name</span></label>
+            <input type="text" name="headline" class="form-control" placeholder="e.g. Senior Software Engineer" value="{{ current_user.headline or '' }}">
+          </div>
+          <div style="grid-column:1/-1">
+            <label class="form-label">Professional Summary</label>
+            <textarea name="resume_headline" class="form-control" rows="3" placeholder="Brief professional summary…">{{ current_user.resume_headline or '' }}</textarea>
+          </div>
+          <div>
+            <label class="form-label">Phone</label>
+            <input type="tel" name="phone" class="form-control" placeholder="+964 …" value="{{ current_user.phone or '' }}">
+          </div>
+          <div>
+            <label class="form-label">Location</label>
+            <input type="text" name="location_city" class="form-control" placeholder="City, Country" value="{{ current_user.location_city or '' }}">
+          </div>
+          <div>
+            <label class="form-label">Nationality</label>
+            <input type="text" name="nationality" class="form-control" value="{{ current_user.nationality or '' }}">
+          </div>
+          <div>
+            <label class="form-label">Date of Birth</label>
+            <input type="date" name="date_of_birth" class="form-control" value="{{ current_user.date_of_birth.strftime('%Y-%m-%d') if current_user.date_of_birth else '' }}">
+          </div>
+          <div>
+            <label class="form-label">Gender</label>
+            <select name="gender" class="form-control">
+              <option value="">Prefer not to say</option>
+              <option value="male" {% if current_user.gender=='male' %}selected{% endif %}>Male</option>
+              <option value="female" {% if current_user.gender=='female' %}selected{% endif %}>Female</option>
+              <option value="other" {% if current_user.gender=='other' %}selected{% endif %}>Other</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Email <span style="color:var(--text3);font-size:11px">(contact admin to change)</span></label>
+            <input type="email" class="form-control" value="{{ current_user.email }}" readonly style="background:#f8f9fa;color:var(--text2)">
+          </div>
+        </div>
+        <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border)">
+          <div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--text2)"><i class="bi bi-link-45deg"></i> Links &amp; Social</div>
+          <div class="form-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+            <div>
+              <label class="form-label"><i class="bi bi-linkedin" style="color:#0077b5"></i> LinkedIn URL</label>
+              <input type="url" name="linkedin_url" class="form-control" value="{{ current_user.linkedin_url or '' }}" placeholder="https://linkedin.com/in/…">
+            </div>
+            <div>
+              <label class="form-label"><i class="bi bi-github"></i> GitHub URL</label>
+              <input type="url" name="github_url" class="form-control" value="{{ current_user.github_url or '' }}" placeholder="https://github.com/…">
+            </div>
+            <div>
+              <label class="form-label"><i class="bi bi-globe2" style="color:var(--green)"></i> Portfolio / Website</label>
+              <input type="url" name="portfolio_url" class="form-control" value="{{ current_user.portfolio_url or '' }}" placeholder="https://…">
+            </div>
+            <div>
+              <label class="form-label"><i class="bi bi-file-text"></i> Bio / About Me</label>
+              <textarea name="bio" class="form-control" rows="2" placeholder="Tell us about yourself…">{{ current_user.bio or '' }}</textarea>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:18px">
+          <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Save Changes</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Skills -->
+    {% elif active_tab == 'skills' %}
+    <div class="card" style="padding:24px">
+      <h2 style="font-size:15px;font-weight:600;margin-bottom:18px">Skills</h2>
+      <div id="skillTags" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px">
+        {% for s in skills %}
+        <span class="skill-tag" style="background:var(--bg);border:1px solid var(--border);padding:5px 12px;border-radius:20px;font-size:13px;display:inline-flex;align-items:center;gap:8px">
+          <span>{{ s.name }}</span>
+          <span style="font-size:10px;padding:1px 7px;border-radius:10px;font-weight:600;
+            {% if s.proficiency=='expert' %}background:#dcfce7;color:#15803d
+            {% elif s.proficiency=='intermediate' %}background:#dbeafe;color:#1d4ed8
+            {% else %}background:#fef3c7;color:#92400e{% endif %}">{{ s.proficiency|capitalize }}</span>
+          <form method="post" action="/profile/skills/{{ s.id }}" style="margin:0;display:inline">
+            <button type="submit" style="background:none;border:none;cursor:pointer;color:#dc2626;font-size:13px;padding:0;line-height:1" onclick="return confirm('Remove skill?')">&times;</button>
+          </form>
+        </span>
+        {% else %}
+        <p style="color:var(--text3);font-size:13px">No skills added yet.</p>
+        {% endfor %}
+      </div>
+      <form method="post" action="/profile/skills" class="prof-skills-form" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+        <div style="flex:1;min-width:0">
+          <label class="form-label">Skill Name</label>
+          <input type="text" name="name" class="form-control" placeholder="e.g. Python" required>
+        </div>
+        <div style="min-width:0;width:140px">
+          <label class="form-label">Proficiency</label>
+          <select name="proficiency" class="form-control">
+            <option value="beginner">Beginner</option>
+            <option value="intermediate" selected>Intermediate</option>
+            <option value="expert">Expert</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary"><i class="bi bi-plus"></i> Add</button>
+      </form>
+    </div>
+
+    <!-- Experience -->
+    {% elif active_tab == 'experience' %}
+    <div class="card" style="padding:24px;margin-bottom:16px">
+      <h2 style="font-size:15px;font-weight:600;margin-bottom:14px">Experience</h2>
+      {% if exps %}
+        {% for exp in exps %}
+        <div class="pv-exp">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+            <div>
+              <div class="pv-exp-title">{{ exp.title }}</div>
+              {% if exp.company %}<div class="pv-exp-company">{{ exp.company }}</div>{% endif %}
+              <div class="pv-exp-dates">
+                {{ exp.start_date.strftime('%b %Y') if exp.start_date else '' }}
+                {% if exp.end_date %} — {{ exp.end_date.strftime('%b %Y') }}{% elif exp.start_date %} — Present{% endif %}
+              </div>
+              {% if exp.description %}<div class="pv-exp-desc">{{ exp.description }}</div>{% endif %}
+            </div>
+            <form method="post" action="/profile/experience/{{ exp.id }}/delete" style="flex-shrink:0">
+              <button class="btn btn-danger btn-xs" onclick="return confirm('Remove?')"><i class="bi bi-trash"></i></button>
+            </form>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}<p style="color:var(--text3);font-size:13px">No experience added yet.</p>{% endif %}
+    </div>
+    <div class="card" style="padding:24px">
+      <h3 style="font-size:14px;font-weight:600;margin-bottom:14px">Add Experience</h3>
+      <form method="post" action="/profile/experience">
+        <div class="form-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div style="grid-column:1/-1"><label class="form-label">Job Title*</label><input type="text" name="title" class="form-control" required></div>
+          <div><label class="form-label">Company</label><input type="text" name="company" class="form-control"></div>
+          <div><label class="form-label">Location</label><input type="text" name="location" class="form-control"></div>
+          <div><label class="form-label">Start Date</label><input type="date" name="start_date" class="form-control"></div>
+          <div><label class="form-label">End Date <span style="color:var(--text3);font-weight:400">(leave blank if current)</span></label><input type="date" name="end_date" class="form-control"></div>
+          <div style="grid-column:1/-1"><label class="form-label">Description</label><textarea name="description" class="form-control" rows="3"></textarea></div>
+        </div>
+        <button type="submit" class="btn btn-primary" style="margin-top:14px"><i class="bi bi-plus"></i> Add Experience</button>
+      </form>
+    </div>
+
+    <!-- Education -->
+    {% elif active_tab == 'education' %}
+    <div class="card" style="padding:24px;margin-bottom:16px">
+      <h2 style="font-size:15px;font-weight:600;margin-bottom:14px">Education</h2>
+      {% if edus %}
+        {% for edu in edus %}
+        <div class="pv-exp">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+            <div>
+              <div class="pv-exp-title">{{ edu.degree }}{% if edu.field %} — {{ edu.field }}{% endif %}</div>
+              {% if edu.institution %}<div class="pv-exp-company">{{ edu.institution }}</div>{% endif %}
+              <div class="pv-exp-dates">{{ edu.start_year }}{% if edu.end_year %} — {{ edu.end_year }}{% endif %}</div>
+              
+            </div>
+            <form method="post" action="/profile/education/{{ edu.id }}/delete" style="flex-shrink:0">
+              <button class="btn btn-danger btn-xs" onclick="return confirm('Remove?')"><i class="bi bi-trash"></i></button>
+            </form>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}<p style="color:var(--text3);font-size:13px">No education added yet.</p>{% endif %}
+    </div>
+    <div class="card" style="padding:24px">
+      <h3 style="font-size:14px;font-weight:600;margin-bottom:14px">Add Education</h3>
+      <form method="post" action="/profile/education">
+        <div class="form-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div style="grid-column:1/-1"><label class="form-label">Institution*</label><input type="text" name="institution" class="form-control" required></div>
+          <div><label class="form-label">Degree</label><input type="text" name="degree" class="form-control" placeholder="e.g. Bachelor's"></div>
+          <div><label class="form-label">Field of Study</label><input type="text" name="field_of_study" class="form-control"></div>
+          <div><label class="form-label">Start Year</label><input type="number" name="start_year" class="form-control" min="1950" max="2030"></div>
+          <div><label class="form-label">End Year <span style="color:var(--text3);font-weight:400">(or expected)</span></label><input type="number" name="end_year" class="form-control" min="1950" max="2030"></div>
+          <div style="grid-column:1/-1"><label class="form-label">Description</label><textarea name="description" class="form-control" rows="2"></textarea></div>
+        </div>
+        <button type="submit" class="btn btn-primary" style="margin-top:14px"><i class="bi bi-plus"></i> Add Education</button>
+      </form>
+    </div>
+
+    {# Removed Languages tab and form (rollback) #}
+
+    {# Removed Certifications tab and form (rollback) #}
+
+    {# Removed Portfolio tab and form (rollback) #}
+
+    <!-- Job Alerts -->
+    {% elif active_tab == 'alerts' %}
+    <div class="card" style="padding:24px;margin-bottom:16px">
+      <h2 style="font-size:15px;font-weight:600;margin-bottom:14px">Job Alerts</h2>
+      <p style="font-size:13px;color:var(--text3);margin-bottom:16px">Get notified when new jobs match your criteria.</p>
+      {% if alerts %}
+        {% for alert in alerts %}
+        <div class="alert-item">
+          <div>
+            <div style="font-size:13px;font-weight:500">{{ alert.title or 'Job Alert' }}</div>
+            <div style="font-size:12px;color:var(--text3)">
+              {% if alert.keywords %}Keywords: {{ alert.keywords }}{% endif %}
+              {% if alert.location %} · {{ alert.location }}{% endif %}
+              {% if alert.job_type %} · {{ alert.job_type }}{% endif %}
+            </div>
+          </div>
+          <form method="post" action="/profile/alerts/{{ alert.id }}/delete">
+            <button class="btn btn-danger btn-sm" style="padding:3px 8px" onclick="return confirm('Delete alert?')"><i class="bi bi-bell-slash"></i></button>
+          </form>
+        </div>
+        {% endfor %}
+      {% else %}<p style="color:var(--text3);font-size:13px">No alerts set up yet.</p>{% endif %}
+    </div>
+    <div class="card" style="padding:24px">
+      <h3 style="font-size:14px;font-weight:600;margin-bottom:14px">Create Alert</h3>
+      <form method="post" action="/profile/alerts">
+        <div class="form-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div style="grid-column:1/-1"><label class="form-label">Alert Name</label><input type="text" name="title" class="form-control" placeholder="e.g. Remote Python Jobs"></div>
+          <div style="grid-column:1/-1"><label class="form-label">Keywords</label><input type="text" name="keywords" class="form-control" placeholder="Python, Django, Backend…"></div>
+          <div><label class="form-label">Location</label><input type="text" name="location" class="form-control"></div>
+          <div><label class="form-label">Job Type</label>
+            <select name="job_type" class="form-control">
+              <option value="">Any</option>
+              <option>Full Time</option><option>Part Time</option><option>Contract</option><option>Remote</option>
+            </select>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary" style="margin-top:14px"><i class="bi bi-bell"></i> Create Alert</button>
+      </form>
+    </div>
+
+    <!-- Following -->
+    {% elif active_tab == 'following' %}
+    <div class="card" style="padding:24px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px">
+        <h2 style="font-size:15px;font-weight:600">Companies You Follow</h2>
+        <a href="{{ url_for('companies.listing') }}" class="btn btn-outline btn-sm"><i class="bi bi-search"></i> Browse</a>
+      </div>
+      {% if followed_companies %}
+        {% for company in followed_companies %}
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)">
+          <div style="width:42px;height:42px;border-radius:8px;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden">
+            {% if company.logo_filename %}
+              <img src="/static/uploads/company/{{ company.logo_filename }}" style="width:100%;height:100%;object-fit:cover">
+            {% else %}<i class="bi bi-building" style="font-size:18px;color:var(--text3)"></i>{% endif %}
+          </div>
+          <div style="flex:1;min-width:0">
+            <a href="{{ url_for('companies.profile', slug=company.slug) }}" style="font-size:14px;font-weight:600;color:var(--text);text-decoration:none">{{ company.name }}</a>
+            <div style="font-size:12px;color:var(--text3);margin-top:2px;display:flex;gap:8px;flex-wrap:wrap">
+              {% if company.industry %}<span>{{ company.industry }}</span>{% endif %}
+              <span><i class="bi bi-briefcase"></i> {{ company.open_jobs_count }} open jobs</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap">
+            <a href="{{ url_for('companies.profile', slug=company.slug) }}" class="btn btn-outline btn-sm">View</a>
+            <form method="POST" action="{{ url_for('companies.toggle_follow', company_id=company.id) }}" style="margin:0">
+              <button type="submit" class="btn btn-sm" style="color:#dc2626;border:1px solid #fca5a5;background:#fff5f5" onclick="return confirm('Unfollow {{ company.name }}?')"><i class="bi bi-heart-break"></i></button>
+            </form>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+      <div style="text-align:center;padding:40px 20px;color:var(--text3)">
+        <i class="bi bi-building" style="font-size:36px;display:block;margin-bottom:12px"></i>
+        <div style="font-size:14px;font-weight:500;margin-bottom:6px">Not following any companies</div>
+        <div style="font-size:13px;margin-bottom:16px">Follow companies to get notified about new jobs.</div>
+        <a href="{{ url_for('companies.listing') }}" class="btn btn-primary btn-sm"><i class="bi bi-search"></i> Browse Companies</a>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% endif %}{# end mode #}
+  </div>
+</div>
+{% endblock %}

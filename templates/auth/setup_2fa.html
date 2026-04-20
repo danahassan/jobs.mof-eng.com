@@ -1,0 +1,68 @@
+﻿{% extends 'base.html' %}
+{% block title %}Enable 2FA — MOF Jobs{% endblock %}
+{% block page_title %}Two-Factor Authentication{% endblock %}
+
+{% block content %}
+<div style="max-width:520px;margin:0 auto">
+  <div class="card mb-3">
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px">
+      <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#198754 0%,#0d563a 100%);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <i class="bi bi-shield-lock-fill" style="font-size:22px;color:#fff"></i>
+      </div>
+      <div>
+        <div style="font-size:16px;font-weight:700">Set Up Two-Factor Authentication</div>
+        <div style="font-size:13px;color:var(--text3)">Protect your account with an authenticator app</div>
+      </div>
+    </div>
+
+    <!-- Step 1 -->
+    <div style="display:flex;align-items:flex-start;gap:12px;padding:14px;background:#f8fafb;border-radius:10px;margin-bottom:14px">
+      <div style="width:28px;height:28px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">1</div>
+      <div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:4px">Install an authenticator app</div>
+        <div style="font-size:12px;color:var(--text2)">Download <strong>Google Authenticator</strong>, <strong>Microsoft Authenticator</strong>, or <strong>Authy</strong> on your phone.</div>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div style="display:flex;align-items:flex-start;gap:12px;padding:14px;background:#f8fafb;border-radius:10px;margin-bottom:14px">
+      <div style="width:28px;height:28px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">2</div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:600;margin-bottom:10px">Scan this QR code</div>
+        <div style="display:flex;justify-content:center;margin-bottom:12px">
+          <img src="data:image/png;base64,{{ qr_b64 }}" alt="QR Code" style="width:180px;height:180px;border:4px solid #fff;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,0.12)">
+        </div>
+        <div style="text-align:center;font-size:12px;color:var(--text3);margin-bottom:8px">Can't scan? Enter this key manually:</div>
+        <div style="font-family:monospace;font-size:13px;font-weight:600;background:#e9ecef;padding:8px 14px;border-radius:8px;text-align:center;letter-spacing:2px;color:var(--navy);word-break:break-all">{{ secret }}</div>
+      </div>
+    </div>
+
+    <!-- Step 3 -->
+    <div style="display:flex;align-items:flex-start;gap:12px;padding:14px;background:#f8fafb;border-radius:10px;margin-bottom:20px">
+      <div style="width:28px;height:28px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">3</div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:600;margin-bottom:10px">Enter the 6-digit code from your app</div>
+        <form method="POST">
+          <div class="form-group" style="margin-bottom:12px">
+            <input type="text" name="code" class="form-control" placeholder="000 000" maxlength="6"
+              style="font-size:24px;font-weight:700;letter-spacing:8px;text-align:center;font-family:monospace"
+              autocomplete="one-time-code" inputmode="numeric" pattern="[0-9]{6}" required autofocus>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%">
+            <i class="bi bi-shield-check-fill"></i> Verify & Enable 2FA
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;align-items:flex-start;padding:10px 14px;background:#fff8e1;border-radius:8px;border:1px solid #ffe082">
+      <i class="bi bi-exclamation-triangle-fill" style="color:#d97706;flex-shrink:0;margin-top:1px"></i>
+      <span style="font-size:12px;color:#92400e">Save the manual key above in a safe place. You'll need it to regain access if you lose your phone.</span>
+    </div>
+  </div>
+
+  <div style="text-align:center">
+    <a href="{{ url_for('auth.profile') }}?tab=security" class="text-sm" style="color:var(--text3)">← Cancel and go back</a>
+  </div>
+</div>
+{% endblock %}

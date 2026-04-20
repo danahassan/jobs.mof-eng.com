@@ -1,0 +1,362 @@
+﻿{% extends 'base.html' %}
+{% block title %}Audit Trail — MOF Jobs{% endblock %}
+{% block page_title %}Audit Trail{% endblock %}
+{% block page_breadcrumb %}System Audit Log{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Filter bar ──────────────────────────────────────────── */
+.audit-filter-bar{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+  padding:14px 18px;margin-bottom:18px;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+.audit-ff-group{display:flex;flex-direction:column;gap:4px;min-width:150px;flex:1}
+.audit-ff-group label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px}
+
+/* ── Category pills ──────────────────────────────────────── */
+.cat-pills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+.cat-pill{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;
+  font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid transparent;transition:all .15s;text-decoration:none}
+.cat-pill.all{background:#f1f5f9;color:var(--text2);border-color:var(--border)}
+.cat-pill.all.active{background:var(--text);color:#fff;border-color:var(--text)}
+.cat-pill.user{background:#eff6ff;color:#2563eb;border-color:#bfdbfe}
+.cat-pill.user.active{background:#2563eb;color:#fff}
+.cat-pill.position{background:#f0fdf4;color:#16a34a;border-color:#bbf7d0}
+.cat-pill.position.active{background:#16a34a;color:#fff}
+.cat-pill.application{background:#ede9fe;color:#7c3aed;border-color:#ddd6fe}
+.cat-pill.application.active{background:#7c3aed;color:#fff}
+.cat-pill.auth{background:#fff7ed;color:#ea580c;border-color:#fed7aa}
+.cat-pill.auth.active{background:#ea580c;color:#fff}
+.cat-pill.audit{background:#fef2f2;color:#dc2626;border-color:#fecaca}
+.cat-pill.audit.active{background:#dc2626;color:#fff}
+.cat-pill.email{background:#f0f9ff;color:#0284c7;border-color:#bae6fd}
+.cat-pill.email.active{background:#0284c7;color:#fff}
+
+/* ── Table ───────────────────────────────────────────────── */
+.audit-tbl{width:100%;border-collapse:collapse}
+.audit-tbl th{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;
+  color:var(--text2);padding:10px 14px;border-bottom:2px solid var(--border);
+  background:var(--bg);white-space:nowrap;text-align:left}
+.audit-tbl td{padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:middle;font-size:13px}
+.audit-tbl tr:hover td{background:var(--bg)}
+.audit-tbl tr:last-child td{border-bottom:none}
+.audit-tbl .col-id{width:46px}
+.audit-tbl .col-action{width:48px}
+
+/* hide lower-priority columns on tablet */
+.audit-col-ip{display:table-cell}
+
+/* ── Action badge ────────────────────────────────────────── */
+.act-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:5px;
+  font-size:11px;font-weight:700;font-family:monospace;white-space:nowrap}
+.act-badge.cat-user{background:#eff6ff;color:#2563eb}
+.act-badge.cat-position{background:#f0fdf4;color:#16a34a}
+.act-badge.cat-application{background:#ede9fe;color:#7c3aed}
+.act-badge.cat-auth{background:#fff7ed;color:#ea580c}
+.act-badge.cat-audit{background:#fef2f2;color:#dc2626}
+.act-badge.cat-email{background:#f0f9ff;color:#0284c7}
+.act-badge.cat-default{background:#f1f5f9;color:#64748b}
+
+/* ── Delete button ───────────────────────────────────────── */
+.del-btn{background:none;border:1px solid transparent;border-radius:5px;padding:4px 7px;
+  cursor:pointer;color:var(--text3);transition:all .15s;font-size:13px;line-height:1}
+.del-btn:hover{background:#fef2f2;border-color:#fecaca;color:#dc2626}
+
+/* ── Mobile cards (hidden on desktop) ───────────────────── */
+.audit-cards{display:none;flex-direction:column;gap:10px}
+.audit-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);
+  padding:12px 14px}
+.audit-card-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.audit-card-meta{display:flex;flex-wrap:wrap;gap:8px;font-size:12px;color:var(--text3);margin-top:6px}
+.audit-card-meta span{display:inline-flex;align-items:center;gap:4px}
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media(max-width:900px){
+  .audit-col-ip{display:none}
+  th.audit-col-ip{display:none}
+}
+@media(max-width:680px){
+  /* hide table, show cards */
+  .audit-table-wrap{display:none}
+  .audit-cards{display:flex}
+  /* filter bar stacks */
+  .audit-filter-bar{flex-direction:column;gap:8px}
+  .audit-ff-group{min-width:0;width:100%}
+  /* pills scroll */
+  .cat-pills{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}
+  .cat-pills::-webkit-scrollbar{height:0}
+  .cat-pill{flex-shrink:0}
+  /* section header */
+  .section-header{flex-wrap:wrap;gap:8px}
+  .section-header .d-flex{flex-wrap:wrap}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- KPI Strip -->
+<div class="kpi-strip">
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#f0fdf4;color:#198754"><i class="bi bi-shield-check-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_total }}</div><div class="kpi-lbl">Total Entries</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#eff6ff;color:#2563eb"><i class="bi bi-calendar-day"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_today }}</div><div class="kpi-lbl">Today</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#fef3c7;color:#d97706"><i class="bi bi-calendar-week"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_this_week }}</div><div class="kpi-lbl">This Week</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#ede9fe;color:#7c3aed"><i class="bi bi-people-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_users_active }}</div><div class="kpi-lbl">Active Users (7d)</div></div>
+  </div>
+</div>
+
+<!-- Page header -->
+<div class="section-header">
+  <h2><i class="bi bi-shield-check-fill" style="color:var(--green);margin-right:8px"></i>System Audit Trail</h2>
+  <div class="d-flex gap-2 align-center">
+    <a href="{{ url_for('admin.audit_export', fmt='csv') }}" class="btn-export csv"><i class="bi bi-filetype-csv"></i> CSV</a>
+    <a href="{{ url_for('admin.audit_export', fmt='xlsx') }}" class="btn-export xlsx"><i class="bi bi-file-earmark-excel"></i> Excel</a>
+    <button type="button" class="btn btn-outline btn-sm" style="color:#dc2626;border-color:#fecaca"
+            onclick="document.getElementById('clearModal').style.display='flex'">
+      <i class="bi bi-trash3"></i> Clear All
+    </button>
+  </div>
+</div>
+
+<!-- Category quick-filters -->
+{% set cats = [
+  ('all',         'All',          'grid-fill'),
+  ('user',        'User',         'person-fill'),
+  ('position',    'Position',     'briefcase-fill'),
+  ('application', 'Application',  'file-earmark-person-fill'),
+  ('auth',        'Auth',         'key-fill'),
+  ('email',       'Email',        'envelope-fill'),
+  ('audit',       'Audit',        'shield-fill'),
+] %}
+<div class="cat-pills">
+  {% for slug, label, icon in cats %}
+  <a href="{{ url_for('admin.audit_trail', action='' if slug=='all' else slug, user_id=user_f) }}"
+     class="cat-pill {{ slug }} {{ 'active' if (slug=='all' and not action_f) or (action_f and action_f.startswith(slug)) else '' }}">
+    <i class="bi bi-{{ icon }}"></i> {{ label }}
+    {% if slug == 'all' %}<span style="opacity:.6;font-weight:500">({{ kpi_total }})</span>{% endif %}
+  </a>
+  {% endfor %}
+</div>
+
+<!-- Filters -->
+<div class="audit-filter-bar">
+  <form method="GET" style="display:contents">
+    <div class="audit-ff-group">
+      <label>Filter by User</label>
+      <select name="user_id" class="form-control">
+        <option value="">All Users</option>
+        {% for u in all_users %}
+        <option value="{{ u.id }}" {% if user_f == u.id %}selected{% endif %}>{{ u.full_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="audit-ff-group" style="max-width:240px">
+      <label>Action Contains</label>
+      <input type="text" name="action" class="form-control" value="{{ action_f }}" placeholder="e.g. user.create">
+    </div>
+    <div style="display:flex;gap:8px;align-self:flex-end;flex-shrink:0">
+      <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-funnel"></i> Filter</button>
+      {% if user_f or action_f %}
+      <a href="{{ url_for('admin.audit_trail') }}" class="btn btn-outline btn-sm"><i class="bi bi-x-lg"></i> Clear</a>
+      {% endif %}
+    </div>
+  </form>
+</div>
+
+{% set act_icons = {
+  'user.create': 'person-plus-fill',
+  'user.edit': 'pencil-fill',
+  'user.delete': 'person-x-fill',
+  'user.toggle': 'toggle-on',
+  'position.create': 'briefcase-fill',
+  'position.edit': 'pencil-fill',
+  'position.delete': 'trash-fill',
+  'application.status_change': 'arrow-repeat',
+  'application.assign': 'person-check-fill',
+  'application.delete': 'trash-fill',
+  'auth.register': 'person-plus-fill',
+  'auth.login': 'box-arrow-in-right',
+  'auth.forgot_password': 'key-fill',
+  'auth.reset_password': 'lock-fill',
+  'auth.password_change': 'lock-fill',
+  'email.sent': 'envelope-fill',
+  'audit.delete': 'shield-x',
+  'audit.clear': 'shield-exclamation',
+} %}
+
+<!-- ── DESKTOP TABLE ──────────────────────────────────────── -->
+<div class="table-card audit-table-wrap">
+  <div class="table-head">
+    <span class="table-head-title">
+      <i class="bi bi-list-ul" style="margin-right:6px"></i>
+      {{ audit_entries.total }} log entr{{ 'y' if audit_entries.total == 1 else 'ies' }}
+      {% if action_f or user_f %}<span style="font-size:12px;color:var(--text3);font-weight:400"> — filtered</span>{% endif %}
+    </span>
+  </div>
+  <div class="table-responsive">
+    <table class="audit-tbl">
+      <thead>
+        <tr>
+          <th class="col-id">#</th>
+          <th>Timestamp</th>
+          <th>Actor</th>
+          <th>Event</th>
+          <th>Target / Details</th>
+          <th class="audit-col-ip">IP Address</th>
+          <th class="col-action"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for entry in audit_entries.items %}
+        {% set cat = entry.action.split('.')[0] %}
+        <tr>
+          <td style="color:var(--text3);font-size:12px">#{{ entry.id }}</td>
+          <td>
+            <div style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap">{{ entry.created_at.strftime('%d %b %Y') }}</div>
+            <div style="font-size:11px;color:var(--text3);font-family:monospace">{{ entry.created_at.strftime('%H:%M:%S') }}</div>
+          </td>
+          <td>
+            {% if entry.user %}
+            <div class="d-flex align-center gap-2">
+              <div class="avatar" style="width:28px;height:28px;font-size:11px;flex-shrink:0">{{ entry.user.initials }}</div>
+              <div>
+                <div style="font-size:13px;font-weight:600;line-height:1.2">{{ entry.user.full_name }}</div>
+                <span class="badge badge-{{ entry.user.role }}" style="font-size:10px">{{ entry.user.role }}</span>
+              </div>
+            </div>
+            {% else %}
+            <span style="display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--text3)">
+              <i class="bi bi-robot" style="font-size:14px"></i> System
+            </span>
+            {% endif %}
+          </td>
+          <td>
+            <span class="act-badge cat-{{ cat if cat in ('user','position','application','auth','audit','email') else 'default' }}">
+              <i class="bi bi-{{ act_icons.get(entry.action, 'circle-fill') }}" style="font-size:10px"></i>
+              {{ entry.action }}
+            </span>
+          </td>
+          <td style="max-width:240px">
+            {% if entry.target %}
+            <span style="font-size:13px;color:var(--text2);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+                  title="{{ entry.target }}">{{ entry.target }}</span>
+            {% else %}
+            <span style="color:var(--text3)">—</span>
+            {% endif %}
+          </td>
+          <td class="audit-col-ip" style="font-family:monospace;font-size:11px;color:var(--text3);white-space:nowrap">
+            {{ entry.ip_address or '—' }}
+          </td>
+          <td>
+            <form method="POST" action="{{ url_for('admin.audit_delete', entry_id=entry.id) }}"
+                  onsubmit="return confirm('Delete audit entry #{{ entry.id }}?')">
+              <button type="submit" class="del-btn" title="Delete this entry">
+                <i class="bi bi-trash3"></i>
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" style="text-align:center;padding:48px;color:var(--text3)">
+            <i class="bi bi-shield-check" style="font-size:32px;display:block;margin-bottom:10px;opacity:.25"></i>
+            <div style="font-weight:600;margin-bottom:4px">No audit entries found</div>
+            <div style="font-size:12px">Try adjusting your filters</div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── MOBILE CARDS ───────────────────────────────────────── -->
+<div class="audit-cards">
+  {% for entry in audit_entries.items %}
+  {% set cat = entry.action.split('.')[0] %}
+  <div class="audit-card">
+    <div class="audit-card-top">
+      <span class="act-badge cat-{{ cat if cat in ('user','position','application','auth','audit','email') else 'default' }}">
+        <i class="bi bi-{{ act_icons.get(entry.action, 'circle-fill') }}" style="font-size:10px"></i>
+        {{ entry.action }}
+      </span>
+      <form method="POST" action="{{ url_for('admin.audit_delete', entry_id=entry.id) }}"
+            onsubmit="return confirm('Delete audit entry #{{ entry.id }}?')">
+        <button type="submit" class="del-btn" title="Delete"><i class="bi bi-trash3"></i></button>
+      </form>
+    </div>
+    {% if entry.target %}
+    <div style="font-size:13px;color:var(--text2);margin-bottom:6px;word-break:break-word">{{ entry.target }}</div>
+    {% endif %}
+    <div class="audit-card-meta">
+      {% if entry.user %}
+      <span><i class="bi bi-person-fill"></i> {{ entry.user.full_name }}</span>
+      {% else %}
+      <span><i class="bi bi-robot"></i> System</span>
+      {% endif %}
+      <span><i class="bi bi-clock"></i> {{ entry.created_at.strftime('%d %b %Y, %H:%M') }}</span>
+      {% if entry.ip_address %}<span><i class="bi bi-hdd-network"></i> {{ entry.ip_address }}</span>{% endif %}
+    </div>
+  </div>
+  {% else %}
+  <div style="text-align:center;padding:40px 20px;color:var(--text3)">
+    <i class="bi bi-shield-check" style="font-size:32px;display:block;margin-bottom:10px;opacity:.25"></i>
+    <div style="font-weight:600">No audit entries found</div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if audit_entries.pages > 1 %}
+<div class="pagination" style="margin-top:20px">
+  <a href="{{ url_for('admin.audit_trail', page=audit_entries.prev_num, user_id=user_f, action=action_f) }}"
+     class="page-link {% if not audit_entries.has_prev %}disabled{% endif %}"><i class="bi bi-chevron-left"></i></a>
+  {% for p in audit_entries.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+    {% if p %}
+      <a href="{{ url_for('admin.audit_trail', page=p, user_id=user_f, action=action_f) }}"
+         class="page-link {{ 'active' if p == audit_entries.page }}">{{ p }}</a>
+    {% else %}
+      <span class="page-link disabled">…</span>
+    {% endif %}
+  {% endfor %}
+  <a href="{{ url_for('admin.audit_trail', page=audit_entries.next_num, user_id=user_f, action=action_f) }}"
+     class="page-link {% if not audit_entries.has_next %}disabled{% endif %}"><i class="bi bi-chevron-right"></i></a>
+</div>
+{% endif %}
+
+<!-- Clear All Confirmation Modal -->
+<div id="clearModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9000;align-items:center;justify-content:center;padding:16px">
+  <div style="background:var(--card);border-radius:12px;padding:24px 28px;max-width:420px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,.2)">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+      <div style="background:#fef2f2;color:#dc2626;border-radius:8px;width:40px;height:40px;
+                  display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">
+        <i class="bi bi-trash3-fill"></i>
+      </div>
+      <div>
+        <div style="font-weight:700;font-size:16px;color:var(--text)">Clear Entire Audit Log</div>
+        <div style="font-size:13px;color:var(--text3)">This action cannot be undone</div>
+      </div>
+    </div>
+    <p style="font-size:14px;color:var(--text2);margin:0 0 20px">
+      You are about to permanently delete all <strong>{{ kpi_total }}</strong> audit log entries.
+      This will erase the complete history of system activity.
+    </p>
+    <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap">
+      <button type="button" class="btn btn-outline"
+              onclick="document.getElementById('clearModal').style.display='none'">Cancel</button>
+      <form method="POST" action="{{ url_for('admin.audit_clear') }}" style="display:inline">
+        <button type="submit" class="btn btn-primary" style="background:#dc2626;border-color:#dc2626">
+          <i class="bi bi-trash3"></i> Yes, Clear All
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

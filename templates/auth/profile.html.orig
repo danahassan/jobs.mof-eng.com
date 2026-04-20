@@ -1,0 +1,508 @@
+{% extends 'base.html' %}
+{% block title %}Profile - MOF Jobs{% endblock %}
+{% block page_title %}My Profile{% endblock %}
+
+{% block extra_css %}
+<style>
+.ap-shell{display:flex;flex-direction:column;gap:18px}
+.ap-hero{display:grid;grid-template-columns:1fr auto;gap:18px;align-items:center;padding:24px;border:1px solid var(--border);border-radius:var(--radius-lg);background:linear-gradient(135deg,#f7fbf8 0%,#ffffff 58%,#eef7f1 100%);box-shadow:var(--shadow)}
+.ap-hero-main{display:flex;align-items:center;gap:16px;min-width:0}
+.ap-avatar{width:74px;height:74px;border-radius:50%;background:linear-gradient(135deg,var(--green) 0%,#0f6b42 100%);color:#fff;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;flex-shrink:0;box-shadow:0 10px 24px rgba(25,135,84,.22)}
+.ap-avatar-img{object-fit:cover;background:#e8f5ee}
+.ap-hero-copy{min-width:0}
+.ap-name{font-size:24px;font-weight:700;line-height:1.2;color:var(--text)}
+.ap-headline{font-size:13px;color:var(--text2);margin-top:5px}
+.ap-email{font-size:13px;color:var(--text3);margin-top:4px;word-break:break-word}
+.ap-meta{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.ap-link-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.ap-icon-link{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border:1px solid var(--border);border-radius:999px;background:#fff;color:var(--text2);text-decoration:none;font-size:12px;font-weight:600}
+.ap-icon-link:hover{border-color:var(--green);color:var(--green);text-decoration:none}
+.ap-hero-side{min-width:220px;display:flex;flex-direction:column;gap:12px;align-items:flex-end}
+.ap-strength-card{width:100%;max-width:240px;padding:14px 16px;border:1px solid var(--border);border-radius:14px;background:rgba(255,255,255,.92)}
+.ap-strength-top{display:flex;justify-content:space-between;align-items:flex-end;gap:10px}
+.ap-strength-label{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3)}
+.ap-strength-value{font-size:28px;font-weight:800;line-height:1;color:var(--green)}
+.ap-strength-bar{height:8px;border-radius:999px;background:var(--border);overflow:hidden;margin-top:10px}
+.ap-strength-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,#f59e0b 0%,#22c55e 100%)}
+.ap-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.ap-grid{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(280px,.85fr);gap:18px}
+.ap-stack{display:flex;flex-direction:column;gap:18px}
+.ap-card{padding:20px;border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--card);box-shadow:var(--shadow)}
+.ap-card-title{display:flex;align-items:center;gap:8px;margin-bottom:14px;font-size:13px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:var(--text2)}
+.ap-lead{font-size:14px;line-height:1.75;color:var(--text2);white-space:pre-wrap}
+.ap-empty{font-size:13px;color:var(--text3)}
+.ap-list{display:flex;flex-direction:column;gap:12px}
+.ap-row{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.ap-row:last-child{border-bottom:none;padding-bottom:0}
+.ap-row-label{font-size:12px;color:var(--text3);font-weight:600}
+.ap-row-value{font-size:13px;color:var(--text);font-weight:600;text-align:right}
+.ap-pills{display:flex;flex-wrap:wrap;gap:8px}
+.ap-pill{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;background:#f3f6f8;border:1px solid var(--border);font-size:12px;font-weight:600;color:var(--text)}
+.ap-pill-level{padding:2px 7px;border-radius:999px;font-size:10px;font-weight:700}
+.lvl-beginner{background:#fef3c7;color:#92400e}
+.lvl-intermediate{background:#dbeafe;color:#1d4ed8}
+.lvl-expert{background:#dcfce7;color:#15803d}
+.ap-timeline{display:flex;flex-direction:column;gap:14px}
+.ap-item{position:relative;padding:0 0 14px 18px;border-left:2px solid #e5edf2}
+.ap-item:last-child{padding-bottom:0}
+.ap-item::before{content:'';position:absolute;left:-6px;top:4px;width:10px;height:10px;border-radius:50%;background:var(--green);box-shadow:0 0 0 4px #edf8f1}
+.ap-item-title{font-size:15px;font-weight:700;color:var(--text)}
+.ap-item-sub{font-size:13px;font-weight:600;color:var(--green);margin-top:2px}
+.ap-item-meta{font-size:12px;color:var(--text3);margin-top:4px}
+.ap-item-desc{font-size:13px;line-height:1.65;color:var(--text2);margin-top:8px}
+.ap-tip-list{display:flex;flex-direction:column;gap:8px}
+.ap-tip{display:flex;gap:8px;font-size:12px;color:var(--text2)}
+.ap-edit-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.ap-edit-title{font-size:18px;font-weight:700;color:var(--text)}
+.ap-edit-sub{font-size:13px;color:var(--text3);margin-top:4px}
+.ap-tabs{display:flex;gap:6px;flex-wrap:wrap;padding:6px;border:1px solid var(--border);border-radius:14px;background:var(--card)}
+.ap-tab{flex:1;min-width:120px;padding:10px 12px;border-radius:10px;text-align:center;text-decoration:none;font-size:13px;font-weight:700;color:var(--text2)}
+.ap-tab:hover{text-decoration:none;background:#f6faf7;color:var(--text)}
+.ap-tab.active{background:var(--green);color:#fff;box-shadow:0 8px 16px rgba(25,135,84,.18)}
+.ap-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.ap-form-group{display:flex;flex-direction:column;gap:6px}
+.ap-form-group.full{grid-column:1 / -1}
+.ap-form-label{font-size:12px;font-weight:700;color:var(--text2);letter-spacing:.02em;text-transform:uppercase}
+.ap-photo-edit{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px;border:1px dashed var(--border);border-radius:12px;background:#f9fcfa;margin-bottom:14px}
+.ap-photo-note{font-size:12px;color:var(--text3)}
+.ap-divider{height:1px;border:0;background:var(--border);margin:18px 0}
+.ap-mini-actions{display:flex;gap:8px;flex-wrap:wrap}
+.ap-delete-btn{color:#dc2626;border-color:#fecaca;background:#fff7f7}
+.ap-side-note{padding:14px;border-radius:12px;background:#f8fbfc;border:1px solid var(--border)}
+@media (max-width: 980px){
+  .ap-grid{grid-template-columns:1fr}
+  .ap-hero{grid-template-columns:1fr}
+  .ap-hero-side{align-items:flex-start;min-width:0}
+  .ap-actions{justify-content:flex-start}
+}
+@media (max-width: 720px){
+  .ap-hero{padding:18px}
+  .ap-hero-main{align-items:flex-start}
+  .ap-avatar{width:62px;height:62px;font-size:24px}
+  .ap-name{font-size:20px}
+  .ap-form-grid{grid-template-columns:1fr}
+  .ap-tabs{flex-wrap:nowrap;overflow-x:auto}
+  .ap-tab{min-width:max-content;flex:none;padding:10px 14px}
+  .ap-row{flex-direction:column;align-items:flex-start}
+  .ap-row-value{text-align:left}
+  .ap-card{padding:16px}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+{% set skills_list = current_user.skills.all() %}
+{% set exps = current_user.experiences.all() %}
+{% set edus = current_user.educations.all() %}
+{% set langs = [] %}
+{% set certs = [] %}
+{% set portfolio = [] %}
+{% set tips = [] %}
+{% if not current_user.phone %}{% set _ = tips.append('Add your phone number') %}{% endif %}
+{% if not current_user.bio %}{% set _ = tips.append('Write a short professional bio') %}{% endif %}
+{% if not current_user.linkedin_url and not current_user.portfolio_url %}{% set _ = tips.append('Add a LinkedIn or portfolio link') %}{% endif %}
+{% if skills_list|length < 3 %}{% set _ = tips.append('Add at least 3 skills') %}{% endif %}
+{% if exps|length == 0 %}{% set _ = tips.append('Add work experience') %}{% endif %}
+{% if edus|length == 0 %}{% set _ = tips.append('Add education') %}{% endif %}
+{% if not current_user.avatar_filename %}{% set _ = tips.append('Upload a profile photo') %}{% endif %}
+
+<div class="ap-shell">
+  <section class="ap-hero">
+    <div class="ap-hero-main">
+      {% if current_user.avatar_filename %}
+      <img src="{{ url_for('static', filename='uploads/avatars/' + current_user.avatar_filename) }}" alt="{{ current_user.full_name }}" class="ap-avatar ap-avatar-img">
+      {% else %}
+      <div class="ap-avatar">{{ current_user.initials }}</div>
+      {% endif %}
+      <div class="ap-hero-copy">
+        <div class="ap-name">{{ current_user.full_name }}</div>
+        {% if current_user.headline %}<div class="ap-headline">{{ current_user.headline }}</div>{% endif %}
+        <div class="ap-email">{{ current_user.email }}</div>
+        <div class="ap-meta">
+          <span class="badge badge-{{ current_user.role }}">{{ current_user.role|capitalize }}</span>
+          <span class="badge {{ 'badge-active' if current_user.is_active else 'badge-inactive' }}">{{ 'Active' if current_user.is_active else 'Inactive' }}</span>
+          <span class="badge {{ 'badge-active' if current_user.totp_enabled else 'badge-inactive' }}">2FA {{ 'Enabled' if current_user.totp_enabled else 'Disabled' }}</span>
+        </div>
+        <div class="ap-link-row">
+          {% if current_user.linkedin_url %}<a href="{{ current_user.linkedin_url }}" target="_blank" rel="noopener" class="ap-icon-link"><i class="bi bi-linkedin"></i> LinkedIn</a>{% endif %}
+          {% if current_user.github_url %}<a href="{{ current_user.github_url }}" target="_blank" rel="noopener" class="ap-icon-link"><i class="bi bi-github"></i> GitHub</a>{% endif %}
+          {% if current_user.portfolio_url %}<a href="{{ current_user.portfolio_url }}" target="_blank" rel="noopener" class="ap-icon-link"><i class="bi bi-globe2"></i> Portfolio</a>{% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="ap-hero-side">
+      <div class="ap-strength-card">
+        <div class="ap-strength-top">
+          <div>
+            <div class="ap-strength-label">Profile Strength</div>
+            <div class="ap-strength-value">{{ current_user.profile_strength }}%</div>
+          </div>
+        </div>
+        <div class="ap-strength-bar"><div class="ap-strength-fill" style="width:{{ current_user.profile_strength }}%"></div></div>
+      </div>
+      <div class="ap-actions">
+        {% if mode == 'edit' %}
+          <a href="{{ url_for('auth.profile') }}" class="btn btn-outline"><i class="bi bi-eye"></i> View Profile</a>
+        {% else %}
+          <a href="{{ url_for('auth.profile', mode='edit', tab='info') }}" class="btn btn-primary"><i class="bi bi-pencil-square"></i> Edit Profile</a>
+        {% endif %}
+        <a href="{{ url_for('profile.cv_builder') }}" class="btn btn-outline"><i class="bi bi-file-earmark-text"></i> CV Preview</a>
+        <a href="{{ url_for('profile.cv_download') }}" class="btn btn-outline"><i class="bi bi-file-earmark-pdf"></i> Download CV (PDF)</a>
+      </div>
+    </div>
+  </section>
+
+  {% if mode != 'edit' %}
+  <section class="ap-grid">
+    <div class="ap-stack">
+      <div class="ap-card">
+        <div class="ap-card-title"><i class="bi bi-person-lines-fill"></i> About</div>
+        {% if current_user.resume_headline or current_user.bio %}
+          {% if current_user.resume_headline %}<div class="ap-lead" style="font-weight:600">{{ current_user.resume_headline }}</div>{% endif %}
+          {% if current_user.bio %}<div class="ap-lead" style="margin-top:10px">{{ current_user.bio }}</div>{% endif %}
+        {% else %}
+          <div class="ap-empty">No bio added yet.</div>
+        {% endif %}
+      </div>
+
+      <div class="ap-card">
+        <div class="ap-card-title"><i class="bi bi-stars"></i> Skills</div>
+        {% if skills_list %}
+          <div class="ap-pills">
+            {% for s in skills_list %}
+              <span class="ap-pill">{{ s.name }}<span class="ap-pill-level lvl-{{ s.proficiency }}">{{ s.proficiency|capitalize }}</span></span>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="ap-empty">No skills added yet.</div>
+        {% endif %}
+      </div>
+
+      <div class="ap-card">
+        <div class="ap-card-title"><i class="bi bi-briefcase-fill"></i> Work Experience</div>
+        {% if exps %}
+          <div class="ap-timeline">
+            {% for e in exps %}
+              <div class="ap-item">
+                <div class="ap-item-title">{{ e.title }}</div>
+                {% if e.company %}<div class="ap-item-sub">{{ e.company }}</div>{% endif %}
+                <div class="ap-item-meta">{{ e.start_date.strftime('%b %Y') if e.start_date else '' }}{% if e.start_date %} - {{ e.end_date.strftime('%b %Y') if e.end_date else 'Present' }}{% endif %}</div>
+                {% if e.description %}<div class="ap-item-desc">{{ e.description }}</div>{% endif %}
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="ap-empty">No work experience added yet.</div>
+        {% endif %}
+      </div>
+
+      <div class="ap-card">
+        <div class="ap-card-title"><i class="bi bi-mortarboard-fill"></i> Education</div>
+        {% if edus %}
+          <div class="ap-timeline">
+            {% for edu in edus %}
+              <div class="ap-item">
+                <div class="ap-item-title">{{ edu.institution }}</div>
+                {% if edu.degree or edu.field %}<div class="ap-item-sub">{{ edu.degree }}{% if edu.degree and edu.field %} in {% endif %}{{ edu.field }}</div>{% endif %}
+                <div class="ap-item-meta">{{ edu.start_year or '' }}{% if edu.start_year %} - {% endif %}{{ edu.end_year or 'Present' }}</div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="ap-empty">No education added yet.</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="ap-stack">
+      <div class="ap-card">
+        <div class="ap-card-title"><i class="bi bi-info-circle-fill"></i> Account Details</div>
+        <div class="ap-row"><span class="ap-row-label">Full Name</span><span class="ap-row-value">{{ current_user.full_name }}</span></div>
+        <div class="ap-row"><span class="ap-row-label">Headline</span><span class="ap-row-value">{{ current_user.headline or 'Not set' }}</span></div>
+        <div class="ap-row"><span class="ap-row-label">Phone</span><span class="ap-row-value">{{ current_user.phone or 'Not set' }}</span></div>
+        <div class="ap-row"><span class="ap-row-label">Location</span><span class="ap-row-value">{{ current_user.location_city or 'Not set' }}</span></div>
+        <div class="ap-row"><span class="ap-row-label">Nationality</span><span class="ap-row-value">{{ current_user.nationality or 'Not set' }}</span></div>
+        <div class="ap-row"><span class="ap-row-label">Date of Birth</span><span class="ap-row-value">{{ current_user.date_of_birth.strftime('%b %d, %Y') if current_user.date_of_birth else 'Not set' }}</span></div>
+        <div class="ap-row"><span class="ap-row-label">Joined</span><span class="ap-row-value">{{ current_user.created_at.strftime('%B %d, %Y') }}</span></div>
+        <div class="ap-row"><span class="ap-row-label">Last Login</span><span class="ap-row-value">{{ current_user.last_login.strftime('%b %d, %Y %H:%M') if current_user.last_login else 'First session' }}</span></div>
+      </div>
+
+      <div class="ap-card">
+        <div class="ap-card-title"><i class="bi bi-translate"></i> Languages and Certifications</div>
+        <div class="ap-row"><span class="ap-row-label">Languages</span><span class="ap-row-value">{{ langs|length }}</span></div>
+        <div class="ap-row"><span class="ap-row-label">Certifications</span><span class="ap-row-value">{{ certs|length }}</span></div>
+        <div class="ap-row"><span class="ap-row-label">Portfolio Items</span><span class="ap-row-value">{{ portfolio|length }}</span></div>
+      </div>
+
+      <div class="ap-card">
+        <div class="ap-card-title"><i class="bi bi-link-45deg"></i> Links</div>
+        <div class="ap-row"><span class="ap-row-label">LinkedIn</span><span class="ap-row-value">{% if current_user.linkedin_url %}<a href="{{ current_user.linkedin_url }}" target="_blank" rel="noopener">{{ current_user.linkedin_url }}</a>{% else %}Not set{% endif %}</span></div>
+        <div class="ap-row"><span class="ap-row-label">GitHub</span><span class="ap-row-value">{% if current_user.github_url %}<a href="{{ current_user.github_url }}" target="_blank" rel="noopener">{{ current_user.github_url }}</a>{% else %}Not set{% endif %}</span></div>
+        <div class="ap-row"><span class="ap-row-label">Portfolio</span><span class="ap-row-value">{% if current_user.portfolio_url %}<a href="{{ current_user.portfolio_url }}" target="_blank" rel="noopener">{{ current_user.portfolio_url }}</a>{% else %}Not set{% endif %}</span></div>
+      </div>
+
+      <div class="ap-card">
+        <div class="ap-card-title"><i class="bi bi-shield-lock-fill"></i> Security</div>
+        <div class="ap-row"><span class="ap-row-label">Password</span><span class="ap-row-value">Managed from edit mode</span></div>
+        <div class="ap-row"><span class="ap-row-label">Two-Factor Auth</span><span class="ap-row-value">{{ 'Enabled' if current_user.totp_enabled else 'Disabled' }}</span></div>
+      </div>
+
+      <div class="ap-card">
+        <div class="ap-card-title"><i class="bi bi-bar-chart-fill"></i> Strength Tips</div>
+        {% if tips %}
+          <div class="ap-tip-list">
+            {% for tip in tips %}
+              <div class="ap-tip"><i class="bi bi-plus-circle-fill" style="color:var(--green);margin-top:1px"></i><span>{{ tip }}</span></div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="ap-empty" style="color:#15803d"><i class="bi bi-check-circle-fill"></i> Profile is complete.</div>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+
+  {% else %}
+  <section class="ap-stack">
+    <div class="ap-edit-head ap-card">
+      <div>
+        <div class="ap-edit-title">Edit Profile</div>
+        <div class="ap-edit-sub">Update your details, resume content, and account security.</div>
+      </div>
+      <a href="{{ url_for('auth.profile') }}" class="btn btn-outline"><i class="bi bi-arrow-left"></i> Back to Profile</a>
+    </div>
+
+    <div class="ap-tabs">
+      <a href="{{ url_for('auth.profile', mode='edit', tab='info') }}" class="ap-tab {% if tab == 'info' %}active{% endif %}">Personal Info</a>
+      <a href="{{ url_for('auth.profile', mode='edit', tab='skills') }}" class="ap-tab {% if tab == 'skills' %}active{% endif %}">Skills</a>
+      <a href="{{ url_for('auth.profile', mode='edit', tab='experience') }}" class="ap-tab {% if tab == 'experience' %}active{% endif %}">Experience and Education</a>
+      <a href="{{ url_for('auth.profile', mode='edit', tab='security') }}" class="ap-tab {% if tab == 'security' %}active{% endif %}">Security</a>
+    </div>
+
+    {% if tab == 'info' %}
+    <div class="ap-grid">
+      <div class="ap-card">
+        <div class="ap-card-title"><i class="bi bi-person-fill"></i> Personal Information</div>
+        <form method="POST" action="{{ url_for('auth.profile', mode='edit', tab='info') }}" enctype="multipart/form-data">
+          <div class="ap-photo-edit">
+            {% if current_user.avatar_filename %}
+            <img src="{{ url_for('static', filename='uploads/avatars/' + current_user.avatar_filename) }}" alt="{{ current_user.full_name }}" class="ap-avatar ap-avatar-img" style="width:56px;height:56px;font-size:20px;box-shadow:none">
+            {% else %}
+            <div class="ap-avatar" style="width:56px;height:56px;font-size:20px;box-shadow:none">{{ current_user.initials }}</div>
+            {% endif %}
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+              <input type="file" name="photo" class="form-control" accept="image/*" style="max-width:240px">
+              <span class="ap-photo-note">Select image then click Save Changes</span>
+            </div>
+          </div>
+          <div class="ap-form-grid">
+            <div class="ap-form-group"><label class="ap-form-label">Full Name</label><input type="text" name="full_name" class="form-control" value="{{ current_user.full_name }}" required></div>
+            <div class="ap-form-group"><label class="ap-form-label">Headline</label><input type="text" name="headline" class="form-control" value="{{ current_user.headline or '' }}" placeholder="e.g. Senior Mechanical Engineer"></div>
+            <div class="ap-form-group"><label class="ap-form-label">Phone</label><input type="tel" name="phone" class="form-control" value="{{ current_user.phone or '' }}" placeholder="+964 ..."></div>
+            <div class="ap-form-group"><label class="ap-form-label">Location</label><input type="text" name="location_city" class="form-control" value="{{ current_user.location_city or '' }}" placeholder="City, Country"></div>
+            <div class="ap-form-group"><label class="ap-form-label">Nationality</label><input type="text" name="nationality" class="form-control" value="{{ current_user.nationality or '' }}"></div>
+            <div class="ap-form-group"><label class="ap-form-label">Date of Birth</label><input type="date" name="date_of_birth" class="form-control" value="{{ current_user.date_of_birth.strftime('%Y-%m-%d') if current_user.date_of_birth else '' }}"></div>
+            <div class="ap-form-group"><label class="ap-form-label">Gender</label><select name="gender" class="form-control"><option value="">Prefer not to say</option><option value="male" {% if current_user.gender=='male' %}selected{% endif %}>Male</option><option value="female" {% if current_user.gender=='female' %}selected{% endif %}>Female</option><option value="other" {% if current_user.gender=='other' %}selected{% endif %}>Other</option></select></div>
+            <div class="ap-form-group full"><label class="ap-form-label">Professional Summary</label><textarea name="resume_headline" class="form-control" rows="3" placeholder="One-line profile summary for CV and applications">{{ current_user.resume_headline or '' }}</textarea></div>
+            <div class="ap-form-group full"><label class="ap-form-label">Bio / About Me</label><textarea name="bio" class="form-control" rows="5" placeholder="Tell us about yourself, your experience, and goals...">{{ current_user.bio or '' }}</textarea></div>
+            <div class="ap-form-group full"><label class="ap-form-label">Email</label><input type="email" class="form-control" value="{{ current_user.email }}" readonly style="background:#f8f9fa;color:var(--text2)"></div>
+          </div>
+          <hr class="ap-divider">
+          <div class="ap-card-title"><i class="bi bi-link-45deg"></i> Links and Social</div>
+          <div class="ap-form-grid">
+            <div class="ap-form-group"><label class="ap-form-label">LinkedIn URL</label><input type="url" name="linkedin_url" class="form-control" value="{{ current_user.linkedin_url or '' }}" placeholder="https://linkedin.com/in/..." ></div>
+            <div class="ap-form-group"><label class="ap-form-label">GitHub URL</label><input type="url" name="github_url" class="form-control" value="{{ current_user.github_url or '' }}" placeholder="https://github.com/..." ></div>
+            <div class="ap-form-group full"><label class="ap-form-label">Portfolio / Website</label><input type="url" name="portfolio_url" class="form-control" value="{{ current_user.portfolio_url or '' }}" placeholder="https://..." ></div>
+          </div>
+          <div style="margin-top:16px"><button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Save Changes</button></div>
+        </form>
+      </div>
+      <div class="ap-stack">
+        <div class="ap-card">
+          <div class="ap-card-title"><i class="bi bi-info-circle-fill"></i> Account Details</div>
+          <div class="ap-row"><span class="ap-row-label">Role</span><span class="ap-row-value">{{ current_user.role|capitalize }}</span></div>
+          <div class="ap-row"><span class="ap-row-label">Joined</span><span class="ap-row-value">{{ current_user.created_at.strftime('%B %d, %Y') }}</span></div>
+          <div class="ap-row"><span class="ap-row-label">Last Login</span><span class="ap-row-value">{{ current_user.last_login.strftime('%b %d, %Y %H:%M') if current_user.last_login else 'First session' }}</span></div>
+          <div class="ap-row"><span class="ap-row-label">2FA</span><span class="ap-row-value">{{ 'Enabled' if current_user.totp_enabled else 'Disabled' }}</span></div>
+        </div>
+        <div class="ap-card">
+          <div class="ap-card-title"><i class="bi bi-bar-chart-fill"></i> Strength Tips</div>
+          {% if tips %}
+            <div class="ap-tip-list">
+              {% for tip in tips %}<div class="ap-tip"><i class="bi bi-plus-circle-fill" style="color:var(--green);margin-top:1px"></i><span>{{ tip }}</span></div>{% endfor %}
+            </div>
+          {% else %}
+            <div class="ap-empty" style="color:#15803d"><i class="bi bi-check-circle-fill"></i> Profile is complete.</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    {% elif tab == 'skills' %}
+    <div class="ap-grid">
+      <div class="ap-stack">
+        <div class="ap-card">
+          <div class="ap-card-title"><i class="bi bi-stars"></i> My Skills</div>
+          {% if skills_list %}
+            <div class="ap-pills" style="margin-bottom:16px">
+              {% for s in skills_list %}
+                <span class="ap-pill">{{ s.name }}<span class="ap-pill-level lvl-{{ s.proficiency }}">{{ s.proficiency|capitalize }}</span>
+                  <form method="POST" action="{{ url_for('auth.skill_delete', skill_id=s.id) }}" style="display:inline"><button type="submit" style="background:none;border:none;color:#dc2626;padding:0;line-height:1"><i class="bi bi-x-lg"></i></button></form>
+                </span>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="ap-empty">No skills added yet.</div>
+          {% endif %}
+        </div>
+        <div class="ap-card">
+          <div class="ap-card-title"><i class="bi bi-plus-circle-fill"></i> Add Skill</div>
+          <form method="POST" action="{{ url_for('auth.skill_add') }}">
+            <div class="ap-form-grid">
+              <div class="ap-form-group"><label class="ap-form-label">Skill Name</label><input type="text" name="name" class="form-control" placeholder="e.g. AutoCAD, Project Management" required></div>
+              <div class="ap-form-group"><label class="ap-form-label">Proficiency Level</label><select name="proficiency" class="form-control"><option value="beginner">Beginner</option><option value="intermediate" selected>Intermediate</option><option value="expert">Expert</option></select></div>
+            </div>
+            <div style="margin-top:16px"><button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Add Skill</button></div>
+          </form>
+        </div>
+      </div>
+      <div class="ap-card">
+        <div class="ap-card-title"><i class="bi bi-info-circle"></i> Proficiency Guide</div>
+        <div class="ap-stack">
+          <div class="ap-side-note" style="background:#fef3c7;border-color:#fcd34d"><div style="font-size:12px;font-weight:800;color:#92400e">Beginner</div><div style="font-size:12px;color:#78350f;margin-top:4px">Basic knowledge, still learning.</div></div>
+          <div class="ap-side-note" style="background:#dbeafe;border-color:#93c5fd"><div style="font-size:12px;font-weight:800;color:#1d4ed8">Intermediate</div><div style="font-size:12px;color:#1e40af;margin-top:4px">Works independently with solid practical knowledge.</div></div>
+          <div class="ap-side-note" style="background:#dcfce7;border-color:#86efac"><div style="font-size:12px;font-weight:800;color:#15803d">Expert</div><div style="font-size:12px;color:#166534;margin-top:4px">Deep expertise and able to mentor others.</div></div>
+        </div>
+      </div>
+    </div>
+
+    {% elif tab == 'experience' %}
+    <div class="ap-grid">
+      <div class="ap-stack">
+        <div class="ap-card">
+          <div class="ap-card-title"><i class="bi bi-briefcase-fill"></i> Work Experience</div>
+          {% if exps %}
+            <div class="ap-timeline" style="margin-bottom:16px">
+              {% for e in exps %}
+                <div class="ap-item">
+                  <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">
+                    <div>
+                      <div class="ap-item-title">{{ e.title }}</div>
+                      {% if e.company %}<div class="ap-item-sub">{{ e.company }}</div>{% endif %}
+                      <div class="ap-item-meta">{{ e.start_date.strftime('%b %Y') if e.start_date else '' }}{% if e.start_date %} - {{ e.end_date.strftime('%b %Y') if e.end_date else 'Present' }}{% endif %}</div>
+                      {% if e.description %}<div class="ap-item-desc">{{ e.description }}</div>{% endif %}
+                    </div>
+                    <form method="POST" action="{{ url_for('auth.experience_delete', exp_id=e.id) }}"><button type="submit" class="btn btn-outline btn-xs ap-delete-btn"><i class="bi bi-trash3"></i></button></form>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="ap-empty">No experience added yet.</div>
+          {% endif %}
+          <hr class="ap-divider">
+          <form method="POST" action="{{ url_for('auth.experience_add') }}">
+            <div class="ap-form-grid">
+              <div class="ap-form-group"><label class="ap-form-label">Job Title</label><input type="text" name="title" class="form-control" placeholder="e.g. Civil Engineer" required></div>
+              <div class="ap-form-group"><label class="ap-form-label">Company</label><input type="text" name="company" class="form-control" placeholder="e.g. MOF Engineering"></div>
+              <div class="ap-form-group"><label class="ap-form-label">Start Date</label><input type="date" name="start_date" class="form-control"></div>
+              <div class="ap-form-group"><label class="ap-form-label">End Date</label><input type="date" name="end_date" class="form-control"></div>
+              <div class="ap-form-group full"><label class="ap-form-label">Description</label><textarea name="description" class="form-control" rows="3" placeholder="Key responsibilities and achievements..."></textarea></div>
+            </div>
+            <div style="margin-top:16px"><button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Add Experience</button></div>
+          </form>
+        </div>
+
+        <div class="ap-card">
+          <div class="ap-card-title"><i class="bi bi-mortarboard-fill"></i> Education</div>
+          {% if edus %}
+            <div class="ap-timeline" style="margin-bottom:16px">
+              {% for edu in edus %}
+                <div class="ap-item">
+                  <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">
+                    <div>
+                      <div class="ap-item-title">{{ edu.institution }}</div>
+                      {% if edu.degree or edu.field %}<div class="ap-item-sub">{{ edu.degree }}{% if edu.degree and edu.field %} in {% endif %}{{ edu.field }}</div>{% endif %}
+                      <div class="ap-item-meta">{{ edu.start_year or '' }}{% if edu.start_year %} - {% endif %}{{ edu.end_year or 'Present' }}</div>
+                    </div>
+                    <form method="POST" action="{{ url_for('auth.education_delete', edu_id=edu.id) }}"><button type="submit" class="btn btn-outline btn-xs ap-delete-btn"><i class="bi bi-trash3"></i></button></form>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="ap-empty">No education added yet.</div>
+          {% endif %}
+          <hr class="ap-divider">
+          <form method="POST" action="{{ url_for('auth.education_add') }}">
+            <div class="ap-form-grid">
+              <div class="ap-form-group full"><label class="ap-form-label">Institution</label><input type="text" name="institution" class="form-control" placeholder="e.g. University of Sulaimani" required></div>
+              <div class="ap-form-group"><label class="ap-form-label">Degree</label><input type="text" name="degree" class="form-control" placeholder="e.g. Bachelor's"></div>
+              <div class="ap-form-group"><label class="ap-form-label">Field of Study</label><input type="text" name="field" class="form-control" placeholder="e.g. Civil Engineering"></div>
+              <div class="ap-form-group"><label class="ap-form-label">Start Year</label><input type="number" name="start_year" class="form-control" placeholder="2018" min="1950" max="2030"></div>
+              <div class="ap-form-group"><label class="ap-form-label">End Year</label><input type="number" name="end_year" class="form-control" placeholder="2022" min="1950" max="2035"></div>
+            </div>
+            <div style="margin-top:16px"><button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Add Education</button></div>
+          </form>
+        </div>
+      </div>
+
+      <div class="ap-card">
+        <div class="ap-card-title"><i class="bi bi-file-earmark-text"></i> Profile Snapshot</div>
+        <div class="ap-row"><span class="ap-row-label">Skills</span><span class="ap-row-value">{{ skills_list|length }}</span></div>
+        <div class="ap-row"><span class="ap-row-label">Experience Entries</span><span class="ap-row-value">{{ exps|length }}</span></div>
+        <div class="ap-row"><span class="ap-row-label">Education Entries</span><span class="ap-row-value">{{ edus|length }}</span></div>
+        <div class="ap-row"><span class="ap-row-label">Profile Strength</span><span class="ap-row-value">{{ current_user.profile_strength }}%</span></div>
+        {% if current_user.bio %}
+          <div class="ap-side-note" style="margin-top:14px">{{ current_user.bio }}</div>
+        {% endif %}
+      </div>
+    </div>
+
+    {% elif tab == 'security' %}
+    <div class="ap-grid">
+      <div class="ap-stack">
+        <div class="ap-card">
+          <div class="ap-card-title"><i class="bi bi-key-fill"></i> Change Password</div>
+          <form method="POST" action="{{ url_for('auth.change_password') }}" style="max-width:460px">
+            <div class="ap-form-group"><label class="ap-form-label">Current Password</label><input type="password" name="current_password" class="form-control" autocomplete="current-password" required></div>
+            <div class="ap-form-group"><label class="ap-form-label">New Password</label><input type="password" name="new_password" class="form-control" autocomplete="new-password" required></div>
+            <div class="ap-form-group"><label class="ap-form-label">Confirm New Password</label><input type="password" name="confirm_new_password" class="form-control" autocomplete="new-password" required></div>
+            <div style="margin-top:16px"><button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Change Password</button></div>
+          </form>
+        </div>
+        <div class="ap-card">
+          <div class="ap-card-title"><i class="bi bi-phone-fill"></i> Two-Factor Authentication</div>
+          {% if current_user.totp_enabled %}
+            <div class="ap-side-note" style="background:#f0fdf4;border-color:#bbf7d0;margin-bottom:14px">
+              <div style="font-size:13px;font-weight:700;color:#15803d">2FA is active</div>
+              <div style="font-size:12px;color:#166534;margin-top:4px">Your account is protected by an authenticator app.</div>
+            </div>
+            <form method="POST" action="{{ url_for('auth.disable_2fa') }}" onsubmit="return confirm('Disable 2FA? Your account will be less secure.')">
+              <div class="ap-form-group"><label class="ap-form-label">Password</label><input type="password" name="password" class="form-control" required></div>
+              <div style="margin-top:16px"><button type="submit" class="btn btn-danger btn-sm"><i class="bi bi-shield-x-fill"></i> Disable 2FA</button></div>
+            </form>
+          {% else %}
+            <div class="ap-side-note" style="background:#fff8e1;border-color:#fde68a;margin-bottom:14px">
+              <div style="font-size:13px;font-weight:700;color:#92400e">2FA is not enabled</div>
+              <div style="font-size:12px;color:#a16207;margin-top:4px">Add an extra layer of security to your account.</div>
+            </div>
+            <a href="{{ url_for('auth.setup_2fa') }}" class="btn btn-primary btn-sm"><i class="bi bi-phone-fill"></i> Enable 2FA</a>
+          {% endif %}
+        </div>
+      </div>
+      <div class="ap-card">
+        <div class="ap-card-title"><i class="bi bi-info-circle-fill"></i> Security Tips</div>
+        <div class="ap-tip-list">
+          <div class="ap-tip"><i class="bi bi-check-circle-fill" style="color:var(--green);margin-top:1px"></i><span>Use a unique password not used on other sites.</span></div>
+          <div class="ap-tip"><i class="bi bi-check-circle-fill" style="color:var(--green);margin-top:1px"></i><span>Enable 2FA for stronger account protection.</span></div>
+          <div class="ap-tip"><i class="bi bi-check-circle-fill" style="color:var(--green);margin-top:1px"></i><span>Log out on shared or public devices.</span></div>
+          <div class="ap-tip"><i class="bi bi-check-circle-fill" style="color:var(--green);margin-top:1px"></i><span>Use at least 12 characters with mixed character types.</span></div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

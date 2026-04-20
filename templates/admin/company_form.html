@@ -1,0 +1,472 @@
+﻿{% extends 'base.html' %}
+{% block title %}{{ 'Edit' if company else 'New' }} Company — MOF Jobs{% endblock %}
+{% block page_title %}{{ 'Edit: ' + company.name if company else 'New Company' }}{% endblock %}
+
+{% block content %}
+<div class="cf-wrap">
+
+  <!-- Lock banner -->
+  {% if company and company.is_verified and company.is_active and current_user.role != 'admin' %}
+  <div class="cf-lock-banner">
+    <i class="bi bi-lock-fill" style="color:#d97706;font-size:18px;flex-shrink:0"></i>
+    <div>
+      <strong style="color:#92400e">Company is verified &amp; active — editing is restricted.</strong>
+      <div style="font-size:12px;color:#78350f;margin-top:2px">Contact an administrator to make changes.</div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Company mini-header (edit mode) -->
+  {% if company %}
+  <div class="card cf-company-header">
+    {% if company.logo_filename %}
+      <img src="{{ url_for('static', filename='uploads/company/' + company.logo_filename) }}"
+           alt="{{ company.name }}" class="cf-header-logo">
+    {% else %}
+      <div class="cf-header-logo-placeholder">{{ company.name[0] }}</div>
+    {% endif %}
+    <div class="cf-header-info">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span style="font-size:17px;font-weight:700;color:var(--text)">{{ company.name }}</span>
+        {% if company.is_active %}<span class="badge badge-active">Active</span>{% else %}<span class="badge badge-inactive">Inactive</span>{% endif %}
+        {% if company.is_verified %}<span class="badge" style="background:#eff6ff;color:#2563eb"><i class="bi bi-patch-check-fill"></i> Verified</span>{% endif %}
+      </div>
+      <div style="font-size:12px;color:var(--text3);margin-top:4px">
+        {% if company.industry %}<span>{{ company.industry }}</span>{% endif %}
+        {% if company.industry and company.location %} &middot; {% endif %}
+        {% if company.location %}<span><i class="bi bi-geo-alt"></i> {{ company.location }}</span>{% endif %}
+      </div>
+    </div>
+    <div class="cf-header-actions">
+      <a href="{{ url_for('companies.profile', slug=company.slug) }}" target="_blank" class="btn btn-outline btn-sm">
+        <i class="bi bi-box-arrow-up-right"></i> Public Profile
+      </a>
+      {% if cancel_url is defined %}
+        <a href="{{ cancel_url }}" class="btn btn-outline btn-sm"><i class="bi bi-arrow-left"></i> Back</a>
+      {% elif current_user.role == 'admin' %}
+        <a href="{{ url_for('admin.company_detail', company_id=company.id) }}" class="btn btn-outline btn-sm"><i class="bi bi-arrow-left"></i> Back</a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  <form method="POST" enctype="multipart/form-data" id="cf-form">
+    <div class="cf-layout">
+
+      <!-- MAIN COLUMN -->
+      <div class="cf-main">
+
+        <!-- 1 Company Information -->
+        <div class="card cf-section">
+          <div class="cf-section-head">
+            <span class="cf-step">1</span>
+            <div>
+              <div class="cf-section-title"><i class="bi bi-building"></i> Company Information</div>
+              <div class="cf-section-sub">Basic details shown on the public profile</div>
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="form-group" style="grid-column:1/-1">
+              <label class="cf-label">Company Name <span class="cf-req">*</span></label>
+              <input type="text" name="name" class="form-control" required
+                     value="{{ company.name if company else '' }}"
+                     placeholder="e.g. MOF Engineering Co.">
+            </div>
+            <div class="form-group">
+              <label class="cf-label">Industry</label>
+              <select name="industry" class="form-control">
+                <option value="">— Select industry —</option>
+                {% for ind in industries %}
+                  <option value="{{ ind }}" {% if company and company.industry == ind %}selected{% endif %}>{{ ind }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="cf-label">Company Size</label>
+              <select name="size" class="form-control">
+                <option value="">— Select size —</option>
+                {% for s in sizes %}
+                  <option value="{{ s }}" {% if company and company.size == s %}selected{% endif %}>{{ s }} employees</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="cf-label">Location</label>
+              <div class="cf-input-icon-wrap">
+                <i class="bi bi-geo-alt cf-input-icon"></i>
+                <input type="text" name="location" class="form-control cf-has-icon"
+                       value="{{ company.location if company else '' }}"
+                       placeholder="e.g. Slemani, Iraq">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="cf-label">Founded Year</label>
+              <div class="cf-input-icon-wrap">
+                <i class="bi bi-calendar3 cf-input-icon"></i>
+                <input type="number" name="founded_year" class="form-control cf-has-icon"
+                       value="{{ company.founded_year if company else '' }}"
+                       min="1800" max="2099" placeholder="e.g. 2010">
+              </div>
+            </div>
+            <div class="form-group" style="grid-column:1/-1">
+              <label class="cf-label">Website</label>
+              <div class="cf-input-icon-wrap">
+                <i class="bi bi-globe2 cf-input-icon"></i>
+                <input type="url" name="website" class="form-control cf-has-icon"
+                       value="{{ company.website if company else '' }}"
+                       placeholder="https://example.com">
+              </div>
+            </div>
+            <div class="form-group" style="grid-column:1/-1">
+              <label class="cf-label" style="display:flex;justify-content:space-between;align-items:center">
+                <span>Description</span>
+                <span id="desc-count" class="cf-char-count">0 / 1000</span>
+              </label>
+              <textarea name="description" class="form-control" rows="5"
+                        id="desc-area" maxlength="1000"
+                        placeholder="About the company — mission, products, culture...">{{ company.description if company else '' }}</textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2 Contact Information -->
+        <div class="card cf-section">
+          <div class="cf-section-head">
+            <span class="cf-step">2</span>
+            <div>
+              <div class="cf-section-title"><i class="bi bi-telephone"></i> Contact Information</div>
+              <div class="cf-section-sub">How applicants and visitors can reach you</div>
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="cf-label">Contact Email</label>
+              <div class="cf-input-icon-wrap">
+                <i class="bi bi-envelope cf-input-icon"></i>
+                <input type="email" name="contact_email" class="form-control cf-has-icon"
+                       value="{{ company.contact_email if company and company.contact_email else '' }}"
+                       placeholder="hr@company.com">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="cf-label">Contact Phone</label>
+              <div class="cf-input-icon-wrap">
+                <i class="bi bi-phone cf-input-icon"></i>
+                <input type="text" name="contact_phone" class="form-control cf-has-icon"
+                       value="{{ company.contact_phone if company and company.contact_phone else '' }}"
+                       placeholder="+964 7xx xxx xxxx">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3 Logo & Cover Image -->
+        <div class="card cf-section">
+          <div class="cf-section-head">
+            <span class="cf-step">3</span>
+            <div>
+              <div class="cf-section-title"><i class="bi bi-image"></i> Logo &amp; Cover Image</div>
+              <div class="cf-section-sub">Visual branding on the public company profile</div>
+            </div>
+          </div>
+
+          <!-- Logo -->
+          <div class="form-group" style="margin-bottom:24px">
+            <label class="cf-label">Company Logo</label>
+            <div class="cf-dim-row">
+              <span class="cf-dim-pill">400 × 400 px</span>
+              <span class="cf-dim-pill">Square</span>
+              <span class="cf-dim-pill">PNG preferred</span>
+              <span class="cf-dim-pill">Max 10 MB</span>
+            </div>
+            <div class="cf-upload-zone" id="logo-zone"
+                 onclick="document.getElementById('logo-input').click()"
+                 role="button" tabindex="0">
+              <img id="logo-preview"
+                   src="{{ url_for('static', filename='uploads/company/' + company.logo_filename) if company and company.logo_filename else '' }}"
+                   alt="Logo" class="cf-logo-preview"
+                   style="{% if not (company and company.logo_filename) %}display:none{% endif %}">
+              <div id="logo-placeholder" {% if company and company.logo_filename %}style="display:none"{% endif %} class="cf-upload-icon-wrap">
+                <div class="cf-upload-icon"><i class="bi bi-image"></i></div>
+              </div>
+              <div class="cf-upload-text">
+                <div class="cf-upload-main-text" id="logo-main-text">{{ 'Replace logo' if (company and company.logo_filename) else 'Upload logo' }}</div>
+                <div class="cf-upload-hint-sm">Click to choose a file</div>
+                <span id="logo-fname" class="cf-selected-name"></span>
+              </div>
+            </div>
+            <input type="file" name="logo" id="logo-input" accept="image/*" style="display:none"
+                   onchange="previewLogo(this)">
+          </div>
+
+          <!-- Cover -->
+          <div class="form-group">
+            <label class="cf-label">Cover / Banner Image</label>
+            <div class="cf-dim-row">
+              <span class="cf-dim-pill">1200 × 160 px</span>
+              <span class="cf-dim-pill">Wide banner</span>
+              <span class="cf-dim-pill">Max 10 MB</span>
+            </div>
+            <div class="cf-cover-zone" id="cover-zone"
+                 onclick="document.getElementById('cover-input').click()"
+                 role="button" tabindex="0">
+              <img id="cover-preview"
+                   src="{{ url_for('static', filename='uploads/company/' + company.cover_filename) if company and company.cover_filename else '' }}"
+                   alt="Cover" class="cf-cover-img"
+                   style="{% if not (company and company.cover_filename) %}display:none{% endif %}">
+              <div id="cover-placeholder" {% if company and company.cover_filename %}style="display:none"{% endif %} class="cf-cover-placeholder">
+                <i class="bi bi-panorama"></i>
+                <span>Upload cover image</span>
+                <span class="cf-upload-hint-sm">1200 × 160 px recommended</span>
+              </div>
+              <div class="cf-cover-overlay">
+                <i class="bi bi-camera"></i>
+                <span id="cover-fname">{{ 'Click to replace' if (company and company.cover_filename) else '' }}</span>
+              </div>
+            </div>
+            <input type="file" name="cover" id="cover-input" accept="image/*" style="display:none"
+                   onchange="previewCover(this)">
+          </div>
+        </div>
+
+        <!-- Submit bar -->
+        <div class="cf-submit-bar">
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-lg"></i> {{ 'Save Changes' if company else 'Create Company' }}
+          </button>
+          {% if cancel_url is defined %}
+            <a href="{{ cancel_url }}" class="btn btn-outline">Cancel</a>
+          {% elif company %}
+            <a href="{{ url_for('admin.company_detail', company_id=company.id) }}" class="btn btn-outline">Cancel</a>
+          {% else %}
+            <a href="{{ url_for('admin.companies') }}" class="btn btn-outline">Cancel</a>
+          {% endif %}
+        </div>
+
+      </div><!-- /cf-main -->
+
+      <!-- SIDEBAR -->
+      <div class="cf-aside">
+
+        <!-- 4 Settings -->
+        <div class="card cf-section cf-aside-sticky">
+          <div class="cf-section-head">
+            <span class="cf-step">4</span>
+            <div>
+              <div class="cf-section-title"><i class="bi bi-gear"></i> Settings</div>
+              <div class="cf-section-sub">Visibility &amp; verification</div>
+            </div>
+          </div>
+          {% if current_user.role == 'admin' %}
+          <div class="cf-toggles">
+            <label class="cf-toggle-row">
+              <div class="cf-toggle-info">
+                <span class="cf-toggle-name">Active</span>
+                <span class="cf-toggle-desc">Visible on the public listing</span>
+              </div>
+              <div class="cf-toggle-switch">
+                <input type="checkbox" name="is_active" class="cf-toggle-input"
+                       {% if not company or company.is_active %}checked{% endif %}>
+                <span class="cf-toggle-track"></span>
+              </div>
+            </label>
+            <label class="cf-toggle-row">
+              <div class="cf-toggle-info">
+                <span class="cf-toggle-name">Verified</span>
+                <span class="cf-toggle-desc">Shows verified badge on profile</span>
+              </div>
+              <div class="cf-toggle-switch">
+                <input type="checkbox" name="is_verified" class="cf-toggle-input"
+                       {% if company and company.is_verified %}checked{% endif %}>
+                <span class="cf-toggle-track"></span>
+              </div>
+            </label>
+          </div>
+          {% else %}
+          <div class="cf-status-col">
+            <div class="cf-status-item">
+              <span class="cf-status-lbl">Status</span>
+              {% if company and company.is_active %}<span class="badge badge-active">Active</span>
+              {% else %}<span class="badge badge-inactive">Inactive</span>{% endif %}
+            </div>
+            <div class="cf-status-item">
+              <span class="cf-status-lbl">Verified</span>
+              {% if company and company.is_verified %}
+                <span class="badge" style="background:#eff6ff;color:#2563eb"><i class="bi bi-patch-check-fill"></i> Yes</span>
+              {% else %}
+                <span class="badge" style="background:#f8f9fa;color:var(--text3)">No</span>
+              {% endif %}
+            </div>
+            <div class="cf-lock-note"><i class="bi bi-lock" style="flex-shrink:0"></i> Only administrators can change active/verified status.</div>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Tips card -->
+        <div class="card cf-tips-card">
+          <div class="cf-section-title" style="margin-bottom:14px"><i class="bi bi-lightbulb"></i> Tips</div>
+          <ul class="cf-tips-list">
+            <li><i class="bi bi-check-circle-fill" style="color:var(--green)"></i> Use a square logo (400×400px) for best display</li>
+            <li><i class="bi bi-check-circle-fill" style="color:var(--green)"></i> A wide cover banner makes profiles stand out</li>
+            <li><i class="bi bi-check-circle-fill" style="color:var(--green)"></i> Keep description clear and under 300 words</li>
+            <li><i class="bi bi-check-circle-fill" style="color:var(--green)"></i> Add contact info so applicants can reach you</li>
+          </ul>
+        </div>
+
+      </div><!-- /cf-aside -->
+
+    </div><!-- /cf-layout -->
+  </form>
+</div>
+
+<style>
+/* Wrapper — full width */
+.cf-wrap{width:100%}
+
+/* Two-column layout */
+.cf-layout{display:grid;grid-template-columns:1fr 290px;gap:20px;align-items:start}
+.cf-main{min-width:0}
+.cf-aside{min-width:0}
+.cf-aside-sticky{position:sticky;top:80px}
+
+/* Lock banner */
+.cf-lock-banner{display:flex;align-items:flex-start;gap:12px;background:#fffbeb;border:1px solid #fcd34d;border-radius:var(--radius);padding:14px 18px;margin-bottom:20px}
+
+/* Mini-header */
+.cf-company-header{display:flex;align-items:center;gap:16px;padding:14px 18px;margin-bottom:20px;flex-wrap:wrap}
+.cf-header-logo{width:52px;height:52px;border-radius:10px;object-fit:contain;background:#f8f9fa;border:1px solid var(--border);padding:4px;flex-shrink:0}
+.cf-header-logo-placeholder{width:52px;height:52px;border-radius:10px;background:var(--green-light);color:var(--green);font-size:20px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.cf-header-info{flex:1;min-width:0}
+.cf-header-actions{display:flex;gap:8px;flex-shrink:0}
+
+/* Section cards */
+.cf-section{margin-bottom:16px;padding:22px 24px}
+.cf-section-head{display:flex;align-items:flex-start;gap:14px;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.cf-step{width:30px;height:30px;border-radius:50%;background:var(--green-light);color:var(--green);font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.cf-section-title{font-size:15px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:7px;line-height:1.3}
+.cf-section-sub{font-size:12px;color:var(--text3);margin-top:3px}
+
+/* Labels */
+.cf-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);display:block;margin-bottom:6px}
+.cf-req{color:#dc2626}
+.cf-char-count{font-size:11px;font-weight:400;text-transform:none;letter-spacing:0;color:var(--text3)}
+
+/* Inputs with icon */
+.cf-input-icon-wrap{position:relative}
+.cf-input-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:14px;pointer-events:none}
+.cf-has-icon{padding-left:34px!important}
+
+/* Dimension pills */
+.cf-dim-row{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+.cf-dim-pill{display:inline-block;background:#f1f5f9;border:1px solid var(--border);border-radius:6px;padding:2px 8px;font-size:11px;font-weight:600;color:var(--text2);white-space:nowrap}
+
+/* Logo upload zone */
+.cf-upload-zone{border:2px dashed var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:border-color .15s,background .15s;background:#fafbfc}
+.cf-upload-zone:hover,.cf-upload-zone:focus{border-color:var(--green);background:var(--green-light);outline:none}
+.cf-logo-preview{width:60px;height:60px;object-fit:contain;border-radius:8px;border:1px solid var(--border);background:#fff;padding:3px;flex-shrink:0}
+.cf-upload-icon-wrap{flex-shrink:0}
+.cf-upload-icon{width:46px;height:46px;border-radius:10px;background:#fff;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--text3)}
+.cf-upload-text{flex:1;min-width:0}
+.cf-upload-main-text{font-size:13px;font-weight:600;color:var(--text)}
+.cf-upload-hint-sm{font-size:11px;color:var(--text3);margin-top:3px}
+.cf-selected-name{font-size:11px;color:var(--green);margin-top:4px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* Cover upload zone */
+.cf-cover-zone{border:2px dashed var(--border);border-radius:12px;height:100px;cursor:pointer;overflow:hidden;position:relative;background:#fafbfc;transition:border-color .15s}
+.cf-cover-zone:hover,.cf-cover-zone:focus{border-color:var(--green);outline:none}
+.cf-cover-img{width:100%;height:100%;object-fit:cover;display:block}
+.cf-cover-placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:13px;font-weight:600;color:var(--text2)}
+.cf-cover-placeholder i{font-size:22px;color:var(--text3)}
+.cf-cover-overlay{position:absolute;inset:0;background:rgba(0,0,0,.4);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;opacity:0;transition:opacity .2s;pointer-events:none;color:#fff;font-size:12px;font-weight:600}
+.cf-cover-overlay i{font-size:18px}
+.cf-cover-zone:hover .cf-cover-overlay{opacity:1}
+
+/* Toggles */
+.cf-toggles{display:flex;flex-direction:column}
+.cf-toggle-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 0;border-bottom:1px solid var(--border);cursor:pointer;user-select:none}
+.cf-toggle-row:last-child{border-bottom:none;padding-bottom:0}
+.cf-toggle-row:first-child{padding-top:0}
+.cf-toggle-info{flex:1;min-width:0}
+.cf-toggle-name{font-size:14px;font-weight:600;color:var(--text);display:block}
+.cf-toggle-desc{font-size:12px;color:var(--text3);margin-top:2px;display:block}
+.cf-toggle-switch{flex-shrink:0;position:relative;width:44px;height:24px}
+.cf-toggle-input{position:absolute;opacity:0;width:0;height:0}
+.cf-toggle-track{position:absolute;inset:0;background:#d1d5db;border-radius:12px;transition:background .2s;cursor:pointer;display:block}
+.cf-toggle-track::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.cf-toggle-input:checked~.cf-toggle-track{background:var(--green)}
+.cf-toggle-input:checked~.cf-toggle-track::after{transform:translateX(20px)}
+
+/* Status (non-admin) */
+.cf-status-col{display:flex;flex-direction:column;gap:12px}
+.cf-status-item{display:flex;align-items:center;gap:8px}
+.cf-status-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;color:var(--text3);min-width:54px}
+.cf-lock-note{font-size:11px;color:var(--text3);display:flex;align-items:flex-start;gap:6px;line-height:1.5;margin-top:4px}
+
+/* Tips card */
+.cf-tips-card{padding:20px 22px;margin-bottom:16px}
+.cf-tips-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:10px}
+.cf-tips-list li{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--text2);line-height:1.5}
+.cf-tips-list i{font-size:13px;margin-top:1px;flex-shrink:0}
+
+/* Submit bar */
+.cf-submit-bar{display:flex;gap:10px;align-items:center;padding:4px 0 28px}
+
+/* Responsive — collapse to single column below 900px */
+@media(max-width:900px){
+  .cf-layout{grid-template-columns:1fr}
+  .cf-aside-sticky{position:static}
+  .cf-tips-card{display:none}
+}
+
+/* Mobile */
+@media(max-width:768px){
+  .cf-company-header{gap:10px}
+  .cf-header-actions{width:100%}
+  .cf-header-actions .btn{flex:1;justify-content:center;text-align:center}
+  .cf-section{padding:16px}
+  .cf-section-head{gap:10px;margin-bottom:14px;padding-bottom:12px}
+  .cf-cover-zone{height:80px}
+  .cf-submit-bar{position:sticky;bottom:0;background:var(--card);margin:0 -12px;padding:12px 16px 20px;border-top:1px solid var(--border);z-index:100;box-shadow:0 -4px 20px rgba(0,0,0,.1)}
+  .cf-submit-bar .btn{flex:1;justify-content:center}
+}
+</style>
+
+<script>
+function previewLogo(input){
+  var file=input.files[0]; if(!file) return;
+  document.getElementById('logo-fname').textContent=file.name;
+  document.getElementById('logo-placeholder').style.display='none';
+  document.getElementById('logo-main-text').textContent='New logo selected';
+  var preview=document.getElementById('logo-preview');
+  var r=new FileReader();
+  r.onload=function(e){ preview.src=e.target.result; preview.style.display='block'; };
+  r.readAsDataURL(file);
+}
+
+function previewCover(input){
+  var file=input.files[0]; if(!file) return;
+  document.getElementById('cover-placeholder').style.display='none';
+  document.getElementById('cover-fname').textContent=file.name;
+  var preview=document.getElementById('cover-preview');
+  var overlay=document.querySelector('.cf-cover-overlay');
+  var r=new FileReader();
+  r.onload=function(e){
+    preview.src=e.target.result; preview.style.display='block';
+    if(overlay) overlay.style.opacity='0';
+  };
+  r.readAsDataURL(file);
+}
+
+document.querySelectorAll('.cf-upload-zone,.cf-cover-zone').forEach(function(z){
+  z.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); z.click(); } });
+});
+
+(function(){
+  var a=document.getElementById('desc-area');
+  var c=document.getElementById('desc-count');
+  if(!a||!c) return;
+  function upd(){ var n=a.value.length; c.textContent=n+' / 1000'; c.style.color=n>900?'#dc2626':'var(--text3)'; }
+  a.addEventListener('input',upd); upd();
+})();
+</script>
+{% endblock %}

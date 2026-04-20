@@ -1,0 +1,53 @@
+﻿{% extends 'base.html' %}
+{% block title %}Assessments — MOF Jobs{% endblock %}
+{% block page_title %}Assessments{% endblock %}
+{% block page_breadcrumb %}Manage Assessments{% endblock %}
+
+{% block content %}
+<div class="section-header" style="margin-bottom:20px">
+  <h2 style="font-size:18px;font-weight:600">Assessments</h2>
+  <a href="{{ url_for('assessments.create') }}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> New Assessment</a>
+</div>
+
+<div class="table-card">
+  <table style="width:100%;border-collapse:collapse;font-size:13px">
+    <thead>
+      <tr style="border-bottom:1px solid var(--border);color:var(--text3)">
+        <th style="padding:10px 14px;text-align:left;font-weight:500">Title</th>
+        <th style="padding:10px 14px;text-align:center;font-weight:500">Questions</th>
+        <th style="padding:10px 14px;text-align:center;font-weight:500">Pass Score</th>
+        <th style="padding:10px 14px;text-align:center;font-weight:500">Time Limit</th>
+        <th style="padding:10px 14px;text-align:center;font-weight:500">Submissions</th>
+        <th style="padding:10px 14px;text-align:center;font-weight:500">Status</th>
+        <th style="padding:10px 14px;text-align:right;font-weight:500">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for a in assessments %}
+    <tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:10px 14px;font-weight:500">{{ a.title }}</td>
+      <td style="padding:10px 14px;text-align:center">{{ a.questions | length }}</td>
+      <td style="padding:10px 14px;text-align:center">{{ a.pass_score }}%</td>
+      <td style="padding:10px 14px;text-align:center">{% if a.time_limit %}{{ a.time_limit }} min{% else %}—{% endif %}</td>
+      <td style="padding:10px 14px;text-align:center">
+        <a href="{{ url_for('assessments.submissions', assessment_id=a.id) }}" style="color:var(--primary)">{{ a.submissions | length }}</a>
+      </td>
+      <td style="padding:10px 14px;text-align:center">
+        <span style="background:{% if a.is_active %}#dcfce7{% else %}#f3f4f6{% endif %};color:{% if a.is_active %}#16a34a{% else %}#6b7280{% endif %};padding:2px 10px;border-radius:12px;font-size:11px">
+          {{ 'Active' if a.is_active else 'Draft' }}
+        </span>
+      </td>
+      <td style="padding:10px 14px;text-align:right">
+        <div style="display:flex;gap:6px;justify-content:flex-end">
+          <a href="{{ url_for('assessments.edit', assessment_id=a.id) }}" class="btn btn-outline btn-sm"><i class="bi bi-pencil"></i></a>
+          <a href="{{ url_for('assessments.submissions', assessment_id=a.id) }}" class="btn btn-light btn-sm"><i class="bi bi-bar-chart"></i></a>
+        </div>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="7" style="padding:40px;text-align:center;color:var(--text3)">No assessments yet. <a href="{{ url_for('assessments.create') }}">Create one</a></td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

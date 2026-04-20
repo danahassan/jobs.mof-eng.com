@@ -1,0 +1,396 @@
+﻿{% extends 'base.html' %}
+{% block title %}Companies — MOF Jobs{% endblock %}
+{% block page_title %}Companies{% endblock %}
+{% block page_breadcrumb %}Browse Companies{% endblock %}
+
+{% block content %}
+<div class="cl-wrap">
+
+<!-- KPI Strip -->
+<div class="kpi-strip">
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#e8f5ee;color:#198754"><i class="bi bi-buildings-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_total }}</div><div class="kpi-lbl">Companies</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#fef3c7;color:#d97706"><i class="bi bi-patch-check-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_verified }}</div><div class="kpi-lbl">Verified</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#eff6ff;color:#2563eb"><i class="bi bi-briefcase-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_open_jobs }}</div><div class="kpi-lbl">Open Jobs</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#fce7f3;color:#db2777"><i class="bi bi-people-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_followers }}</div><div class="kpi-lbl">Followers</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#ede9fe;color:#7c3aed"><i class="bi bi-tags-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_industries }}</div><div class="kpi-lbl">Industries</div></div>
+  </div>
+</div>
+
+<!-- Filter / toolbar row -->
+<div class="cl-toolbar">
+  <form method="get" class="cl-filter" id="filterForm">
+    <input type="hidden" name="view" value="{{ view }}">
+    <div class="cl-filter-search">
+      <i class="bi bi-search cl-search-ico"></i>
+      <input type="text" name="q" value="{{ q }}" placeholder="Search companies…" class="form-control cl-search-input">
+    </div>
+    <select name="industry" class="form-control cl-select">
+      <option value="">All Industries</option>
+      {% for ind in industries %}
+      <option value="{{ ind }}" {% if ind == industry %}selected{% endif %}>{{ ind }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn btn-primary btn-sm cl-filter-btn"><i class="bi bi-search"></i> Search</button>
+    {% if q or industry %}
+    <a href="{{ url_for('companies.listing', view=view) }}" class="btn btn-outline btn-sm"><i class="bi bi-x"></i> Clear</a>
+    {% endif %}
+  </form>
+
+  <div class="cl-toolbar-right">
+    <span class="cl-count">{{ total }} compan{{ 'ies' if total != 1 else 'y' }}</span>
+    <div class="cl-view-toggle">
+      <a href="?q={{ q }}&industry={{ industry }}&view=card"
+         class="{% if view=='card' %}active{% endif %}" title="Card view"><i class="bi bi-grid-3x3-gap-fill"></i></a>
+      <a href="?q={{ q }}&industry={{ industry }}&view=list"
+         class="{% if view=='list' %}active{% endif %}" title="List view"><i class="bi bi-list-ul"></i></a>
+    </div>
+  </div>
+</div>
+
+{# ── CARD VIEW ───────────────────────────────────────────── #}
+{% if view == 'card' %}
+<div class="cl-grid">
+  {% for company in companies %}
+  {% set is_following = company.id in followed_ids %}
+  <div class="cl-card">
+
+    <!-- Cover banner -->
+    <a href="{{ url_for('companies.profile', slug=company.slug) }}" class="cl-card-cover-link">
+      {% if company.cover_filename %}
+        <img src="{{ url_for('static', filename='uploads/company/' + company.cover_filename) }}"
+             alt="" class="cl-card-cover-img">
+      {% else %}
+        <div class="cl-card-cover-default"></div>
+      {% endif %}
+    </a>
+
+    <!-- Floating logo -->
+    <div class="cl-card-logo-float">
+      {% if company.logo_filename %}
+        <img src="{{ url_for('static', filename='uploads/company/' + company.logo_filename) }}"
+             alt="{{ company.name }}" class="cl-card-logo">
+      {% else %}
+        <div class="cl-card-logo-ph">{{ company.name[0] | upper }}</div>
+      {% endif %}
+    </div>
+
+    <!-- Body -->
+    <div class="cl-card-body">
+      <div class="cl-card-name-row">
+        <a href="{{ url_for('companies.profile', slug=company.slug) }}" class="cl-card-name">{{ company.name }}</a>
+        {% if company.is_verified %}
+          <i class="bi bi-patch-check-fill cl-verified" title="Verified"></i>
+        {% endif %}
+      </div>
+      {% if company.industry %}
+        <div class="cl-card-industry">{{ company.industry }}</div>
+      {% endif %}
+
+      {% if company.description %}
+        <p class="cl-card-desc">{{ company.description }}</p>
+      {% endif %}
+
+      <div class="cl-card-stats">
+        <span class="cl-stat {% if company.open_jobs_count > 0 %}cl-stat-jobs{% endif %}">
+          <i class="bi bi-briefcase"></i> {{ company.open_jobs_count }} job{{ 's' if company.open_jobs_count != 1 }}
+        </span>
+        <span class="cl-stat">
+          <i class="bi bi-heart"></i> {{ company.follower_count }}
+        </span>
+        {% if company.location %}
+          <span class="cl-stat"><i class="bi bi-geo-alt"></i> {{ company.location }}</span>
+        {% endif %}
+        {% if company.size %}
+          <span class="cl-stat"><i class="bi bi-building"></i> {{ company.size }}</span>
+        {% endif %}
+      </div>
+
+      <div class="cl-card-actions">
+        <a href="{{ url_for('companies.profile', slug=company.slug) }}" class="btn btn-outline btn-sm" style="flex:1;justify-content:center">
+          <i class="bi bi-eye"></i> View
+        </a>
+        {% if current_user.is_authenticated %}
+        <button class="btn btn-sm follow-btn {{ 'following' if is_following else '' }}"
+                style="flex:1;justify-content:center"
+                data-company-id="{{ company.id }}"
+                data-following="{{ '1' if is_following else '0' }}">
+          <i class="bi bi-heart{{ '-fill' if is_following }}"></i>
+          <span>{{ 'Following' if is_following else 'Follow' }}</span>
+        </button>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+  {% else %}
+  <div class="cl-empty">
+    <i class="bi bi-building"></i>
+    <div class="cl-empty-title">No companies found</div>
+    <div class="cl-empty-sub">Try adjusting your search or filters</div>
+    {% if q or industry %}
+    <a href="{{ url_for('companies.listing') }}" class="btn btn-outline btn-sm" style="margin-top:14px">Clear filters</a>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+
+{# ── LIST VIEW ───────────────────────────────────────────── #}
+{% else %}
+<div class="cl-list">
+  {% for company in companies %}
+  {% set is_following = company.id in followed_ids %}
+  <div class="cl-list-row">
+
+    <!-- Logo -->
+    <a href="{{ url_for('companies.profile', slug=company.slug) }}" class="cl-list-logo-wrap">
+      {% if company.logo_filename %}
+        <img src="{{ url_for('static', filename='uploads/company/' + company.logo_filename) }}"
+             alt="{{ company.name }}" class="cl-list-logo">
+      {% else %}
+        <div class="cl-list-logo-ph">{{ company.name[0] | upper }}</div>
+      {% endif %}
+    </a>
+
+    <!-- Info -->
+    <div class="cl-list-body">
+      <div class="cl-list-name-row">
+        <a href="{{ url_for('companies.profile', slug=company.slug) }}" class="cl-list-name">{{ company.name }}</a>
+        {% if company.is_verified %}<i class="bi bi-patch-check-fill cl-verified" title="Verified"></i>{% endif %}
+      </div>
+      <div class="cl-list-meta">
+        {% if company.industry %}<span><i class="bi bi-tag"></i> {{ company.industry }}</span>{% endif %}
+        {% if company.location %}<span><i class="bi bi-geo-alt"></i> {{ company.location }}</span>{% endif %}
+        {% if company.size %}<span><i class="bi bi-building"></i> {{ company.size }}</span>{% endif %}
+        <span {% if company.open_jobs_count > 0 %}class="cl-jobs-active"{% endif %}>
+          <i class="bi bi-briefcase"></i> {{ company.open_jobs_count }} job{{ 's' if company.open_jobs_count != 1 }}
+        </span>
+        <span><i class="bi bi-heart"></i> {{ company.follower_count }} follower{{ 's' if company.follower_count != 1 }}</span>
+      </div>
+      {% if company.description %}
+        <div class="cl-list-desc">{{ company.description }}</div>
+      {% endif %}
+    </div>
+
+    <!-- Actions -->
+    <div class="cl-list-actions">
+      <a href="{{ url_for('companies.profile', slug=company.slug) }}" class="btn btn-outline btn-sm">
+        <i class="bi bi-eye"></i> View
+      </a>
+      {% if current_user.is_authenticated %}
+      <button class="btn btn-sm follow-btn {{ 'following' if is_following else '' }}"
+              data-company-id="{{ company.id }}"
+              data-following="{{ '1' if is_following else '0' }}">
+        <i class="bi bi-heart{{ '-fill' if is_following }}"></i>
+        <span>{{ 'Following' if is_following else 'Follow' }}</span>
+      </button>
+      {% endif %}
+    </div>
+
+  </div>
+  {% else %}
+  <div class="cl-empty">
+    <i class="bi bi-building"></i>
+    <div class="cl-empty-title">No companies found</div>
+    {% if q or industry %}
+    <a href="{{ url_for('companies.listing') }}" class="btn btn-outline btn-sm" style="margin-top:14px">Clear filters</a>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- Pagination -->
+{% if pagination.pages > 1 %}
+<div class="pagination" style="margin-top:24px">
+  <a href="{{ url_for('companies.listing', q=q, industry=industry, view=view, page=pagination.prev_num) }}"
+     class="page-link {% if not pagination.has_prev %}disabled{% endif %}"><i class="bi bi-chevron-left"></i></a>
+  {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+    {% if p %}
+    <a href="{{ url_for('companies.listing', q=q, industry=industry, view=view, page=p) }}"
+       class="page-link {% if p == pagination.page %}active{% endif %}">{{ p }}</a>
+    {% else %}
+    <span class="page-link" style="color:var(--text3)">…</span>
+    {% endif %}
+  {% endfor %}
+  <a href="{{ url_for('companies.listing', q=q, industry=industry, view=view, page=pagination.next_num) }}"
+     class="page-link {% if not pagination.has_next %}disabled{% endif %}"><i class="bi bi-chevron-right"></i></a>
+</div>
+{% endif %}
+
+</div><!-- /cl-wrap -->
+
+<style>
+/* ── Wrapper ──────────────────────────────────────────────── */
+.cl-wrap{width:100%}
+
+/* ── Toolbar ─────────────────────────────────────────────── */
+.cl-toolbar{display:flex;align-items:center;gap:14px;margin-bottom:20px;flex-wrap:wrap}
+.cl-filter{display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:1;min-width:0;
+  background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);
+  padding:12px 16px;box-shadow:var(--shadow)}
+.cl-filter-search{position:relative;flex:1;min-width:160px}
+.cl-search-ico{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:13px;pointer-events:none}
+.cl-search-input{padding-left:32px!important}
+.cl-select{width:auto;min-width:140px}
+.cl-filter-btn{white-space:nowrap;flex-shrink:0}
+
+.cl-toolbar-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.cl-count{font-size:13px;color:var(--text3);white-space:nowrap}
+.cl-view-toggle{display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.cl-view-toggle a{padding:7px 12px;font-size:14px;color:var(--text3);text-decoration:none;transition:all .15s}
+.cl-view-toggle a.active,.cl-view-toggle a:hover{background:var(--green);color:#fff}
+
+/* ── Verified badge ──────────────────────────────────────── */
+.cl-verified{color:#2563eb;font-size:14px;flex-shrink:0}
+
+/* ── Jobs highlight ──────────────────────────────────────── */
+.cl-jobs-active{color:var(--green)!important;font-weight:600}
+.cl-stat-jobs{color:var(--green);font-weight:600}
+
+/* ─────────────────────────────────────────────────────────
+   CARD GRID
+   ───────────────────────────────────────────────────────── */
+.cl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(280px,100%),1fr));gap:18px}
+
+.cl-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);
+  display:flex;flex-direction:column;overflow:hidden;transition:box-shadow .15s,border-color .15s}
+.cl-card:hover{box-shadow:0 4px 24px rgba(0,0,0,.10);border-color:var(--green)}
+
+/* Cover banner */
+.cl-card-cover-link{display:block;overflow:hidden;height:76px;position:relative}
+.cl-card-cover-img{width:100%;height:100%;object-fit:cover;display:block}
+.cl-card-cover-default{height:76px;background:linear-gradient(135deg,#0f2d1e 0%,#1a4d30 50%,#1e6040 100%)}
+
+/* Floating logo */
+.cl-card-logo-float{position:relative;z-index:2;margin:-22px 0 0 16px;width:fit-content}
+.cl-card-logo{width:46px;height:46px;border-radius:10px;object-fit:contain;background:#fff;
+  border:2px solid var(--card);box-shadow:0 2px 8px rgba(0,0,0,.12);padding:3px;display:block}
+.cl-card-logo-ph{width:46px;height:46px;border-radius:10px;background:var(--green-light);
+  color:var(--green);font-size:18px;font-weight:800;display:flex;align-items:center;justify-content:center;
+  border:2px solid var(--card);box-shadow:0 2px 8px rgba(0,0,0,.1)}
+
+/* Card body */
+.cl-card-body{padding:10px 16px 16px;display:flex;flex-direction:column;gap:8px;flex:1}
+.cl-card-name-row{display:flex;align-items:center;gap:6px;margin-top:2px}
+.cl-card-name{font-size:14px;font-weight:700;color:var(--text);text-decoration:none;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
+.cl-card-name:hover{color:var(--green)}
+.cl-card-industry{font-size:11px;color:var(--text3);margin-top:-4px}
+.cl-card-desc{font-size:12px;color:var(--text2);line-height:1.55;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin:0}
+.cl-card-stats{display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--text3)}
+.cl-stat{display:inline-flex;align-items:center;gap:3px}
+.cl-card-actions{display:flex;gap:8px;margin-top:auto;padding-top:4px}
+
+/* ─────────────────────────────────────────────────────────
+   LIST VIEW
+   ───────────────────────────────────────────────────────── */
+.cl-list{display:flex;flex-direction:column;gap:10px}
+
+.cl-list-row{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);
+  padding:14px 20px;display:grid;grid-template-columns:54px 1fr auto;gap:0 16px;align-items:center;
+  transition:box-shadow .15s,border-color .15s}
+.cl-list-row:hover{box-shadow:0 2px 16px rgba(0,0,0,.07);border-color:var(--green)}
+
+.cl-list-logo-wrap{display:block;flex-shrink:0;width:54px}
+.cl-list-logo{width:46px;height:46px;border-radius:10px;object-fit:contain;background:#f8f9fa;
+  border:1px solid var(--border);padding:3px}
+.cl-list-logo-ph{width:46px;height:46px;border-radius:10px;background:var(--green-light);
+  color:var(--green);font-size:18px;font-weight:800;display:flex;align-items:center;justify-content:center}
+
+.cl-list-body{min-width:0}
+.cl-list-name-row{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.cl-list-name{font-size:14px;font-weight:700;color:var(--text);text-decoration:none}
+.cl-list-name:hover{color:var(--green)}
+.cl-list-meta{display:flex;gap:12px;font-size:12px;color:var(--text3);flex-wrap:wrap}
+.cl-list-meta span{display:inline-flex;align-items:center;gap:4px}
+.cl-list-desc{font-size:12px;color:var(--text2);margin-top:5px;
+  display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.cl-list-actions{display:flex;gap:8px;flex-shrink:0}
+
+/* ── Follow button states ─────────────────────────────────── */
+.follow-btn{background:var(--card);border:1px solid var(--border);color:var(--text2)}
+.follow-btn:hover{border-color:var(--green);color:var(--green)}
+.follow-btn.following{background:var(--green-light);color:var(--green);border-color:var(--green)}
+.follow-btn.following:hover{background:#fef2f2;color:#dc2626;border-color:#fca5a5}
+
+/* ── Empty state ─────────────────────────────────────────── */
+.cl-empty{grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--text3)}
+.cl-empty i{font-size:44px;display:block;margin-bottom:12px;opacity:.4}
+.cl-empty-title{font-size:16px;font-weight:600;color:var(--text2);margin-bottom:6px}
+.cl-empty-sub{font-size:13px}
+
+/* ── Responsive ───────────────────────────────────────────── */
+/* Tablet */
+@media(max-width:768px){
+  .cl-toolbar{gap:10px}
+  .cl-toolbar-right{width:100%;justify-content:space-between}
+  .cl-filter{width:100%}
+  .cl-list-row{grid-template-columns:44px 1fr auto;padding:12px 14px}
+  .cl-list-logo, .cl-list-logo-ph{width:40px;height:40px}
+  .cl-list-logo-wrap{width:44px}
+}
+
+/* Mobile — 1 card per row */
+@media(max-width:768px){
+  .cl-grid{grid-template-columns:1fr;gap:14px}
+  .cl-card-cover-link,.cl-card-cover-default{height:100px}
+  .cl-card-body{padding:10px 14px 14px}
+}
+@media(max-width:540px){
+  .cl-card-cover-link,.cl-card-cover-default{height:80px}
+  .cl-card-body{padding:8px 12px 12px}
+  .cl-card-desc{display:none}
+
+  .cl-list-row{grid-template-columns:40px 1fr;grid-template-rows:auto auto}
+  .cl-list-logo-wrap{grid-row:1/3;width:40px}
+  .cl-list-logo,.cl-list-logo-ph{width:36px;height:36px}
+  .cl-list-actions{grid-column:2;grid-row:2;display:flex;gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
+  .cl-list-actions .btn{flex:1;justify-content:center;font-size:12px}
+  .cl-select{width:100%;min-width:0}
+}
+</style>
+
+<script>
+document.querySelectorAll('.follow-btn').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const id = btn.dataset.companyId;
+    const resp = await fetch(`/companies/${id}/follow`, {
+      method: 'POST', credentials: 'include',
+      headers: {'X-Requested-With': 'XMLHttpRequest'}
+    });
+    if (resp.status === 401) { location.href = '/auth/login?next=' + location.pathname; return; }
+    const data = await resp.json();
+    const following = data.following;
+    btn.querySelector('i').className = following ? 'bi bi-heart-fill' : 'bi bi-heart';
+    btn.querySelector('span').textContent = following ? 'Following' : 'Follow';
+    btn.classList.toggle('following', following);
+    btn.dataset.following = following ? '1' : '0';
+    // Update follower count in nearby stats
+    const row = btn.closest('.cl-card, .cl-list-row');
+    if (row) {
+      const el = [...row.querySelectorAll('.cl-stat, .cl-list-meta span')]
+        .find(s => s.querySelector('.bi-heart'));
+      if (el) {
+        const ico = el.querySelector('i').outerHTML;
+        el.innerHTML = ico + ' ' + data.followers;
+      }
+    }
+  });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,294 @@
+﻿{% extends 'base.html' %}
+{% block title %}Supervisor Dashboard — MOF Jobs{% endblock %}
+{% block page_title %}My Dashboard{% endblock %}
+{% block page_breadcrumb %}Supervisor Overview{% endblock %}
+
+{% block content %}
+<style>
+@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.6;transform:scale(1.3)}}
+
+/* ── Sticky header ── */
+.dash-sticky-header{position:sticky;top:var(--topbar-h);z-index:99;background:var(--card);border-bottom:1px solid var(--border);margin:-24px -24px 24px -24px;padding:14px 28px;display:flex;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
+.dash-actions{display:flex;gap:8px;flex-shrink:0;flex-wrap:nowrap}
+
+/* ── Company card grid ── */
+.co-card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:24px}
+/* Card — position:relative for the float logo; NO overflow:hidden at card level */
+.co-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow);display:flex;flex-direction:column;position:relative}
+/* Cover — clips image internally */
+.co-card-cover{height:80px;border-radius:var(--radius-lg) var(--radius-lg) 0 0;overflow:hidden;flex-shrink:0}
+.co-card-cover-img{width:100%;height:100%;object-fit:cover;display:block}
+.co-card-cover-default{width:100%;height:100%;background:linear-gradient(135deg,#0d7a4e,#145f3b)}
+/* Logo floats at cover/body junction: 80px cover − 24px (half of 48px logo) = 56px */
+.co-card-logo-float{position:absolute;top:56px;left:14px;z-index:2}
+.co-card-logo{width:48px;height:48px;border-radius:10px;object-fit:contain;background:#fff;border:3px solid var(--card);box-shadow:0 2px 10px rgba(0,0,0,.15);display:block}
+.co-card-logo-placeholder{width:48px;height:48px;border-radius:10px;background:var(--green);display:flex;align-items:center;justify-content:center;border:3px solid var(--card);box-shadow:0 2px 10px rgba(0,0,0,.15);color:#fff;font-size:18px}
+/* Body — top padding reserves space for the floating logo (24px protrusion + 6px gap) */
+.co-card-body{padding:30px 14px 14px;flex:1;display:flex;flex-direction:column}
+.co-card-name{font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3;margin-bottom:2px}
+.co-card-industry{font-size:11px;color:var(--text3);margin-bottom:10px}
+.co-card-stats{display:flex;gap:6px;margin-bottom:12px}
+.co-card-stat{flex:1;text-align:center;background:#f8fafb;border-radius:8px;padding:7px 4px}
+.co-card-stat-val{font-size:15px;font-weight:800;line-height:1}
+.co-card-stat-lbl{font-size:10px;color:var(--text3);margin-top:2px;white-space:nowrap}
+
+/* ── Pipeline board ── */
+.pipeline-board{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+
+/* ── Stat label overflow fix ── */
+.stat-lbl{white-space:normal!important;line-height:1.2!important}
+
+/* ─────────── RESPONSIVE ─────────── */
+@media(max-width:1100px){
+  .pipeline-board{grid-template-columns:repeat(2,1fr)}
+  .co-card-grid{grid-template-columns:repeat(2,1fr)}
+}
+
+@media(max-width:768px){
+  /* Sticky header stacks */
+  .dash-sticky-header{flex-direction:column;align-items:flex-start;margin:-12px -12px 16px -12px;padding:12px 14px;gap:10px}
+  .dash-actions{width:100%;display:grid;grid-template-columns:repeat(3,1fr)}
+  .dash-actions .btn{justify-content:center;text-align:center;font-size:11px;padding:6px 4px}
+
+  /* Company grid: 1 col by default, 2 col at mid-small */
+  .co-card-grid{grid-template-columns:1fr;gap:10px}
+
+  /* Pipeline: two columns at mid-small, then single stack */
+  .pipeline-board{grid-template-columns:repeat(2,1fr);gap:10px}
+
+  /* Hide # column in recent activity table */
+  .tbl td:first-child,.tbl th:first-child{display:none}
+}
+
+@media(max-width:480px){
+  .co-card-grid{grid-template-columns:1fr}
+  .pipeline-board{grid-template-columns:1fr}
+}
+
+@media(min-width:480px) and (max-width:768px){
+  .co-card-grid{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+
+<!-- Sticky Page Header -->
+<div class="dash-sticky-header">
+  <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+    <div class="avatar" style="width:38px;height:38px;font-size:14px;flex-shrink:0">{{ current_user.initials }}</div>
+    <div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span style="font-size:15px;font-weight:700;color:var(--text)">Good {% if now.hour < 12 %}morning{% elif now.hour < 17 %}afternoon{% else %}evening{% endif %}, {{ current_user.full_name.split()[0] }} 👋</span>
+        <div style="display:flex;align-items:center;gap:5px;background:#dcfce7;border-radius:20px;padding:2px 9px;font-size:11px;font-weight:600;color:#16a34a">
+          <span style="width:6px;height:6px;border-radius:50%;background:#16a34a;display:inline-block;animation:pulse-dot 2s infinite"></span>
+          Session Active
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--text3);display:flex;align-items:center;gap:10px;margin-top:2px;flex-wrap:wrap">
+        <span><i class="bi bi-calendar3" style="margin-right:3px"></i><span id="sup-date">{{ now.strftime('%A, %B %d, %Y') }}</span></span>
+        <span><i class="bi bi-clock" style="margin-right:3px"></i><span id="sup-time">{{ now.strftime('%H:%M') }}</span></span>
+        <span style="color:var(--border2)">|</span>
+        <span><strong style="color:var(--green)">{{ my_apps|length }}</strong> assigned{% if my_companies %} · <strong style="color:var(--green)">{{ my_companies|length }}</strong> compan{% if my_companies|length != 1 %}ies{% else %}y{% endif %}{% endif %}</span>
+      </div>
+    </div>
+  </div>
+  <div class="dash-actions">
+    <a href="{{ url_for('supervisor.applications') }}" class="btn btn-primary btn-sm"><i class="bi bi-list-task"></i> All Assigned</a>
+    {% if my_companies %}<a href="{{ url_for('supervisor.companies') }}" class="btn btn-outline btn-sm"><i class="bi bi-buildings"></i> My Companies</a>{% endif %}
+    <a href="{{ url_for('messages.inbox') }}" class="btn btn-outline btn-sm">
+      <i class="bi bi-chat-dots-fill"></i> Messages{% if unread_count %} <span style="background:var(--green);color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:3px">{{ unread_count }}</span>{% endif %}
+    </a>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="stats-grid" style="margin-bottom:14px">
+  <div class="stat-card">
+    <div class="stat-card-accent" style="background:linear-gradient(90deg,#198754,#22c55e)"></div>
+    <div class="stat-card-inner">
+      <div><div class="stat-num">{{ my_apps|length }}</div><div class="stat-lbl">Total Assigned</div></div>
+      <div class="stat-icon" style="background:#dcfce7;color:#16a34a"><i class="bi bi-person-check-fill"></i></div>
+    </div>
+    <div class="stat-trend neutral"><i class="bi bi-briefcase"></i> Active pipeline</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-accent" style="background:linear-gradient(90deg,#f59e0b,#fbbf24)"></div>
+    <div class="stat-card-inner">
+      <div><div class="stat-num">{{ status_counts.get('New', 0) + status_counts.get('Under Review', 0) }}</div><div class="stat-lbl">Needs Attention</div></div>
+      <div class="stat-icon" style="background:#fef3c7;color:#d97706"><i class="bi bi-exclamation-circle-fill"></i></div>
+    </div>
+    <div class="stat-trend down"><i class="bi bi-clock"></i> Awaiting review</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-accent" style="background:linear-gradient(90deg,#6d28d9,#8b5cf6)"></div>
+    <div class="stat-card-inner">
+      <div><div class="stat-num">{{ status_counts.get('Interview', 0) }}</div><div class="stat-lbl">In Interview</div></div>
+      <div class="stat-icon" style="background:#ede9fe;color:#7c3aed"><i class="bi bi-camera-video-fill"></i></div>
+    </div>
+    <div class="stat-trend neutral"><i class="bi bi-calendar3"></i> Scheduled</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-accent" style="background:linear-gradient(90deg,#64748b,#94a3b8)"></div>
+    <div class="stat-card-inner">
+      <div><div class="stat-num">{{ status_counts.get('Future Consideration', 0) }}</div><div class="stat-lbl">Future Pool</div></div>
+      <div class="stat-icon" style="background:#f1f5f9;color:#475569"><i class="bi bi-bookmark-fill"></i></div>
+    </div>
+    <div class="stat-trend neutral"><i class="bi bi-archive"></i> Saved for later</div>
+  </div>
+</div>
+
+{% if my_companies %}
+<!-- Managed Companies -->
+<div class="section-header">
+  <h2><i class="bi bi-buildings-fill" style="color:var(--green);margin-right:8px"></i>My Companies</h2>
+  <a href="{{ url_for('supervisor.companies') }}" class="btn btn-outline btn-sm">Manage All</a>
+</div>
+<div class="co-card-grid">
+  {% for company in my_companies %}
+  <div class="co-card">
+    <!-- Cover -->
+    <div class="co-card-cover">
+      {% if company.cover_filename %}
+      <img src="{{ url_for('static', filename='uploads/company/' + company.cover_filename) }}"
+           alt="" class="co-card-cover-img">
+      {% else %}
+      <div class="co-card-cover-default"></div>
+      {% endif %}
+    </div>
+    <!-- Logo floating at cover/body junction -->
+    <div class="co-card-logo-float">
+      {% if company.logo_filename %}
+      <img src="{{ url_for('static', filename='uploads/company/' + company.logo_filename) }}"
+           class="co-card-logo" alt="{{ company.name }}">
+      {% else %}
+      <div class="co-card-logo-placeholder">
+        <i class="bi bi-building"></i>
+      </div>
+      {% endif %}
+    </div>
+    <!-- Card body — name/industry sit below the logo in clean white space -->
+    <div class="co-card-body">
+      <div class="co-card-name">{{ company.name }}{% if company.is_verified %} <i class="bi bi-patch-check-fill" style="color:#2563eb;font-size:11px"></i>{% endif %}</div>
+      <div class="co-card-industry">{{ company.industry or 'General' }}</div>
+      <div class="co-card-stats">
+        <div class="co-card-stat">
+          <div class="co-card-stat-val" style="color:var(--green)">{{ company.open_jobs_count }}</div>
+          <div class="co-card-stat-lbl">Open Jobs</div>
+        </div>
+        <div class="co-card-stat">
+          <div class="co-card-stat-val" style="color:#2563eb">{{ company.follower_count }}</div>
+          <div class="co-card-stat-lbl">Followers</div>
+        </div>
+      </div>
+      <a href="{{ url_for('supervisor.company_dashboard', company_id=company.id) }}"
+         class="btn btn-primary btn-sm" style="width:100%;justify-content:center;margin-top:auto">
+        <i class="bi bi-speedometer2"></i> Manage
+      </a>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- Pipeline board -->
+<div class="section-header">
+  <h2>Pipeline</h2>
+  <a href="{{ url_for('supervisor.applications') }}" class="btn btn-outline btn-sm"><i class="bi bi-grid-3x3-gap"></i> Full List</a>
+</div>
+<div class="pipeline-board">
+  {% set stage_conf = [
+    ('New',                '#dcfce7','#16a34a'),
+    ('Under Review',       '#dbeafe','#2563eb'),
+    ('Interview',          '#ede9fe','#7c3aed'),
+    ('Future Consideration','#f1f5f9','#64748b'),
+  ] %}
+  {% for status, bg, color in stage_conf %}
+  <div class="card" style="padding:16px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <span style="font-size:12px;font-weight:700;color:{{ color }}">{{ status.upper() }}</span>
+      <span style="background:{{ bg }};color:{{ color }};border-radius:20px;padding:2px 9px;font-size:12px;font-weight:700">{{ pipeline[status]|length }}</span>
+    </div>
+    {% for app in pipeline[status][:4] %}
+    <a href="{{ url_for('supervisor.application_detail', app_id=app.id) }}"
+       style="display:block;background:#f8fafb;border:1px solid var(--border);border-radius:8px;padding:9px 11px;margin-bottom:6px;text-decoration:none;transition:box-shadow 0.15s"
+       onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'" onmouseout="this.style.boxShadow='none'">
+      <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+        {{ app.applicant.full_name }}
+      </div>
+      <div style="font-size:11px;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ app.position.title }}</div>
+      <div style="font-size:10px;color:var(--text3);margin-top:3px"><i class="bi bi-clock" style="font-size:9px"></i> {{ app.applied_at.strftime('%b %d') }}</div>
+    </a>
+    {% else %}
+    <div style="text-align:center;padding:16px 0;font-size:12px;color:var(--text3)">
+      <i class="bi bi-inbox" style="font-size:18px;display:block;margin-bottom:4px;opacity:0.3"></i>Empty
+    </div>
+    {% endfor %}
+    {% if pipeline[status]|length > 4 %}
+    <a href="{{ url_for('supervisor.applications') }}?status={{ status }}" style="font-size:12px;color:var(--green);display:block;text-align:center;margin-top:4px">
+      +{{ pipeline[status]|length - 4 }} more →
+    </a>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Recent table -->
+<div class="table-card">
+  <div class="table-head">
+    <span class="table-head-title"><i class="bi bi-clock-history" style="margin-right:6px"></i>Recent Activity</span>
+    <a href="{{ url_for('supervisor.applications') }}" class="btn btn-outline btn-sm">View All</a>
+  </div>
+  <div class="table-responsive">
+    <table class="tbl">
+      <thead><tr><th>#</th><th>Applicant</th><th>Position</th><th>Applied</th><th>Status</th><th>Action</th></tr></thead>
+      <tbody>
+        {% for app in my_apps[:8] %}
+        <tr>
+          <td data-label="#">{{ app.id }}</td>
+          <td data-label="Applicant" class="td-name">
+            <div style="display:flex;align-items:center;gap:8px">
+              <div class="avatar" style="width:28px;height:28px;font-size:10px;flex-shrink:0">{{ app.applicant.initials }}</div>
+              {{ app.applicant.full_name }}
+            </div>
+          </td>
+          <td data-label="Position" style="color:var(--text2)">
+            {{ app.position.title }}
+            {% if app.position.company %}
+            <div style="font-size:11px;color:var(--text3)"><i class="bi bi-building" style="margin-right:2px"></i>{{ app.position.company.name }}</div>
+            {% endif %}
+          </td>
+          <td data-label="Applied" class="text-muted">{{ app.applied_at.strftime('%b %d, %Y') }}</td>
+          <td data-label="Status"><span class="badge badge-{{ app.status.lower().replace(' ','') }}">{{ app.status }}</span></td>
+          <td data-label="Action">
+            <div style="display:flex;gap:6px">
+              <a href="{{ url_for('supervisor.application_detail', app_id=app.id) }}" class="btn btn-outline btn-sm"><i class="bi bi-eye"></i> View</a>
+              <a href="{{ url_for('messages.compose') }}?to={{ app.applicant_id }}" class="btn btn-outline btn-sm"><i class="bi bi-chat"></i></a>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6">
+          <div class="empty-state"><i class="bi bi-inbox"></i><p>No applications assigned yet.</p></div>
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+(function(){
+  function pad(n){return String(n).padStart(2,'0');}
+  function updateClock(){
+    var d=new Date();
+    var days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    var months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+    var dateEl=document.getElementById('sup-date');
+    var timeEl=document.getElementById('sup-time');
+    if(dateEl) dateEl.textContent=days[d.getDay()]+', '+months[d.getMonth()]+' '+pad(d.getDate())+', '+d.getFullYear();
+    if(timeEl) timeEl.textContent=pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds());
+  }
+  updateClock();
+  setInterval(updateClock,1000);
+})();
+</script>
+{% endblock %}
+

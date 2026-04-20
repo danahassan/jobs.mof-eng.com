@@ -1,0 +1,70 @@
+﻿<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f0f2f5;font-family:'Segoe UI',Arial,sans-serif">
+  <table width="100%" cellpadding="0" cellspacing="0" style="padding:28px 0">
+    <tr><td align="center">
+      <table width="580" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08)">
+        <!-- Header -->
+        <tr>
+          <td style="background:linear-gradient(135deg,#0f1923,#1a2c3d);padding:28px 32px;text-align:center">
+            <div style="color:#198754;font-size:22px;font-weight:800;letter-spacing:-0.5px">MOF Jobs</div>
+            <div style="color:rgba(255,255,255,0.5);font-size:12px;margin-top:4px">Managing of Future Engineering</div>
+          </td>
+        </tr>
+        <!-- Body -->
+        <tr>
+          <td style="padding:32px">
+            <p style="margin:0 0 8px;font-size:15px;font-weight:600;color:#0f1923">Hello {{ supervisor.full_name }},</p>
+            <p style="margin:0 0 20px;font-size:14px;color:#4a5a6a;line-height:1.6">
+              A new application has been assigned to you for review. Please log in to the portal to action it.
+            </p>
+
+            <!-- Application card -->
+            <div style="background:#f8fafb;border-radius:10px;border:1px solid #e4e8ed;padding:20px;margin-bottom:24px">
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="padding:6px 0;border-bottom:1px solid #e4e8ed">
+                    <span style="font-size:11px;color:#8a9aaa;text-transform:uppercase;letter-spacing:0.5px">Position</span><br>
+                    <span style="font-size:15px;font-weight:700;color:#0f1923">{{ app.position.title }}</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 0;border-bottom:1px solid #e4e8ed">
+                    <span style="font-size:11px;color:#8a9aaa;text-transform:uppercase;letter-spacing:0.5px">Applicant</span><br>
+                    <span style="font-size:14px;font-weight:600;color:#0f1923">{{ app.applicant.full_name }}</span>
+                    <span style="font-size:12px;color:#8a9aaa"> · {{ app.applicant.email }}</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 0">
+                    <span style="font-size:11px;color:#8a9aaa;text-transform:uppercase;letter-spacing:0.5px">Applied on</span><br>
+                    <span style="font-size:13px;color:#4a5a6a">{{ app.applied_at.strftime('%B %d, %Y') }}</span>
+                  </td>
+                </tr>
+              </table>
+            </div>
+
+            <div style="text-align:center">
+              <a href="{{ site_url }}{{ url_for('supervisor.application_detail', app_id=app.id) }}"
+                 style="display:inline-block;background:#198754;color:#fff;font-weight:700;font-size:14px;padding:13px 28px;border-radius:8px;text-decoration:none">
+                Review Application →
+              </a>
+            </div>
+          </td>
+        </tr>
+        <!-- Footer -->
+        <tr>
+          <td style="background:#f8fafb;border-top:1px solid #e4e8ed;padding:18px 32px;text-align:center">
+            <img src="https://mof-eng.com/wp-content/uploads/2025/05/cropped-MOF-LOGO-transparent--100x46.png"
+                 alt="MOF Engineering" width="72" style="display:block;margin:0 auto 10px;filter:brightness(0);opacity:.55"
+                 onerror="this.style.display='none'">
+            <p style="margin:0;font-size:12px;color:#8a9aaa">MOF Engineering Company · Slemani, Iraq</p>
+            <p style="margin:4px 0 0;font-size:11px;color:#b0bac4">This is an automated notification. Do not reply to this email.</p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>

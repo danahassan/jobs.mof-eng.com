@@ -1,0 +1,185 @@
+﻿{% extends 'base.html' %}
+{% block title %}My Dashboard — MOF Jobs{% endblock %}
+{% block page_title %}My Dashboard{% endblock %}
+{% block page_breadcrumb %}Welcome back{% endblock %}
+
+{% block content %}
+<style>
+@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.6;transform:scale(1.3)}}
+.dash-sticky-header{position:sticky;top:var(--topbar-h);z-index:99;background:var(--card);border-bottom:1px solid var(--border);margin:-24px -24px 24px -24px;padding:14px 28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
+.app-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 20px;box-shadow:var(--shadow);display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.app-card-info{flex:1;min-width:180px}
+.app-card-actions{display:flex;align-items:center;gap:12px;flex-shrink:0}
+@media(max-width:768px){
+  .dash-sticky-header{flex-direction:column;align-items:flex-start;margin:-12px -12px 16px -12px;padding:12px 14px;gap:10px}
+  .app-card{padding:12px 14px;gap:10px}
+  .app-card-actions{flex-wrap:wrap;gap:8px}
+  .app-card-updated{display:none}
+}
+</style>
+
+<!-- Sticky Page Header -->
+<div class="dash-sticky-header">
+  <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+    <div class="avatar" style="width:38px;height:38px;font-size:14px;flex-shrink:0">{{ current_user.initials }}</div>
+    <div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span style="font-size:15px;font-weight:700;color:var(--text)">Good {% if now.hour < 12 %}morning{% elif now.hour < 17 %}afternoon{% else %}evening{% endif %}, {{ current_user.full_name }} 👋</span>
+        <div style="display:flex;align-items:center;gap:5px;background:#dcfce7;border-radius:20px;padding:2px 9px;font-size:11px;font-weight:600;color:#16a34a">
+          <span style="width:6px;height:6px;border-radius:50%;background:#16a34a;display:inline-block;animation:pulse-dot 2s infinite"></span>
+          Session Active
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--text3);display:flex;align-items:center;gap:10px;margin-top:2px;flex-wrap:wrap">
+        <span><i class="bi bi-calendar3" style="margin-right:3px"></i><span id="usr-date">{{ now.strftime('%A, %B %d, %Y') }}</span></span>
+        <span><i class="bi bi-clock" style="margin-right:3px"></i><span id="usr-time">{{ now.strftime('%H:%M') }}</span></span>
+        {% if current_user.profile_strength is defined %}
+        <span style="color:var(--border2)">|</span>
+        <span>Profile <strong style="color:{% if current_user.profile_strength >= 80 %}var(--green){% elif current_user.profile_strength >= 50 %}#d97706{% else %}#dc2626{% endif %}">{{ current_user.profile_strength }}%</strong> complete</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="stats-grid mb-3">
+  <div class="stat-card">
+    <div class="stat-card-accent" style="background:linear-gradient(90deg,#198754,#22c55e)"></div>
+    <div class="stat-card-inner">
+      <div><div class="stat-num">{{ my_apps|length }}</div><div class="stat-lbl">Total Applied</div></div>
+      <div class="stat-icon" style="background:#dcfce7;color:#16a34a"><i class="bi bi-send-fill"></i></div>
+    </div>
+    <div class="stat-trend neutral"><i class="bi bi-collection"></i> Submitted applications</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-accent" style="background:linear-gradient(90deg,#2563eb,#3b82f6)"></div>
+    <div class="stat-card-inner">
+      <div><div class="stat-num">{{ my_apps|selectattr('status','in',['New','Under Review'])|list|length }}</div><div class="stat-lbl">Under Review</div></div>
+      <div class="stat-icon" style="background:#dbeafe;color:#2563eb"><i class="bi bi-hourglass-split"></i></div>
+    </div>
+    <div class="stat-trend neutral"><i class="bi bi-clock"></i> Being considered</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-accent" style="background:linear-gradient(90deg,#6d28d9,#8b5cf6)"></div>
+    <div class="stat-card-inner">
+      <div><div class="stat-num">{{ my_apps|selectattr('status','equalto','Interview')|list|length }}</div><div class="stat-lbl">Interviews</div></div>
+      <div class="stat-icon" style="background:#ede9fe;color:#7c3aed"><i class="bi bi-camera-video-fill"></i></div>
+    </div>
+    <div class="stat-trend up"><i class="bi bi-star"></i> Great progress!</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-accent" style="background:linear-gradient(90deg,#f59e0b,#fbbf24)"></div>
+    <div class="stat-card-inner">
+      <div><div class="stat-num">{{ saved_count }}</div><div class="stat-lbl">Saved Jobs</div></div>
+      <div class="stat-icon" style="background:#fef3c7;color:#d97706"><i class="bi bi-bookmark-fill"></i></div>
+    </div>
+    <div class="stat-trend neutral"><i class="bi bi-bookmark-heart"></i> Bookmarked</div>
+  </div>
+</div>
+
+{% if my_apps %}
+<!-- Application list -->
+<div class="section-header">
+  <h2>My Applications</h2>
+  <a href="{{ url_for('user.my_applications') }}" class="btn btn-outline btn-sm">View All</a>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px">
+  {% for app in my_apps[:5] %}
+  <div class="app-card">
+    {% if app.position.company and app.position.company.logo_filename %}
+    <img src="{{ url_for('static', filename='uploads/company/' + app.position.company.logo_filename) }}" style="width:38px;height:38px;border-radius:8px;object-fit:contain;background:#f8fafb;border:1px solid var(--border);flex-shrink:0" alt="">
+    {% else %}
+    <div style="width:38px;height:38px;border-radius:8px;background:var(--green-light);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <i class="bi bi-building" style="color:var(--green);font-size:16px"></i>
+    </div>
+    {% endif %}
+    <div class="app-card-info">
+      <div style="font-size:14px;font-weight:600;margin-bottom:4px">{{ app.position.title }}</div>
+      <div style="font-size:12px;color:var(--text3)">
+        <i class="bi bi-building" style="margin-right:4px"></i>{{ app.position.company.name if app.position.company else (app.position.department or 'MOF Engineering') }}
+        {% if app.position.location %}<span style="margin:0 6px">·</span><i class="bi bi-geo-alt" style="margin-right:3px"></i>{{ app.position.location }}{% endif %}
+        <span style="margin:0 8px">·</span>
+        <i class="bi bi-calendar3" style="margin-right:4px"></i>Applied {{ app.applied_at.strftime('%b %d, %Y') }}
+      </div>
+    </div>
+    <div class="app-card-actions">
+      <span class="badge badge-{{ app.status.lower().replace(' ','') }}" style="font-size:12px;padding:5px 12px">{{ app.status }}</span>
+      <span class="app-card-updated" style="font-size:11px;color:var(--text3)">Updated {{ app.updated_at.strftime('%b %d') }}</span>
+      {% if app.assigned_to %}
+      <a href="{{ url_for('messages.compose') }}?to={{ app.assigned_to_id }}" class="btn btn-outline btn-xs" title="Message your reviewer"><i class="bi bi-chat"></i></a>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+  {% if my_apps|length > 5 %}
+  <a href="{{ url_for('user.my_applications') }}" class="btn btn-outline btn-sm" style="text-align:center;justify-content:center">
+    View all {{ my_apps|length }} applications →
+  </a>
+  {% endif %}
+</div>
+
+{% else %}
+<div class="card mb-3" style="text-align:center;padding:40px 24px">
+  <i class="bi bi-send" style="font-size:40px;color:var(--text3);display:block;margin-bottom:14px;opacity:0.3"></i>
+  <div style="font-weight:600;font-size:16px;margin-bottom:6px">No applications yet</div>
+  <div class="text-sm text-muted mb-3">Browse open positions and submit your first application.</div>
+  <a href="{{ url_for('user.browse') }}" class="btn btn-primary"><i class="bi bi-search"></i> Browse Positions</a>
+</div>
+{% endif %}
+
+{% if followed_companies %}
+<!-- Followed companies -->
+<div class="section-header">
+  <h2><i class="bi bi-buildings-fill" style="color:var(--green);margin-right:8px"></i>Companies I Follow</h2>
+</div>
+<div style="display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap">
+  {% for follow in followed_companies[:6] %}
+  {% set co = follow.company %}
+  <a href="{{ url_for('user.browse') }}?company={{ co.id }}" style="display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px 14px;text-decoration:none;transition:box-shadow 0.15s" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow='none'">
+    {% if co.logo_filename %}
+    <img src="{{ url_for('static', filename='uploads/company/' + co.logo_filename) }}" style="width:24px;height:24px;border-radius:5px;object-fit:contain" alt="{{ co.name }}">
+    {% else %}
+    <div style="width:24px;height:24px;border-radius:5px;background:var(--green-light);display:flex;align-items:center;justify-content:center">
+      <i class="bi bi-building" style="color:var(--green);font-size:11px"></i>
+    </div>
+    {% endif %}
+    <div>
+      <div style="font-size:12px;font-weight:600;color:var(--text)">{{ co.name }}</div>
+      <div style="font-size:10px;color:var(--text3)">{{ co.open_jobs_count }} open</div>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- Quick actions -->
+<div class="quick-actions">
+  <a href="{{ url_for('user.browse') }}" class="quick-action"><i class="bi bi-search"></i><span>Browse Jobs</span></a>
+  <a href="{{ url_for('user.my_applications') }}" class="quick-action"><i class="bi bi-collection-fill"></i><span>My Applications</span></a>
+  <a href="{{ url_for('messages.inbox') }}" class="quick-action">
+    <i class="bi bi-chat-dots-fill"></i>
+    <span>Messages{% if unread_count %} ({{ unread_count }}){% endif %}</span>
+  </a>
+  <a href="{{ url_for('auth.profile') }}" class="quick-action"><i class="bi bi-person-circle"></i><span>My Profile</span></a>
+</div>
+
+<script>
+(function(){
+  function pad(n){return String(n).padStart(2,'0');}
+  function updateClock(){
+    var d=new Date();
+    var days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    var months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+    var dateEl=document.getElementById('usr-date');
+    var timeEl=document.getElementById('usr-time');
+    if(dateEl) dateEl.textContent=days[d.getDay()]+', '+months[d.getMonth()]+' '+pad(d.getDate())+', '+d.getFullYear();
+    if(timeEl) timeEl.textContent=pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds());
+  }
+  updateClock();
+  setInterval(updateClock,1000);
+})();
+</script>
+{% endblock %}
+
+

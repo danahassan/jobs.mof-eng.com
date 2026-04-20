@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Flask / SQLite
+instance/
+*.db
+*.sqlite3
+
+# Environment & secrets — NEVER commit
+.env
+.env.*
+
+# Migration & scratch scripts
+migrate_from_mysql.py
+migrate_from_sql_dump.py
+migrate_files_and_profiles.py
+generate_icons.py
+full_dump.sql
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Uploads (large binary files, managed separately)
+static/uploads/cvs/
+static/uploads/avatars/
+static/uploads/company/
+static/uploads/company_photos/
+static/uploads/portfolio/
+
+# Logs
+*.log
+error_log
+tmp/

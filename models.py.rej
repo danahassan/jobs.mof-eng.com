@@ -1,0 +1,76 @@
+--- models.py
++++ models.py
+@@ -359,6 +366,42 @@
+     user = db.relationship('User', back_populates='educations')
+ 
+ 
++class UserLanguage(db.Model):
++    __tablename__ = 'user_languages'
++    id          = db.Column(db.Integer, primary_key=True)
++    user_id     = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
++    language    = db.Column(db.String(100), nullable=False)
++    proficiency = db.Column(db.String(30), default='Intermediate')
++    created_at  = db.Column(db.DateTime, default=datetime.utcnow)
++    user = db.relationship('User', back_populates='languages')
++
++
++class UserCertification(db.Model):
++    __tablename__ = 'user_certifications'
++    id             = db.Column(db.Integer, primary_key=True)
++    user_id        = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
++    name           = db.Column(db.String(200), nullable=False)
++    issuing_org    = db.Column(db.String(200))
++    credential_id  = db.Column(db.String(100))
++    credential_url = db.Column(db.String(300))
++    issue_date     = db.Column(db.Date)
++    expiry_date    = db.Column(db.Date)
++    created_at     = db.Column(db.DateTime, default=datetime.utcnow)
++    user = db.relationship('User', back_populates='certifications')
++
++
++class UserPortfolioItem(db.Model):
++    __tablename__ = 'user_portfolio_items'
++    id          = db.Column(db.Integer, primary_key=True)
++    user_id     = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
++    title       = db.Column(db.String(200), nullable=False)
++    description = db.Column(db.Text)
++    url         = db.Column(db.String(300))
++    filename    = db.Column(db.String(200))
++    created_at  = db.Column(db.DateTime, default=datetime.utcnow)
++    user = db.relationship('User', back_populates='portfolio_items')
++
++
+ class Notification(db.Model):
+     __tablename__ = 'notifications'
+--- a/routes/auth.py
++++ b/routes/auth.py
+@@ -11,7 +11,9 @@
+ from flask import (Blueprint, render_template, redirect, url_for,
+                    flash, request, session, abort, current_app)
+ from flask_login import login_user, logout_user, login_required, current_user
+-from models import db, User, UserSkill, UserExperience, UserEducation, Position, ROLE_USER, ROLE_EMPLOYER
++from models import (db, User, UserSkill, UserExperience, UserEducation,
++                    UserLanguage, UserCertification, UserPortfolioItem,
++                    Position, ROLE_USER, ROLE_EMPLOYER, LANG_LEVELS)
+ from sqlalchemy import or_
+ 
+ auth_bp = Blueprint('auth', __name__)
+@@ -172,7 +174,17 @@
+         db.session.commit()
+         flash('Profile updated.', 'success')
+         return redirect(url_for('auth.profile', mode='edit', tab='info'))
+-    return render_template('auth/profile.html', tab=tab, mode=mode)
++    u = current_user
++    skills_list = u.skills.order_by(UserSkill.created_at).all()
++    exps        = u.experiences.order_by(UserExperience.start_date.desc()).all()
++    edus        = u.educations.order_by(UserEducation.start_year.desc()).all()
++    langs       = u.languages.order_by(UserLanguage.created_at).all()
++    certs       = u.certifications.order_by(UserCertification.created_at).all()
++    portfolio   = u.portfolio_items.order_by(UserPortfolioItem.created_at).all()
++    return render_template('auth/profile.html', tab=tab, mode=mode,
++                           skills_list=skills_list, exps=exps, edus=edus,
++                           langs=langs, certs=certs, portfolio=portfolio,
++                           lang_levels=LANG_LEVELS)
+ 
+ 
+ # ─── SKILLS ───────────────────────────────────────────────────────────────────

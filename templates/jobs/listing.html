@@ -1,0 +1,282 @@
+﻿{% extends 'base.html' %}
+{% block title %}Jobs — MOF Jobs{% endblock %}
+{% block page_title %}Browse Jobs{% endblock %}
+{% block page_breadcrumb %}Opportunities{% endblock %}
+
+{% block extra_css %}
+<style>
+.job-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;box-shadow:var(--shadow);transition:transform .15s,box-shadow .15s}
+.job-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+.job-logo{width:48px;height:48px;border-radius:10px;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden}
+.job-logo img{width:100%;height:100%;object-fit:contain;padding:4px}
+.job-tag{background:var(--bg);border:1px solid var(--border);padding:3px 10px;border-radius:20px;font-size:11px;white-space:nowrap}
+.job-tag-remote{background:#ede9fe;border-color:#ddd6fe;color:#7c3aed}
+.job-tag-salary{background:#f0fdf4;border-color:#bbf7d0;color:#16a34a}
+.save-btn{background:none;border:1px solid var(--border);border-radius:8px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text3);transition:all .15s;flex-shrink:0}
+.save-btn:hover,.save-btn.saved{border-color:#f59e0b;color:#f59e0b}
+.save-btn.saved i{color:#f59e0b}
+@media(max-width:600px){
+  .job-card-inner{flex-direction:column;gap:12px}
+  .job-card-actions{flex-direction:row;align-items:center;justify-content:flex-start}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+{# Build qs for pagination preserving all filters #}
+{% set qs = 'q=' + (q|urlencode) + '&loc=' + (location|urlencode) + '&type=' + (jtype|urlencode) + '&exp=' + (exp|urlencode) + '&remote=' + (remote or '') + '&dept=' + (dept|urlencode) + '&sort=' + sort %}
+{% if salary_min %}{%  set qs = qs + '&salary_min=' + salary_min|string %}{% endif %}
+
+<!-- KPI Strip -->
+<div class="kpi-strip" style="margin-bottom:16px">
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#e8f5ee;color:#198754"><i class="bi bi-briefcase-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ positions.total }}</div><div class="kpi-lbl">Open Positions</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#ede9fe;color:#7c3aed"><i class="bi bi-wifi"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_remote }}</div><div class="kpi-lbl">Remote Available</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#eff6ff;color:#2563eb"><i class="bi bi-building-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ companies|length }}</div><div class="kpi-lbl">Companies Hiring</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#fef3c7;color:#d97706"><i class="bi bi-diagram-3-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ depts|length }}</div><div class="kpi-lbl">Departments</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#fce7f3;color:#db2777"><i class="bi bi-send-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_apps_7d }}</div><div class="kpi-lbl">Applied This Week</div></div>
+  </div>
+</div>
+
+<!-- Filter Bar -->
+<form method="GET" class="filter-bar" id="filterForm">
+  <div class="filter-row">
+
+    <div class="filter-search" style="flex:2;min-width:200px">
+      <label>Search</label>
+      <div style="position:relative">
+        <i class="bi bi-search filter-search-icon"></i>
+        <input type="text" name="q" class="form-control" placeholder="Job title, skills, keywords…" value="{{ q }}">
+      </div>
+    </div>
+
+    <div class="filter-search" style="flex:1;min-width:130px">
+      <label>Location</label>
+      <div style="position:relative">
+        <i class="bi bi-geo-alt filter-search-icon"></i>
+        <input type="text" name="loc" class="form-control" placeholder="City or country…" value="{{ location }}" style="padding-left:32px">
+      </div>
+    </div>
+
+    <div class="filter-group">
+      <label>Type</label>
+      <select name="type" class="form-control">
+        <option value="">Any type</option>
+        {% for t in types %}
+        <option value="{{ t }}" {% if jtype == t %}selected{% endif %}>{{ t }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label>Experience</label>
+      <select name="exp" class="form-control">
+        <option value="">Any level</option>
+        {% for e in exp_levels %}
+        <option value="{{ e }}" {% if exp == e %}selected{% endif %}>{{ e }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    {% if depts %}
+    <div class="filter-group">
+      <label>Department</label>
+      <select name="dept" class="form-control">
+        <option value="">All depts</option>
+        {% for d in depts %}
+        <option value="{{ d }}" {% if dept == d %}selected{% endif %}>{{ d }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% endif %}
+
+    <div class="filter-group" style="min-width:110px">
+      <label>Sort</label>
+      <select name="sort" class="form-control">
+        <option value="newest"     {% if sort=='newest'     %}selected{% endif %}>Newest</option>
+        <option value="oldest"     {% if sort=='oldest'     %}selected{% endif %}>Oldest</option>
+        <option value="salary_high"{% if sort=='salary_high'%}selected{% endif %}>Salary ↓</option>
+        <option value="salary_low" {% if sort=='salary_low' %}selected{% endif %}>Salary ↑</option>
+      </select>
+    </div>
+
+    <div class="filter-actions">
+      <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-search"></i> Search</button>
+      <a href="{{ url_for('jobs.listing') }}" class="btn btn-outline btn-sm"><i class="bi bi-x"></i> Reset</a>
+    </div>
+  </div>
+
+  <!-- Extra filters row (remote + salary) -->
+  <div style="display:flex;align-items:center;gap:16px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);flex-wrap:wrap">
+    <label style="display:flex;align-items:center;gap:7px;font-size:13px;cursor:pointer;color:var(--text2)">
+      <input type="checkbox" name="remote" value="1" {% if remote=='1' %}checked{% endif %} style="accent-color:var(--green);width:15px;height:15px">
+      Remote only
+    </label>
+    <div style="display:flex;align-items:center;gap:8px">
+      <label style="font-size:12px;color:var(--text3);white-space:nowrap">Min Salary</label>
+      <input type="number" name="salary_min" class="form-control" value="{{ salary_min or '' }}" placeholder="e.g. 2000" style="width:120px;font-size:13px">
+    </div>
+    {% if jtype or exp or dept or remote or salary_min %}
+    <span style="font-size:12px;color:var(--text3)">
+      Active filters:
+      {% if jtype %}<span style="background:var(--green-light);color:var(--green);padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">{{ jtype }}</span>{% endif %}
+      {% if exp %}<span style="background:var(--green-light);color:var(--green);padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">{{ exp }}</span>{% endif %}
+      {% if dept %}<span style="background:var(--green-light);color:var(--green);padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">{{ dept }}</span>{% endif %}
+      {% if remote=='1' %}<span style="background:#ede9fe;color:#7c3aed;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">Remote</span>{% endif %}
+    </span>
+    {% endif %}
+  </div>
+</form>
+
+<!-- Recommended jobs -->
+{% if recommended %}
+<div style="margin-bottom:20px">
+  <div style="font-size:13px;font-weight:600;color:var(--green);margin-bottom:10px;display:flex;align-items:center;gap:6px">
+    <i class="bi bi-stars"></i> Recommended for you
+  </div>
+  <div style="display:flex;flex-direction:column;gap:10px">
+    {% for job in recommended %}
+    <div class="job-card">
+      <div class="d-flex job-card-inner" style="gap:14px;align-items:flex-start">
+        <div class="job-logo">
+          {% if job.company and job.company.logo_filename %}
+          <img src="/static/uploads/company/{{ job.company.logo_filename }}" alt="">
+          {% else %}<i class="bi bi-building" style="color:var(--text3)"></i>{% endif %}
+        </div>
+        <div style="flex:1;min-width:0">
+          <a href="{{ url_for('jobs.detail', job_id=job.id) }}" style="font-size:14px;font-weight:600;color:var(--text);text-decoration:none">{{ job.title }}</a>
+          <div style="font-size:12px;color:var(--text3);margin:2px 0 6px">{{ job.company.name if job.company else 'MOF Engineering' }}{% if job.location %} · {{ job.location }}{% endif %}</div>
+          <div style="display:flex;gap:5px;flex-wrap:wrap">
+            <span class="job-tag">{{ job.type }}</span>
+            {% if job.is_remote %}<span class="job-tag job-tag-remote">Remote</span>{% endif %}
+          </div>
+          <div style="margin-top:10px">
+            <a href="{{ url_for('jobs.detail', job_id=job.id) }}" class="btn btn-outline btn-sm" style="font-size:12px;padding:4px 12px"><i class="bi bi-eye"></i> More Details</a>
+          </div>
+        </div>
+        <span style="background:var(--green-light);color:var(--green);padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;flex-shrink:0">Match</span>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  <hr style="margin:20px 0;border-color:var(--border)">
+</div>
+{% endif %}
+
+<!-- Results header -->
+<div class="section-header" style="margin-bottom:14px">
+  <span style="font-size:13px;color:var(--text3)">
+    {{ positions.total }} job{{ 's' if positions.total != 1 }} found
+    {% if q or jtype or exp or location or dept or remote or salary_min %}
+    &nbsp;·&nbsp;<a href="{{ url_for('jobs.listing') }}" style="font-size:12px">Clear all</a>
+    {% endif %}
+  </span>
+</div>
+
+<!-- Job cards -->
+{% if positions.items %}
+<div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px">
+  {% for job in positions.items %}
+  {% set is_saved = job.id in saved_ids %}
+  <div class="job-card">
+    <div class="d-flex job-card-inner" style="gap:14px;align-items:flex-start">
+      <!-- Logo -->
+      <div class="job-logo">
+        {% if job.company and job.company.logo_filename %}
+        <img src="/static/uploads/company/{{ job.company.logo_filename }}" alt="">
+        {% else %}<i class="bi bi-building" style="color:var(--text3)"></i>{% endif %}
+      </div>
+      <!-- Info -->
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+          <a href="{{ url_for('jobs.detail', job_id=job.id) }}" style="font-size:15px;font-weight:600;color:var(--text);text-decoration:none;line-height:1.3">{{ job.title }}</a>
+          <button class="save-btn {% if is_saved %}saved{% endif %}" data-job-id="{{ job.id }}" title="{% if is_saved %}Unsave{% else %}Save{% endif %} job">
+            <i class="bi bi-bookmark{% if is_saved %}-fill{% endif %}"></i>
+          </button>
+        </div>
+        <div style="font-size:12px;color:var(--text3);margin:3px 0 8px">
+          {{ job.company.name if job.company else 'MOF Engineering' }}
+          {% if job.location %}&nbsp;·&nbsp;<i class="bi bi-geo-alt"></i> {{ job.location }}{% endif %}
+          &nbsp;·&nbsp;<span style="color:var(--text3)">{{ job.created_at.strftime('%b %d') }}</span>
+        </div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap">
+          <span class="job-tag">{{ job.type }}</span>
+          {% if job.is_remote %}<span class="job-tag job-tag-remote">Remote</span>{% endif %}
+          {% if job.experience_level %}<span class="job-tag">{{ job.experience_level }}</span>{% endif %}
+          {% if job.salary_min or job.salary_range %}
+          <span class="job-tag job-tag-salary">
+            {% if job.salary_range %}{{ job.salary_range }}
+            {% elif job.salary_min %}{{ '{:,}'.format(job.salary_min) }}{% if job.salary_max %} – {{ '{:,}'.format(job.salary_max) }}{% endif %} IQD{% endif %}
+          </span>
+          {% endif %}
+        </div>
+        {% if job.is_closing_soon %}
+        <div style="margin-top:8px;font-size:11px;color:#dc2626;font-weight:600">
+          <i class="bi bi-exclamation-triangle"></i> Closes {{ job.closes_at.strftime('%b %d, %Y') }}
+        </div>
+        {% endif %}
+        <div style="margin-top:12px">
+          <a href="{{ url_for('jobs.detail', job_id=job.id) }}" class="btn btn-outline btn-sm" style="font-size:12px;padding:5px 14px"><i class="bi bi-eye"></i> More Details</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if positions.pages > 1 %}
+<div class="pagination">
+  <a href="?{{ qs }}&page={{ positions.prev_num }}" class="page-link {% if not positions.has_prev %}disabled{% endif %}"><i class="bi bi-chevron-left"></i></a>
+  {% for p in positions.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+    {% if p %}
+    <a href="?{{ qs }}&page={{ p }}" class="page-link {% if p == positions.page %}active{% endif %}">{{ p }}</a>
+    {% else %}<span class="page-link" style="border:none;background:none">…</span>{% endif %}
+  {% endfor %}
+  <a href="?{{ qs }}&page={{ positions.next_num }}" class="page-link {% if not positions.has_next %}disabled{% endif %}"><i class="bi bi-chevron-right"></i></a>
+</div>
+{% endif %}
+
+{% else %}
+<div class="card" style="padding:60px;text-align:center">
+  <i class="bi bi-briefcase" style="font-size:48px;color:var(--text3);display:block;margin-bottom:16px;opacity:.3"></i>
+  <h3 style="margin-bottom:8px">No jobs found</h3>
+  <p style="color:var(--text3);margin-bottom:16px">Try different keywords or clear your filters.</p>
+  <a href="{{ url_for('jobs.listing') }}" class="btn btn-primary">Clear all filters</a>
+</div>
+{% endif %}
+
+<script>
+document.querySelectorAll('.save-btn').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const jobId = btn.dataset.jobId;
+    const resp = await fetch(`/api/v1/jobs/${jobId}/save`, {method:'POST', credentials:'include'});
+    if (resp.status === 401) { location.href = '/login'; return; }
+    const data = await resp.json();
+    const icon = btn.querySelector('i');
+    if (data.saved) {
+      btn.classList.add('saved');
+      icon.className = 'bi bi-bookmark-fill';
+      btn.title = 'Unsave job';
+    } else {
+      btn.classList.remove('saved');
+      icon.className = 'bi bi-bookmark';
+      btn.title = 'Save job';
+    }
+  });
+});
+</script>
+{% endblock %}

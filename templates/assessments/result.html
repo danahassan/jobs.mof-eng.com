@@ -1,0 +1,71 @@
+﻿{% extends 'base.html' %}
+{% block title %}Assessment Result — MOF Jobs{% endblock %}
+{% block page_title %}Assessment Result{% endblock %}
+{% block page_breadcrumb %}Result{% endblock %}
+
+{% block content %}
+<div style="max-width:700px;margin:0 auto">
+  <!-- Score Card -->
+  <div class="card" style="padding:32px;text-align:center;margin-bottom:20px">
+    <div style="width:100px;height:100px;border-radius:50%;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;border:4px solid {% if submission.passed %}#22c55e{% else %}#ef4444{% endif %};color:{% if submission.passed %}#16a34a{% else %}#dc2626{% endif %}">
+      {{ submission.percentage | int }}%
+    </div>
+    <h1 style="font-size:22px;font-weight:700;margin-bottom:6px">{{ 'Congratulations!' if submission.passed else 'Not Passed' }}</h1>
+    <p style="font-size:14px;color:var(--text2)">
+      You scored <b>{{ submission.score }}</b> out of <b>{{ assessment.total_points }}</b> points ({{ submission.percentage | int }}%).
+      Pass threshold is {{ assessment.pass_score }}%.
+    </p>
+    <div style="display:flex;justify-content:center;gap:20px;margin-top:16px;flex-wrap:wrap;font-size:14px">
+      <div style="text-align:center">
+        <div style="font-size:24px;font-weight:700;color:{% if submission.passed %}#16a34a{% else %}#dc2626{% endif %}">{{ 'PASS' if submission.passed else 'FAIL' }}</div>
+        <div style="color:var(--text3)">Result</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-size:24px;font-weight:700">{{ submission.score }}/{{ assessment.total_points }}</div>
+        <div style="color:var(--text3)">Points</div>
+      </div>
+      {% if submission.completed_at and submission.started_at %}
+      <div style="text-align:center">
+        {% set elapsed = (submission.completed_at - submission.started_at).seconds %}
+        <div style="font-size:24px;font-weight:700">{{ elapsed // 60 }}m {{ elapsed % 60 }}s</div>
+        <div style="color:var(--text3)">Time Taken</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Answer Review -->
+  {% if answers %}
+  <h2 style="font-size:15px;font-weight:600;margin-bottom:12px">Answer Review</h2>
+  {% for ans in answers %}
+  {% set q = ans.question %}
+  <div class="card" style="padding:18px 20px;margin-bottom:10px;border-left:3px solid {% if ans.is_correct %}#22c55e{% else %}#ef4444{% endif %}">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+      <div style="font-size:13px;font-weight:500">{{ loop.index }}. {{ q.question_text }}</div>
+      <span style="font-size:12px;color:{% if ans.is_correct %}#16a34a{% else %}#dc2626{% endif %};margin-left:12px;white-space:nowrap">
+        {% if ans.is_correct %}<i class="bi bi-check-circle-fill"></i> +{{ ans.points_earned }}{% else %}<i class="bi bi-x-circle-fill"></i> 0{% endif %}/{{ q.points }} pts
+      </span>
+    </div>
+    {% if q.question_type != 'text' %}
+    {% set opts = q.options | from_json %}
+    <div style="display:flex;flex-direction:column;gap:4px">
+      {% for opt in opts %}
+      <div style="padding:5px 10px;border-radius:5px;font-size:12px;background:{% if loop.index0 | string == q.correct_answer %}#dcfce7{% elif loop.index0 | string == ans.given_answer and not ans.is_correct %}#fee2e2{% else %}transparent{% endif %}">
+        {% if loop.index0 | string == q.correct_answer %}<i class="bi bi-check" style="color:#16a34a"></i>{% elif loop.index0 | string == ans.given_answer %}<i class="bi bi-x" style="color:#dc2626"></i>{% else %}&nbsp;&nbsp;{% endif %}
+        {{ opt }}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div style="font-size:12px;color:var(--text3)">Your answer: <i>{{ ans.given_answer or 'No answer' }}</i></div>
+    {% endif %}
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  <div style="display:flex;gap:10px;justify-content:center;margin-top:20px">
+    <a href="{{ url_for('user.my_applications') }}" class="btn btn-outline">Back to Applications</a>
+    <a href="{{ url_for('jobs.listing') }}" class="btn btn-primary">Browse Jobs</a>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,24 @@
+--- templates/auth/profile.html
++++ templates/auth/profile.html
+@@ -91,12 +91,6 @@
+ {% endblock %}
+ 
+ {% block content %}
+-{% set skills_list = current_user.skills.all() %}
+-{% set exps = current_user.experiences.all() %}
+-{% set edus = current_user.educations.all() %}
+-{% set langs = [] %}
+-{% set certs = [] %}
+-{% set portfolio = [] %}
+ {% set tips = [] %}
+ {% if not current_user.phone %}{% set _ = tips.append('Add your phone number') %}{% endif %}
+ {% if not current_user.bio %}{% set _ = tips.append('Write a short professional bio') %}{% endif %}
+@@ -104,6 +98,8 @@
+ {% if skills_list|length < 3 %}{% set _ = tips.append('Add at least 3 skills') %}{% endif %}
+ {% if exps|length == 0 %}{% set _ = tips.append('Add work experience') %}{% endif %}
+ {% if edus|length == 0 %}{% set _ = tips.append('Add education') %}{% endif %}
++{% if langs|length == 0 %}{% set _ = tips.append('Add at least one language') %}{% endif %}
++{% if certs|length == 0 %}{% set _ = tips.append('Add a certification') %}{% endif %}
+ {% if not current_user.avatar_filename %}{% set _ = tips.append('Upload a profile photo') %}{% endif %}
+ 
+ <div class="ap-shell">

@@ -1,0 +1,133 @@
+﻿{% extends 'base.html' %}
+{% block title %}CV Preview — MOF Jobs{% endblock %}
+{% block page_title %}CV Preview{% endblock %}
+{% block page_breadcrumb %}CV Preview{% endblock %}
+
+{% block content %}
+<div style="max-width:900px;margin:0 auto">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+    <a href="{{ url_for('profile.view') }}" class="btn btn-outline btn-sm"><i class="bi bi-arrow-left"></i> Back to Profile</a>
+    <a href="{{ url_for('profile.cv_download') }}" class="btn btn-primary"><i class="bi bi-download"></i> Download PDF</a>
+  </div>
+
+  <!-- CV Sheet -->
+  <div id="cvSheet" style="background:#fff;padding:40px;box-shadow:0 4px 24px rgba(0,0,0,.1);border-radius:4px;font-family:Georgia,'Times New Roman',serif;color:#1a1a1a;line-height:1.6">
+
+    <!-- Header -->
+    <div style="border-bottom:2px solid #1a1a1a;padding-bottom:16px;margin-bottom:20px">
+      <h1 style="font-size:28px;font-weight:700;margin:0 0 4px">{{ user.full_name }}</h1>
+      {% if user.headline %}<div style="font-size:15px;color:#555;margin-bottom:6px">{{ user.headline }}</div>{% endif %}
+      <div style="font-size:13px;color:#555;display:flex;flex-wrap:wrap;gap:16px;row-gap:4px">
+        {% if user.email %}<span>{{ user.email }}</span>{% endif %}
+        {% if user.phone %}<span>{{ user.phone }}</span>{% endif %}
+        {% if user.location_city %}<span>{{ user.location_city }}</span>{% endif %}
+        {% if user.nationality %}<span>{{ user.nationality }}</span>{% endif %}
+      </div>
+      {% if user.linkedin_url or user.github_url or user.portfolio_url %}
+      <div style="font-size:12px;color:#444;display:flex;flex-wrap:wrap;gap:10px;margin-top:8px">
+        {% if user.linkedin_url %}<span>LinkedIn: {{ user.linkedin_url }}</span>{% endif %}
+        {% if user.github_url %}<span>GitHub: {{ user.github_url }}</span>{% endif %}
+        {% if user.portfolio_url %}<span>Portfolio: {{ user.portfolio_url }}</span>{% endif %}
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Summary -->
+    {% if user.bio or user.resume_headline %}
+    <div style="margin-bottom:20px">
+      <h2 style="font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid #ccc;padding-bottom:4px;margin-bottom:10px">Professional Summary</h2>
+      {% if user.resume_headline %}
+      <p style="font-size:13px;margin:0 0 8px"><b>{{ user.resume_headline }}</b></p>
+      {% endif %}
+      {% if user.bio %}
+      <p style="font-size:13px;margin:0;white-space:pre-wrap">{{ user.bio }}</p>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Skills -->
+    {% if skills %}
+    <div style="margin-bottom:20px">
+      <h2 style="font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid #ccc;padding-bottom:4px;margin-bottom:10px">Skills</h2>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        {% for s in skills %}
+        <span style="background:#f3f4f6;border:1px solid #d1d5db;padding:3px 10px;border-radius:4px;font-size:12px;font-family:Arial,sans-serif">{{ s.name }}{% if s.proficiency %} ({{ s.proficiency }}){% endif %}</span>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Experience -->
+    {% if exps %}
+    <div style="margin-bottom:20px">
+      <h2 style="font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid #ccc;padding-bottom:4px;margin-bottom:10px">Work Experience</h2>
+      {% for e in exps %}
+      <div style="margin-bottom:10px">
+        <div style="font-size:13px;font-weight:700;color:#222">{{ e.title }}</div>
+        <div style="font-size:12px;color:#444">{{ e.company or '' }}</div>
+        <div style="font-size:11px;color:#666">{{ e.start_date.strftime('%b %Y') if e.start_date else '' }}{% if e.start_date %} - {{ e.end_date.strftime('%b %Y') if e.end_date else 'Present' }}{% endif %}</div>
+        {% if e.description %}<div style="font-size:12px;color:#444;line-height:1.6;margin-top:3px">{{ e.description }}</div>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Education -->
+    {% if edus %}
+    <div style="margin-bottom:20px">
+      <h2 style="font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid #ccc;padding-bottom:4px;margin-bottom:10px">Education</h2>
+      {% for edu in edus %}
+      <div style="margin-bottom:10px">
+        <div style="font-size:13px;font-weight:700;color:#222">{{ edu.institution }}</div>
+        <div style="font-size:12px;color:#444">{{ edu.degree or '' }}{% if edu.degree and edu.field %} in {% endif %}{{ edu.field or '' }}</div>
+        <div style="font-size:11px;color:#666">{{ edu.start_year or '' }}{% if edu.start_year %} - {% endif %}{{ edu.end_year or 'Present' }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Languages -->
+    {% if langs %}
+    <div style="margin-bottom:20px">
+      <h2 style="font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid #ccc;padding-bottom:4px;margin-bottom:10px">Languages</h2>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
+        {% for lang in langs %}
+        <div style="font-size:13px"><b>{{ lang.language }}</b> — {{ lang.proficiency }}</div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Certifications -->
+    {% if certs %}
+    <div style="margin-bottom:20px">
+      <h2 style="font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid #ccc;padding-bottom:4px;margin-bottom:10px">Certifications</h2>
+      {% for cert in certs %}
+      <div style="margin-bottom:8px">
+        <div style="font-size:13px;font-weight:600">{{ cert.name }}</div>
+        <div style="font-size:12px;color:#555">
+          {{ cert.issuing_org or '' }}
+          {% if cert.issue_date %} · {{ cert.issue_date.strftime('%b %Y') }}{% endif %}
+          {% if cert.expiry_date %} – {{ cert.expiry_date.strftime('%b %Y') }}{% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Portfolio -->
+    {% if portfolio %}
+    <div style="margin-bottom:0">
+      <h2 style="font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid #ccc;padding-bottom:4px;margin-bottom:10px">Portfolio</h2>
+      {% for p in portfolio %}
+      <div style="margin-bottom:8px;font-size:12px;color:#333">
+        <div style="font-weight:700">{{ p.title }}</div>
+        {% if p.description %}<div style="color:#555">{{ p.description }}</div>{% endif %}
+        {% if p.url %}<div style="color:#2563eb">{{ p.url }}</div>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

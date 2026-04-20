@@ -1,0 +1,116 @@
+﻿{% extends 'base.html' %}
+{% block title %}My Companies — MOF Jobs{% endblock %}
+{% block page_title %}My Companies{% endblock %}
+
+{% block content %}
+
+<!-- KPI Strip -->
+<div class="kpi-strip">
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#e8f5ee;color:#198754"><i class="bi bi-building"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_companies }}</div><div class="kpi-lbl">Companies</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#eff6ff;color:#2563eb"><i class="bi bi-briefcase-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_jobs }}</div><div class="kpi-lbl">Open Jobs</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#ede9fe;color:#7c3aed"><i class="bi bi-file-earmark-person-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_apps }}</div><div class="kpi-lbl">Total Applications</div></div>
+  </div>
+</div>
+
+{% if memberships %}
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px">
+  {% for m in memberships %}
+  {% set c = m.company %}
+  <div class="card" style="padding:0;overflow:hidden">
+
+    <!-- Cover / Banner -->
+    {% if c.cover_filename %}
+    <div style="height:90px;overflow:hidden">
+      <img src="{{ url_for('static', filename='uploads/company/' + c.cover_filename) }}"
+           alt="" style="width:100%;height:100%;object-fit:cover">
+    </div>
+    {% else %}
+    <div style="height:6px;background:linear-gradient(90deg,var(--green),#0d6efd)"></div>
+    {% endif %}
+
+    <div style="padding:20px">
+      <!-- Logo + name -->
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
+        {% if c.logo_filename %}
+          <img src="{{ url_for('static', filename='uploads/company/' + c.logo_filename) }}"
+               alt="{{ c.name }}"
+               style="width:52px;height:52px;border-radius:10px;object-fit:contain;background:#f8f9fa;border:1px solid var(--border);padding:4px;flex-shrink:0">
+        {% else %}
+          <div style="width:52px;height:52px;border-radius:10px;background:var(--green-light);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:var(--green);flex-shrink:0">
+            {{ c.name[0] }}
+          </div>
+        {% endif %}
+        <div style="min-width:0">
+          <div style="font-weight:700;font-size:15px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.name }}</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:2px">
+            {% if c.industry %}<span>{{ c.industry }}</span>{% endif %}
+            {% if c.industry and c.location %} &middot; {% endif %}
+            {% if c.location %}<span>{{ c.location }}</span>{% endif %}
+          </div>
+          {% if c.is_active %}
+            <span class="badge badge-active" style="margin-top:4px">Active</span>
+          {% else %}
+            <span class="badge badge-inactive" style="margin-top:4px">Inactive</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Stats row -->
+      <div style="display:flex;gap:0;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:16px">
+        <div style="flex:1;text-align:center;padding:10px 8px;border-right:1px solid var(--border)">
+          <div style="font-size:18px;font-weight:800;color:var(--text)">{{ c.open_jobs_count }}</div>
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px">Open Jobs</div>
+        </div>
+        <div style="flex:1;text-align:center;padding:10px 8px;border-right:1px solid var(--border)">
+          <div style="font-size:18px;font-weight:800;color:var(--text)">{{ c.follower_count }}</div>
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px">Followers</div>
+        </div>
+        <div style="flex:1;text-align:center;padding:10px 8px">
+          <div style="font-size:18px;font-weight:800;color:var(--text)">{{ c.positions.count() }}</div>
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px">Positions</div>
+        </div>
+      </div>
+
+      <!-- Description snippet -->
+      {% if c.description %}
+      <p style="font-size:12px;color:var(--text2);line-height:1.5;margin:0 0 16px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">
+        {{ c.description }}
+      </p>
+      {% endif %}
+
+      <!-- Actions -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <a href="{{ url_for('supervisor.company_dashboard', company_id=c.id) }}"
+           class="btn btn-primary btn-sm" style="flex:1;justify-content:center">
+          <i class="bi bi-grid-1x2-fill"></i> View
+        </a>
+        <a href="{{ url_for('supervisor.company_job_new', company_id=c.id) }}"
+           class="btn btn-outline btn-sm" style="flex:1;justify-content:center">
+          <i class="bi bi-plus-lg"></i> Post Job
+        </a>
+        <a href="{{ url_for('companies.profile', slug=c.slug) }}"
+           class="btn btn-outline btn-sm" target="_blank" title="Public view">
+          <i class="bi bi-box-arrow-up-right"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% else %}
+<div class="empty-state">
+  <i class="bi bi-building" style="font-size:48px;opacity:.25;display:block;margin-bottom:14px"></i>
+  <h3>No companies assigned</h3>
+  <p style="color:var(--text3)">Ask an administrator to assign you as manager of a company.</p>
+</div>
+{% endif %}
+{% endblock %}

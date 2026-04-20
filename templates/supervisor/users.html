@@ -1,0 +1,203 @@
+﻿{% extends 'base.html' %}
+{% block title %}Applicants — MOF Jobs{% endblock %}
+{% block page_title %}Applicants{% endblock %}
+
+{% block extra_css %}
+<style>
+.sv-usr-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:16px}
+.sv-usr-stat{background:linear-gradient(180deg,#ffffff 0%,#f7fbf8 100%);border:1px solid var(--border);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow)}
+.sv-usr-stat-label{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text3)}
+.sv-usr-stat-value{font-size:24px;font-weight:800;line-height:1.1;color:var(--text);margin-top:8px}
+.sv-usr-table-wrap .table-card{border-radius:16px;overflow:hidden}
+.sv-usr-table-wrap .table-head{padding-bottom:14px}
+.sv-usr-table-wrap .tbl thead th:first-child,
+.sv-usr-table-wrap .tbl tbody td:first-child{width:56px;text-align:center}
+.sv-usr-index{display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:30px;padding:0 8px;border-radius:999px;background:#edf7f0;color:var(--green);font-size:12px;font-weight:800}
+.sv-usr-name-cell{display:flex;align-items:center;gap:10px;min-width:0}
+.sv-usr-name-copy{min-width:0}
+.sv-usr-name{font-size:13px;font-weight:700;color:var(--text);line-height:1.25}
+.sv-usr-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.sv-usr-actions{display:flex;gap:8px;flex-wrap:wrap}
+.sv-usr-cards{display:none;flex-direction:column;gap:12px}
+.sv-usr-card{background:linear-gradient(180deg,#ffffff 0%,#f9fbfc 100%);border:1px solid var(--border);border-radius:14px;padding:15px 16px;box-shadow:var(--shadow)}
+.sv-usr-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.sv-usr-card-info{display:flex;align-items:center;gap:12px;min-width:0;flex:1}
+.sv-usr-card-num{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:28px;border-radius:999px;background:#edf7f0;color:var(--green);font-size:12px;font-weight:800;flex-shrink:0}
+.sv-usr-card-name{font-weight:700;font-size:14px;color:var(--text);line-height:1.3}
+.sv-usr-card-email{font-size:12px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.sv-usr-card-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
+.sv-usr-card-meta-item{min-width:0}
+.sv-usr-card-meta-label{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text3);margin-bottom:4px}
+.sv-usr-card-meta-value{font-size:12px;font-weight:600;color:var(--text);word-break:break-word}
+.sv-usr-card-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+@media(max-width:680px){
+  .sv-usr-summary{grid-template-columns:1fr}
+  .sv-usr-cards{display:flex}
+  .sv-usr-table-wrap{display:none}
+  .sv-usr-card-top{flex-direction:column}
+  .sv-usr-card-meta{grid-template-columns:1fr}
+  .sv-usr-card-actions .btn{flex:1;justify-content:center}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="sv-usr-summary">
+  <div class="sv-usr-stat">
+    <div class="sv-usr-stat-label">Applicants</div>
+    <div class="sv-usr-stat-value">{{ applicants|length }}</div>
+  </div>
+  <div class="sv-usr-stat">
+    <div class="sv-usr-stat-label">Search</div>
+    <div class="sv-usr-stat-value" style="font-size:16px;font-weight:700">{{ q_str if q_str else 'All applicants' }}</div>
+  </div>
+  <div class="sv-usr-stat">
+    <div class="sv-usr-stat-label">Position Filter</div>
+    <div class="sv-usr-stat-value" style="font-size:16px;font-weight:700">{% if pos_f %}{% for pos in managed_positions %}{% if pos.id == pos_f %}{{ pos.title }}{% endif %}{% endfor %}{% else %}All positions{% endif %}</div>
+  </div>
+</div>
+
+<form method="GET" class="filter-bar">
+  <div class="filter-row">
+    <div class="filter-search">
+      <label class="msd-label">Search</label>
+      <div style="position:relative">
+        <i class="bi bi-search filter-search-icon"></i>
+        <input type="text" name="q" class="form-control" placeholder="Name or email…" value="{{ q_str }}">
+      </div>
+    </div>
+    {% if managed_positions %}
+    <div class="filter-group">
+      <label>Position</label>
+      <select name="position_id" class="form-control">
+        <option value="">All Positions</option>
+        {% for pos in managed_positions %}
+        <option value="{{ pos.id }}" {% if pos.id == pos_f %}selected{% endif %}>{{ pos.title }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% endif %}
+    <div class="filter-actions">
+      <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-funnel"></i> Filter</button>
+      <a href="{{ url_for('supervisor.users') }}" class="btn btn-outline btn-sm">Reset</a>
+    </div>
+  </div>
+</form>
+
+<!-- Desktop table -->
+<div class="sv-usr-table-wrap">
+  <div class="table-card">
+    <div class="table-head">
+      <span class="table-head-title">
+        <span class="table-head-count">{{ applicants|length }}</span>
+        applicant{{ 's' if applicants|length != 1 }}
+      </span>
+      <div class="export-group">
+        <a href="{{ url_for('supervisor.users_export', fmt='csv', q=q_str, position_id=pos_f) }}" class="btn-export csv"><i class="bi bi-filetype-csv"></i> CSV</a>
+        <a href="{{ url_for('supervisor.users_export', fmt='xlsx', q=q_str, position_id=pos_f) }}" class="btn-export xlsx"><i class="bi bi-file-earmark-excel"></i> Excel</a>
+      </div>
+    </div>
+    <div class="table-responsive">
+      <table class="tbl">
+        <thead>
+          <tr><th>#</th><th>Name</th><th>Email</th><th>Phone</th><th>Applications</th><th>Joined</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+          {% for u in applicants %}
+          <tr>
+            <td data-label="#"><span class="sv-usr-index">{{ loop.index }}</span></td>
+            <td data-label="Name" class="td-name">
+              <div class="sv-usr-name-cell">
+                {% if u.avatar_filename %}
+                <img src="{{ url_for('static', filename='uploads/avatars/' + u.avatar_filename) }}"
+                     alt="{{ u.full_name }}"
+                     class="avatar"
+                     style="width:28px;height:28px;font-size:11px;object-fit:cover"
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div class="avatar" style="width:28px;height:28px;font-size:11px">{{ u.initials }}</div>
+                {% else %}
+                <div class="avatar" style="width:28px;height:28px;font-size:11px">{{ u.initials }}</div>
+                {% endif %}
+                <div class="sv-usr-name-copy">
+                  <div class="sv-usr-name">{{ u.full_name }}</div>
+                  <div class="sv-usr-sub">Applicant ID {{ u.id }}</div>
+                </div>
+              </div>
+            </td>
+            <td data-label="Email" class="text-muted">{{ u.email }}</td>
+            <td data-label="Phone" class="text-muted">{{ u.phone or '—' }}</td>
+            <td data-label="Applications">
+              <span class="badge badge-future">{{ u.applications.count() }}</span>
+            </td>
+            <td data-label="Joined" class="text-muted">{{ u.created_at.strftime('%b %d, %Y') if u.created_at else '—' }}</td>
+            <td data-label="Actions">
+              <div class="sv-usr-actions">
+                <a href="{{ url_for('supervisor.user_detail', user_id=u.id) }}" class="btn btn-primary btn-sm"><i class="bi bi-person-lines-fill"></i> Profile</a>
+                <a href="{{ url_for('supervisor.applications', q=u.full_name) }}" class="btn btn-outline btn-sm"><i class="bi bi-inbox"></i> Applications</a>
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="7"><div class="empty-state"><i class="bi bi-people"></i> No applicants found for your managed positions.</div></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Mobile cards -->
+<div class="sv-usr-cards">
+  {% for u in applicants %}
+  <div class="sv-usr-card">
+    <div class="sv-usr-card-top">
+      <div class="sv-usr-card-info">
+        <div class="sv-usr-card-num">{{ loop.index }}</div>
+        {% if u.avatar_filename %}
+        <img src="{{ url_for('static', filename='uploads/avatars/' + u.avatar_filename) }}"
+             alt="{{ u.full_name }}"
+             class="avatar"
+             style="width:36px;height:36px;font-size:14px;flex-shrink:0;object-fit:cover"
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+        <div class="avatar" style="width:36px;height:36px;font-size:14px;flex-shrink:0">{{ u.initials }}</div>
+        {% else %}
+        <div class="avatar" style="width:36px;height:36px;font-size:14px;flex-shrink:0">{{ u.initials }}</div>
+        {% endif %}
+        <div style="min-width:0">
+          <div class="sv-usr-card-name">{{ u.full_name }}</div>
+          <div class="sv-usr-card-email">{{ u.email }}</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+        <span class="badge badge-future">{{ u.applications.count() }}</span>
+      </div>
+    </div>
+    <div class="sv-usr-card-meta">
+      <div class="sv-usr-card-meta-item">
+        <div class="sv-usr-card-meta-label">Phone</div>
+        <div class="sv-usr-card-meta-value">{{ u.phone or 'Not provided' }}</div>
+      </div>
+      <div class="sv-usr-card-meta-item">
+        <div class="sv-usr-card-meta-label">Joined</div>
+        <div class="sv-usr-card-meta-value">{{ u.created_at.strftime('%b %d, %Y') if u.created_at else '—' }}</div>
+      </div>
+      <div class="sv-usr-card-meta-item">
+        <div class="sv-usr-card-meta-label">Applications</div>
+        <div class="sv-usr-card-meta-value">{{ u.applications.count() }}</div>
+      </div>
+      <div class="sv-usr-card-meta-item">
+        <div class="sv-usr-card-meta-label">Applicant ID</div>
+        <div class="sv-usr-card-meta-value">{{ u.id }}</div>
+      </div>
+    </div>
+    <div class="sv-usr-card-actions">
+      <a href="{{ url_for('supervisor.user_detail', user_id=u.id) }}" class="btn btn-primary btn-sm"><i class="bi bi-person-lines-fill"></i> Profile</a>
+      <a href="{{ url_for('supervisor.applications', q=u.full_name) }}" class="btn btn-outline btn-sm"><i class="bi bi-inbox"></i> Applications</a>
+    </div>
+  </div>
+  {% else %}
+  <div class="empty-state"><i class="bi bi-people"></i> No applicants found for your managed positions.</div>
+  {% endfor %}
+</div>
+{% endblock %}

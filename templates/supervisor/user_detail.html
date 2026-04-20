@@ -1,0 +1,448 @@
+﻿{% extends 'base.html' %}
+{% block title %}{{ user.full_name }} — Applicant Profile{% endblock %}
+{% block page_title %}Applicant Profile{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Hero ─────────────────────────────────────────────────────────────────── */
+.up-hero{background:linear-gradient(135deg,var(--navy) 0%,#1a2d3f 60%,#1e3a52 100%);
+  border-radius:var(--radius-lg,12px);padding:28px 32px;margin-bottom:22px;
+  position:relative;overflow:hidden}
+.up-hero::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at top right,rgba(25,135,84,.12) 0%,transparent 60%);
+  pointer-events:none}
+.up-hero-inner{display:flex;align-items:flex-start;gap:20px;position:relative}
+.up-hero-avatar{width:72px;height:72px;font-size:26px;flex-shrink:0;
+  border:3px solid rgba(255,255,255,.18);border-radius:50%}
+.up-hero-body{flex:1;min-width:0}
+.up-hero-name{color:#fff;font-size:24px;font-weight:800;line-height:1.2}
+.up-hero-sub{color:rgba(255,255,255,.6);font-size:13px;margin-top:5px;
+  display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.up-hero-links{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}
+.up-hero-link{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);
+  color:#fff!important;font-size:12px;padding:5px 12px;border-radius:7px;
+  display:inline-flex;align-items:center;gap:5px;text-decoration:none;
+  transition:background .15s}
+.up-hero-link:hover{background:rgba(255,255,255,.18)}
+.up-hero-right{display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0}
+.up-hero-meta{display:flex;flex-wrap:wrap;gap:10px 20px;margin-top:14px}
+.up-hero-meta-item{color:rgba(255,255,255,.65);font-size:12px;
+  display:flex;align-items:center;gap:5px}
+.up-hero-meta-item strong{color:rgba(255,255,255,.92)}
+.up-ps-bar-wrap{margin-top:16px}
+.up-ps-label{font-size:11px;color:rgba(255,255,255,.5);margin-bottom:5px;
+  display:flex;justify-content:space-between}
+.up-ps-bar{height:5px;background:rgba(255,255,255,.12);border-radius:3px;overflow:hidden}
+.up-ps-fill{height:100%;border-radius:3px;
+  background:linear-gradient(90deg,var(--green),#20c997)}
+.up-back{color:rgba(255,255,255,.45);font-size:12px;text-decoration:none;
+  display:inline-flex;align-items:center;gap:5px;margin-top:10px}
+.up-back:hover{color:rgba(255,255,255,.75)}
+
+/* ── Page grid ──────────────────────────────────────────────────────────── */
+.up-grid{display:grid;grid-template-columns:1fr 310px;gap:22px;align-items:start}
+.up-main{display:flex;flex-direction:column;gap:16px;min-width:0}
+.up-sidebar{display:flex;flex-direction:column;gap:16px;position:sticky;top:76px}
+
+/* ── Info grid ──────────────────────────────────────────────────────────── */
+.up-info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px 20px}
+.info-pair .lbl{font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.5px;color:var(--text3);margin-bottom:3px}
+.info-pair .val{font-size:13px;font-weight:600;color:var(--text);word-break:break-word}
+
+/* ── Section divider ────────────────────────────────────────────────────── */
+.up-section{margin-top:18px;padding-top:16px;border-top:1px solid var(--border)}
+.up-section-title{font-size:11px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.6px;color:var(--text3);margin-bottom:12px;
+  display:flex;align-items:center;gap:7px}
+
+/* ── Skills ─────────────────────────────────────────────────────────────── */
+.skill-chip{display:inline-flex;align-items:center;gap:5px;background:var(--green-light);
+  color:var(--green);font-size:12px;font-weight:600;padding:4px 11px;
+  border-radius:20px;margin:3px}
+.skill-chip .skill-level{font-size:10px;opacity:.7;font-weight:500}
+
+/* ── Timeline rows (Exp / Edu) ──────────────────────────────────────────── */
+.tl-list{display:flex;flex-direction:column}
+.tl-row{display:flex;gap:14px;padding:12px 0;border-bottom:1px solid var(--border)}
+.tl-row:last-child{border-bottom:none;padding-bottom:0}
+.tl-icon-col{display:flex;flex-direction:column;align-items:center;flex-shrink:0;width:36px}
+.tl-icon-circle{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:15px;flex-shrink:0}
+.tl-icon-circle.green{background:var(--green-light);color:var(--green)}
+.tl-icon-circle.blue{background:#dbeafe;color:#1d4ed8}
+.tl-connector{flex:1;width:2px;background:var(--border);margin:4px auto 0;min-height:10px}
+.tl-row:last-child .tl-connector{display:none}
+.tl-content{flex:1;min-width:0;padding-top:6px}
+.tl-heading{font-size:13px;font-weight:700;color:var(--text)}
+.tl-sub{font-size:12px;color:var(--green);font-weight:500;margin-top:1px}
+.tl-dates{font-size:11px;color:var(--text3);margin-top:3px}
+.tl-desc{font-size:12px;color:var(--text2);line-height:1.6;margin-top:6px}
+
+/* ── Lang / Cert ────────────────────────────────────────────────────────── */
+.up-lc-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.lc-item{display:flex;align-items:flex-start;gap:9px;padding:9px 0;
+  border-bottom:1px solid var(--border)}
+.lc-item:last-child{border-bottom:none;padding-bottom:0}
+.lc-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;
+  justify-content:center;font-size:14px;flex-shrink:0}
+.lc-icon.lang{background:#e0f2fe;color:#0369a1}
+.lc-icon.cert{background:#fef9c3;color:#854d0e}
+.lc-name{font-size:13px;font-weight:600;color:var(--text)}
+.lc-sub{font-size:11px;color:var(--text3);margin-top:2px}
+
+/* ── Application items ──────────────────────────────────────────────────── */
+.up-app-item{padding:12px 14px;background:var(--bg,#f8fafb);
+  border-radius:10px;border:1px solid var(--border);margin-bottom:9px}
+.up-app-item:last-child{margin-bottom:0}
+.up-app-header{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.up-app-title{font-size:13px;font-weight:700;color:var(--text);line-height:1.3}
+.up-app-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.up-app-meta-tag{font-size:11px;color:var(--text3);display:flex;align-items:center;gap:4px}
+
+/* ── Chat ───────────────────────────────────────────────────────────────── */
+.chat-thread{display:flex;flex-direction:column;gap:8px;max-height:260px;
+  overflow-y:auto;padding:12px;background:var(--bg,#f8fafb);
+  border-radius:10px;border:1px solid var(--border);scrollbar-width:thin}
+.chat-thread::-webkit-scrollbar{width:4px}
+.chat-thread::-webkit-scrollbar-thumb{background:var(--border2,#d1d9e0);border-radius:4px}
+.chat-bubble{max-width:84%;padding:9px 13px;border-radius:12px;
+  font-size:13px;line-height:1.5;word-break:break-word}
+.bubble-out{background:var(--green);color:#fff;border-bottom-right-radius:3px;margin-left:auto}
+.bubble-in{background:#fff;color:var(--text);border:1px solid var(--border);border-bottom-left-radius:3px}
+.bubble-out .cmeta{color:rgba(255,255,255,.65);font-size:10px;margin-top:4px;text-align:right}
+.bubble-in .cmeta{color:var(--text3);font-size:10px;margin-top:4px}
+.chat-empty{text-align:center;padding:24px 12px;color:var(--text3);font-size:13px}
+.chat-compose{display:flex;gap:8px;align-items:flex-end;margin-top:10px}
+.chat-compose textarea{flex:1;min-height:56px;resize:none;font-size:13px}
+.chat-compose button{flex-shrink:0;width:46px;height:56px;padding:0;justify-content:center}
+
+/* ── Mobile apps card ───────────────────────────────────────────────────── */
+.up-mobile-apps{display:none}
+
+/* ── Responsive ─────────────────────────────────────────────────────────── */
+@media(max-width:960px){
+  .up-grid{grid-template-columns:1fr 270px}
+}
+@media(max-width:760px){
+  .up-grid{grid-template-columns:1fr}
+  .up-sidebar{position:static}
+  .up-desktop-sidebar{display:none}
+  .up-mobile-apps{display:block}
+  .up-hero{padding:18px 20px}
+  .up-hero-name{font-size:20px}
+  .up-hero-right{display:none}
+  .up-lc-grid{grid-template-columns:1fr}
+  .up-info-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:480px){
+  .up-info-grid{grid-template-columns:1fr}
+  .up-hero-inner{flex-direction:column;gap:12px}
+  .up-hero-avatar{width:54px;height:54px;font-size:20px}
+  .up-hero{padding:16px}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+{%- set ps = user.profile_strength -%}
+
+<!-- HERO -->
+<div class="up-hero">
+  <div class="up-hero-inner">
+
+    <div class="avatar up-hero-avatar">{{ user.initials }}</div>
+
+    <div class="up-hero-body">
+      <div class="up-hero-name">{{ user.full_name }}</div>
+      <div class="up-hero-sub">
+        {{ user.headline or user.resume_headline or '' }}
+        {% if user.location_city %}
+          {% if user.headline or user.resume_headline %}<span style="opacity:.35">·</span>{% endif %}
+          <i class="bi bi-geo-alt-fill" style="font-size:11px"></i> {{ user.location_city }}
+        {% endif %}
+      </div>
+      <div class="up-hero-meta">
+        {% if user.email %}<div class="up-hero-meta-item"><i class="bi bi-envelope-fill"></i><a href="mailto:{{ user.email }}" style="color:inherit">{{ user.email }}</a></div>{% endif %}
+        {% if user.phone %}<div class="up-hero-meta-item"><i class="bi bi-telephone-fill"></i><strong>{{ user.phone }}</strong></div>{% endif %}
+        {% if user.nationality %}<div class="up-hero-meta-item"><i class="bi bi-flag-fill"></i><strong>{{ user.nationality }}</strong></div>{% endif %}
+        {% if user.gender %}<div class="up-hero-meta-item"><i class="bi bi-person-fill"></i><strong>{{ user.gender }}</strong></div>{% endif %}
+        <div class="up-hero-meta-item"><i class="bi bi-calendar3"></i>Joined <strong>{{ user.created_at.strftime('%b %Y') if user.created_at else '—' }}</strong></div>
+      </div>
+      {% if user.linkedin_url or user.github_url or user.portfolio_url %}
+      <div class="up-hero-links">
+        {% if user.linkedin_url %}<a href="{{ user.linkedin_url }}" target="_blank" rel="noopener" class="up-hero-link"><i class="bi bi-linkedin"></i> LinkedIn</a>{% endif %}
+        {% if user.github_url %}<a href="{{ user.github_url }}" target="_blank" rel="noopener" class="up-hero-link"><i class="bi bi-github"></i> GitHub</a>{% endif %}
+        {% if user.portfolio_url %}<a href="{{ user.portfolio_url }}" target="_blank" rel="noopener" class="up-hero-link"><i class="bi bi-globe2"></i> Portfolio</a>{% endif %}
+      </div>
+      {% endif %}
+      {% if ps %}
+      <div class="up-ps-bar-wrap">
+        <div class="up-ps-label"><span>Profile Strength</span><span>{{ ps }}%</span></div>
+        <div class="up-ps-bar"><div class="up-ps-fill" style="width:{{ ps }}%"></div></div>
+      </div>
+      {% endif %}
+      <a href="{{ url_for('supervisor.users') }}" class="up-back"><i class="bi bi-arrow-left"></i> Back to Applicants</a>
+    </div>
+
+    <!-- Apps count stat (desktop only) -->
+    <div class="up-hero-right">
+      <div style="text-align:center;background:rgba(255,255,255,.1);
+           border:1px solid rgba(255,255,255,.18);border-radius:10px;padding:14px 20px;min-width:80px">
+        <div style="font-size:28px;font-weight:800;color:#fff;line-height:1">{{ applications|length }}</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:3px">Application{{ 's' if applications|length != 1 }}</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MOBILE: Applications shown above main content -->
+<div class="up-mobile-apps">
+  <div class="card mb-3">
+    <div class="card-title"><i class="bi bi-file-earmark-person-fill" style="color:var(--green)"></i> Applications</div>
+    {% if applications %}
+    {% for a in applications %}
+    <div class="up-app-item">
+      <div class="up-app-header">
+        <div>
+          <div class="up-app-title">{{ a.position.title if a.position else '—' }}</div>
+          {% if a.position and a.position.company %}<div style="font-size:12px;color:var(--text3)"><i class="bi bi-building"></i> {{ a.position.company.name }}</div>{% endif %}
+        </div>
+        <span class="badge badge-{{ a.status.lower().replace(' ','') }}" style="white-space:nowrap;flex-shrink:0">{{ a.status }}</span>
+      </div>
+      <div class="up-app-meta">
+        <span class="up-app-meta-tag"><i class="bi bi-calendar3"></i> {{ a.applied_at.strftime('%b %d, %Y') }}</span>
+        {% if a.expected_salary %}<span class="up-app-meta-tag"><i class="bi bi-cash"></i> {{ a.expected_salary }}</span>{% endif %}
+      </div>
+      <a href="{{ url_for('supervisor.application_detail', app_id=a.id) }}"
+         class="btn btn-outline btn-sm" style="margin-top:8px;width:100%;justify-content:center">
+        <i class="bi bi-eye"></i> View Application
+      </a>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="text-muted text-sm">No accessible applications.</div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- MAIN GRID -->
+<div class="up-grid">
+
+  <!-- LEFT COLUMN -->
+  <div class="up-main">
+
+    <!-- Personal Info -->
+    <div class="card">
+      <div class="card-title"><i class="bi bi-person-vcard-fill" style="color:var(--green)"></i> Personal Info</div>
+      <div class="up-info-grid">
+        <div class="info-pair"><div class="lbl">Email</div><a href="mailto:{{ user.email }}" class="val">{{ user.email }}</a></div>
+        {% if user.phone %}<div class="info-pair"><div class="lbl">Phone</div><div class="val">{{ user.phone }}</div></div>{% endif %}
+        {% if user.location_city %}<div class="info-pair"><div class="lbl">Location</div><div class="val">{{ user.location_city }}</div></div>{% endif %}
+        {% if user.nationality %}<div class="info-pair"><div class="lbl">Nationality</div><div class="val">{{ user.nationality }}</div></div>{% endif %}
+        {% if user.gender %}<div class="info-pair"><div class="lbl">Gender</div><div class="val">{{ user.gender }}</div></div>{% endif %}
+        {% if user.date_of_birth %}<div class="info-pair"><div class="lbl">Date of Birth</div><div class="val">{{ user.date_of_birth.strftime('%b %d, %Y') }}</div></div>{% endif %}
+      </div>
+      {% if user.bio %}
+      <div class="up-section">
+        <div class="up-section-title"><i class="bi bi-journal-text"></i> About</div>
+        <p style="font-size:13px;color:var(--text2);line-height:1.8;margin:0">{{ user.bio }}</p>
+      </div>
+      {% endif %}
+      {% if user.resume_headline and user.resume_headline != user.headline %}
+      <div class="up-section">
+        <div class="up-section-title"><i class="bi bi-card-text"></i> Resume Summary</div>
+        <p style="font-size:13px;color:var(--text2);line-height:1.8;margin:0">{{ user.resume_headline }}</p>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Skills -->
+    {% if skills %}
+    <div class="card">
+      <div class="card-title"><i class="bi bi-lightning-fill" style="color:var(--green)"></i> Skills</div>
+      <div style="margin:-3px">
+        {% for s in skills %}
+        <span class="skill-chip">{{ s.name }}{% if s.proficiency %}<span class="skill-level">· {{ s.proficiency }}</span>{% endif %}</span>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Work Experience -->
+    {% if experiences %}
+    <div class="card">
+      <div class="card-title"><i class="bi bi-briefcase-fill" style="color:var(--green)"></i> Work Experience</div>
+      <div class="tl-list">
+        {% for exp in experiences %}
+        <div class="tl-row">
+          <div class="tl-icon-col">
+            <div class="tl-icon-circle green"><i class="bi bi-briefcase-fill"></i></div>
+            <div class="tl-connector"></div>
+          </div>
+          <div class="tl-content">
+            <div class="tl-heading">{{ exp.title }}</div>
+            {% if exp.company %}<div class="tl-sub">{{ exp.company }}</div>{% endif %}
+            <div class="tl-dates">
+              {% if exp.start_date %}{{ exp.start_date.strftime('%b %Y') }}{% endif %}{% if exp.start_date %} – {% endif %}{{ exp.end_date.strftime('%b %Y') if exp.end_date else 'Present' }}
+            </div>
+            {% if exp.description %}<div class="tl-desc">{{ exp.description }}</div>{% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Education -->
+    {% if educations %}
+    <div class="card">
+      <div class="card-title"><i class="bi bi-mortarboard-fill" style="color:var(--green)"></i> Education</div>
+      <div class="tl-list">
+        {% for edu in educations %}
+        <div class="tl-row">
+          <div class="tl-icon-col">
+            <div class="tl-icon-circle blue"><i class="bi bi-mortarboard-fill"></i></div>
+            <div class="tl-connector"></div>
+          </div>
+          <div class="tl-content">
+            <div class="tl-heading">{{ edu.institution }}</div>
+            <div class="tl-sub">{{ edu.degree }}{% if edu.field %}, {{ edu.field }}{% endif %}</div>
+            {% if edu.start_year or edu.end_year %}
+            <div class="tl-dates">{{ edu.start_year or '' }}{% if edu.start_year and edu.end_year %} – {% endif %}{{ edu.end_year or '' }}</div>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Languages & Certifications -->
+    {% if languages or certifications %}
+    <div class="card">
+      <div class="up-lc-grid">
+        {% if languages %}
+        <div>
+          <div class="up-section-title"><i class="bi bi-translate"></i> Languages</div>
+          {% for l in languages %}
+          <div class="lc-item">
+            <div class="lc-icon lang"><i class="bi bi-translate"></i></div>
+            <div><div class="lc-name">{{ l.language }}</div><div class="lc-sub">{{ l.proficiency }}</div></div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+        {% if certifications %}
+        <div>
+          <div class="up-section-title"><i class="bi bi-patch-check-fill"></i> Certifications</div>
+          {% for c in certifications %}
+          <div class="lc-item">
+            <div class="lc-icon cert"><i class="bi bi-patch-check-fill"></i></div>
+            <div>
+              <div class="lc-name">{{ c.name }}</div>
+              {% if c.issuing_org %}<div class="lc-sub">{{ c.issuing_org }}</div>{% endif %}
+              {% if c.issue_date %}<div class="lc-sub">{{ c.issue_date.strftime('%b %Y') }}{% if c.expiry_date %} – {{ c.expiry_date.strftime('%b %Y') }}{% endif %}</div>{% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if not skills and not experiences and not educations and not languages and not certifications %}
+    <div class="card">
+      <div class="empty-state"><i class="bi bi-person-x"></i> This applicant has not filled in their profile yet.</div>
+    </div>
+    {% endif %}
+
+  </div><!-- /up-main -->
+
+  <!-- RIGHT SIDEBAR (desktop) -->
+  <div class="up-sidebar up-desktop-sidebar">
+
+    <!-- Applications -->
+    <div class="card">
+      <div class="card-title">
+        <i class="bi bi-file-earmark-person-fill" style="color:var(--green)"></i> Applications
+        <span class="badge badge-future" style="margin-left:6px">{{ applications|length }}</span>
+      </div>
+      {% if applications %}
+      {% for a in applications %}
+      <div class="up-app-item">
+        <div class="up-app-header">
+          <div style="min-width:0">
+            <div class="up-app-title">{{ a.position.title if a.position else '—' }}</div>
+            {% if a.position and a.position.company %}
+            <div style="font-size:12px;color:var(--text3);margin-top:2px"><i class="bi bi-building"></i> {{ a.position.company.name }}</div>
+            {% endif %}
+          </div>
+          <span class="badge badge-{{ a.status.lower().replace(' ','') }}" style="white-space:nowrap;flex-shrink:0">{{ a.status }}</span>
+        </div>
+        <div class="up-app-meta">
+          <span class="up-app-meta-tag"><i class="bi bi-calendar3"></i> {{ a.applied_at.strftime('%b %d, %Y') }}</span>
+          {% if a.expected_salary %}<span class="up-app-meta-tag"><i class="bi bi-cash"></i> {{ a.expected_salary }}</span>{% endif %}
+        </div>
+        <a href="{{ url_for('supervisor.application_detail', app_id=a.id) }}"
+           class="btn btn-outline btn-sm" style="margin-top:8px;width:100%;justify-content:center">
+          <i class="bi bi-eye"></i> View Application
+        </a>
+      </div>
+      {% endfor %}
+      {% else %}
+      <div class="text-muted text-sm" style="padding:4px 0">No accessible applications found.</div>
+      {% endif %}
+    </div>
+
+    <!-- Message thread -->
+    <div class="card">
+      <div class="card-title" style="justify-content:space-between">
+        <span><i class="bi bi-chat-dots-fill" style="color:var(--green)"></i> Message</span>
+        <a href="{{ url_for('messages.thread', partner_id=user.id) }}" style="color:var(--text3);font-size:12px;font-weight:500">
+          Full thread <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+      {% if thread_messages %}
+      <div class="chat-thread" id="chatThread">
+        {% for msg in thread_messages %}
+        <div class="chat-bubble {{ 'bubble-out' if msg.sender_id == current_user.id else 'bubble-in' }}">
+          {{ msg.body }}
+          <div class="cmeta">{{ 'You' if msg.sender_id == current_user.id else msg.sender.full_name.split()[0] }} · {{ msg.created_at.strftime('%b %d, %H:%M') }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="chat-empty">
+        <i class="bi bi-chat-dots" style="font-size:26px;display:block;margin-bottom:8px;opacity:.35"></i>
+        No messages yet
+      </div>
+      {% endif %}
+      <form method="POST" action="{{ url_for('messages.send') }}" id="chatForm">
+        <input type="hidden" name="receiver_id" value="{{ user.id }}">
+        <input type="hidden" name="next" value="{{ url_for('supervisor.user_detail', user_id=user.id) }}">
+        <div class="chat-compose">
+          <textarea name="body" id="chatBody" class="form-control"
+                    placeholder="Message {{ user.full_name.split()[0] }}..." required></textarea>
+          <button type="submit" class="btn btn-primary" title="Send (Ctrl+Enter)">
+            <i class="bi bi-send-fill"></i>
+          </button>
+        </div>
+      </form>
+    </div>
+
+  </div><!-- /up-sidebar -->
+
+</div><!-- /up-grid -->
+
+<script>
+const ct = document.getElementById('chatThread');
+if (ct) ct.scrollTop = ct.scrollHeight;
+document.getElementById('chatBody')?.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); document.getElementById('chatForm').submit(); }
+});
+</script>
+{% endblock %}

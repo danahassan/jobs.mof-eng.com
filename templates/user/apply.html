@@ -1,0 +1,254 @@
+﻿{% extends 'base.html' %}
+{% block title %}Apply — {{ pos.title }} — MOF Jobs{% endblock %}
+{% block page_title %}Apply for {{ pos.title }}{% endblock %}
+
+{% block content %}
+<div class="ap-wrap">
+
+  <div class="ap-layout">
+
+    <!-- SIDEBAR: position summary -->
+    <div class="ap-sidebar">
+
+      <!-- Position card -->
+      <div class="card ap-pos-card">
+        {% if pos.company and pos.company.logo_filename %}
+          <img src="{{ url_for('static', filename='uploads/company/' + pos.company.logo_filename) }}"
+               alt="{{ pos.company.name }}" class="ap-pos-logo">
+        {% else %}
+          <div class="ap-pos-logo-ph"><i class="bi bi-building"></i></div>
+        {% endif %}
+        <div class="ap-pos-company">{{ pos.company.name if pos.company else 'MOF Engineering' }}</div>
+        <div class="ap-pos-title">{{ pos.title }}</div>
+        <div class="ap-pos-tags">
+          {% if pos.department %}<span class="ap-tag"><i class="bi bi-diagram-3"></i> {{ pos.department }}</span>{% endif %}
+          <span class="ap-tag"><i class="bi bi-geo-alt"></i> {{ pos.location }}</span>
+          <span class="ap-tag"><i class="bi bi-briefcase"></i> {{ pos.type }}</span>
+          {% if pos.is_remote %}<span class="ap-tag ap-tag-remote"><i class="bi bi-wifi"></i> Remote</span>{% endif %}
+          {% if pos.salary_range %}<span class="ap-tag ap-tag-salary"><i class="bi bi-cash-stack"></i> {{ pos.salary_range }}</span>{% endif %}
+          {% if pos.experience_level %}<span class="ap-tag"><i class="bi bi-bar-chart"></i> {{ pos.experience_level }}</span>{% endif %}
+        </div>
+        {% if pos.closes_at %}
+        <div class="ap-pos-deadline {% if pos.is_closing_soon %}ap-deadline-warn{% endif %}">
+          <i class="bi bi-calendar-x"></i>
+          Closes {{ pos.closes_at.strftime('%b %d, %Y') }}
+          {% if pos.is_closing_soon %}<span> — Closing soon!</span>{% endif %}
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Tips -->
+      <div class="card ap-tips-card">
+        <div class="ap-tips-title"><i class="bi bi-lightbulb"></i> Application Tips</div>
+        <ul class="ap-tips-list">
+          <li><i class="bi bi-check-circle-fill"></i> Attach an up-to-date CV (PDF preferred)</li>
+          <li><i class="bi bi-check-circle-fill"></i> Write a focused cover letter for this role</li>
+          <li><i class="bi bi-check-circle-fill"></i> Double-check your contact details on your CV</li>
+          <li><i class="bi bi-check-circle-fill"></i> Be honest about your expected salary</li>
+        </ul>
+      </div>
+
+    </div><!-- /ap-sidebar -->
+
+    <!-- MAIN: application form -->
+    <div class="ap-main">
+      <div class="card ap-form-card">
+        <div class="ap-form-header">
+          <div class="ap-form-icon"><i class="bi bi-send-fill"></i></div>
+          <div>
+            <div class="ap-form-title">Your Application</div>
+            <div class="ap-form-sub">All fields marked <span style="color:#dc2626">*</span> are required</div>
+          </div>
+        </div>
+
+        <form method="POST" enctype="multipart/form-data" id="ap-form">
+
+          <!-- Applying as -->
+          <div class="ap-field-group">
+            <label class="ap-label">APPLYING AS</label>
+            <div class="ap-readonly-box">
+              <i class="bi bi-person-circle ap-field-icon"></i>
+              <span>{{ current_user.full_name }} ({{ current_user.email }})</span>
+            </div>
+          </div>
+
+          <!-- How did you hear -->
+          <div class="ap-field-group">
+            <label class="ap-label" for="ap-source">HOW DID YOU HEAR ABOUT THIS POSITION?</label>
+            <div class="ap-input-wrap">
+              <i class="bi bi-megaphone ap-field-icon"></i>
+              <select name="source" id="ap-source" class="form-control ap-has-icon">
+                {% for s in SOURCES %}
+                  <option>{{ s }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <!-- Expected salary -->
+          <div class="ap-field-group">
+            <label class="ap-label" for="ap-salary">EXPECTED SALARY <span class="ap-req">*</span></label>
+            <div class="ap-input-wrap">
+              <i class="bi bi-cash-stack ap-field-icon"></i>
+              <select name="expected_salary" id="ap-salary" class="form-control ap-has-icon" required>
+                <option value="">— Select a range —</option>
+                {% for r in SALARY_RANGES %}
+                  <option value="{{ r }}">{{ r }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <!-- CV Upload -->
+          <div class="ap-field-group">
+            <label class="ap-label">UPLOAD CV / RESUME <span class="ap-hint">(PDF, DOC, DOCX — Max 5 MB)</span></label>
+            <div class="ap-upload-zone" id="ap-cv-zone" onclick="document.getElementById('ap-cv-input').click()" role="button" tabindex="0">
+              <div class="ap-upload-icon-wrap">
+                <i class="bi bi-file-earmark-arrow-up"></i>
+              </div>
+              <div class="ap-upload-text">
+                <div class="ap-upload-main" id="ap-cv-label">Click to upload your CV</div>
+                <div class="ap-upload-hint">PDF, DOC or DOCX · Max 5 MB</div>
+                <div id="ap-cv-name" class="ap-upload-chosen"></div>
+              </div>
+            </div>
+            <input type="file" name="cv_file" id="ap-cv-input" accept=".pdf,.doc,.docx" style="display:none"
+                   onchange="handleCvChange(this)">
+          </div>
+
+          <!-- Cover letter -->
+          <div class="ap-field-group" style="margin-bottom:0">
+            <label class="ap-label" style="display:flex;justify-content:space-between;align-items:center">
+              <span>COVER LETTER <span class="ap-hint">(Optional)</span></span>
+              <span id="ap-cl-count" class="ap-char-count">0 / 1000</span>
+            </label>
+            <textarea name="cover_letter" id="ap-cl" class="form-control ap-textarea" maxlength="1000"
+                      placeholder="Tell us why you're a great fit for this role..."></textarea>
+          </div>
+
+          <!-- Submit bar -->
+          <div class="ap-submit-bar">
+            <button type="submit" class="btn btn-primary ap-submit-btn">
+              <i class="bi bi-send"></i> Submit Application
+            </button>
+            <a href="{{ url_for('user.position_detail', pos_id=pos.id) }}" class="btn btn-outline">Cancel</a>
+          </div>
+
+        </form>
+      </div>
+    </div><!-- /ap-main -->
+
+  </div><!-- /ap-layout -->
+</div><!-- /ap-wrap -->
+
+<style>
+/* Wrapper */
+.ap-wrap{width:100%}
+
+/* Two-column layout: form left, sidebar right */
+.ap-layout{display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start}
+.ap-main{min-width:0}
+.ap-sidebar{min-width:0;display:flex;flex-direction:column;gap:16px}
+
+/* Position summary card */
+.ap-pos-card{padding:22px 24px;text-align:left}
+.ap-pos-logo{width:56px;height:56px;border-radius:12px;object-fit:contain;background:#f8f9fa;border:1px solid var(--border);padding:4px;margin-bottom:12px}
+.ap-pos-logo-ph{width:56px;height:56px;border-radius:12px;background:var(--green-light);color:var(--green);font-size:22px;display:flex;align-items:center;justify-content:center;margin-bottom:12px}
+.ap-pos-company{font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.ap-pos-title{font-size:18px;font-weight:700;color:var(--text);margin-bottom:12px;line-height:1.3}
+.ap-pos-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.ap-tag{display:inline-flex;align-items:center;gap:4px;background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:3px 10px;font-size:11px;color:var(--text2)}
+.ap-tag-remote{background:#ede9fe;border-color:#ddd6fe;color:#7c3aed}
+.ap-tag-salary{background:#f0fdf4;border-color:#bbf7d0;color:#16a34a}
+.ap-pos-deadline{font-size:12px;color:var(--text3);display:flex;align-items:center;gap:5px;padding:8px 12px;background:#f8f9fa;border-radius:8px;border:1px solid var(--border)}
+.ap-deadline-warn{background:#fef2f2;border-color:#fecaca;color:#dc2626}
+
+/* Tips card */
+.ap-tips-card{padding:20px 22px}
+.ap-tips-title{font-size:13px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:7px;margin-bottom:12px}
+.ap-tips-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:9px}
+.ap-tips-list li{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--text2);line-height:1.5}
+.ap-tips-list .bi-check-circle-fill{color:var(--green);flex-shrink:0;margin-top:2px}
+
+/* Form card */
+.ap-form-card{padding:28px 32px}
+.ap-form-header{display:flex;align-items:center;gap:14px;margin-bottom:28px;padding-bottom:18px;border-bottom:1px solid var(--border)}
+.ap-form-icon{width:44px;height:44px;border-radius:12px;background:var(--green-light);color:var(--green);font-size:20px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ap-form-title{font-size:18px;font-weight:700;color:var(--text)}
+.ap-form-sub{font-size:12px;color:var(--text3);margin-top:3px}
+
+/* Field groups */
+.ap-field-group{margin-bottom:20px}
+.ap-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);display:block;margin-bottom:7px}
+.ap-req{color:#dc2626}
+.ap-hint{font-size:10px;font-weight:400;text-transform:none;letter-spacing:0;color:var(--text3)}
+.ap-char-count{font-size:11px;font-weight:400;text-transform:none;letter-spacing:0;color:var(--text3)}
+
+/* Readonly display */
+.ap-readonly-box{display:flex;align-items:center;gap:10px;background:#f8f9fa;border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--text2)}
+
+/* Input with icon */
+.ap-input-wrap{position:relative}
+.ap-field-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--text3);pointer-events:none;z-index:1}
+.ap-has-icon{padding-left:36px!important}
+
+/* CV upload zone */
+.ap-upload-zone{border:2px dashed var(--border);border-radius:12px;padding:18px 20px;display:flex;align-items:center;gap:16px;cursor:pointer;transition:border-color .15s,background .15s;background:#fafbfc}
+.ap-upload-zone:hover,.ap-upload-zone:focus{border-color:var(--green);background:var(--green-light);outline:none}
+.ap-upload-icon-wrap{width:48px;height:48px;border-radius:10px;background:#fff;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--text3);flex-shrink:0}
+.ap-upload-text{flex:1;min-width:0}
+.ap-upload-main{font-size:13px;font-weight:600;color:var(--text)}
+.ap-upload-hint{font-size:11px;color:var(--text3);margin-top:3px}
+.ap-upload-chosen{font-size:12px;color:var(--green);margin-top:5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Textarea */
+.ap-textarea{min-height:150px;resize:vertical}
+
+/* Submit bar */
+.ap-submit-bar{display:flex;gap:10px;margin-top:24px;padding-top:20px;border-top:1px solid var(--border)}
+.ap-submit-btn{min-width:180px}
+
+/* Responsive: below 900px collapse sidebar below form */
+@media(max-width:900px){
+  .ap-layout{grid-template-columns:1fr}
+  .ap-sidebar{order:-1}
+  .ap-pos-card{display:flex;flex-wrap:wrap;align-items:flex-start;gap:14px;text-align:left}
+  .ap-pos-logo,.ap-pos-logo-ph{margin-bottom:0;flex-shrink:0}
+  .ap-pos-info-col{flex:1;min-width:0}
+}
+
+/* Mobile */
+@media(max-width:600px){
+  .ap-form-card{padding:20px 16px}
+  .ap-submit-bar{flex-direction:column}
+  .ap-submit-bar .btn{width:100%;justify-content:center}
+  .ap-upload-zone{padding:14px}
+  .ap-tips-card{display:none}
+}
+</style>
+
+<script>
+function handleCvChange(input) {
+  var file = input.files[0];
+  if (!file) return;
+  document.getElementById('ap-cv-label').textContent = 'CV selected';
+  document.getElementById('ap-cv-name').textContent = file.name;
+  var zone = document.getElementById('ap-cv-zone');
+  zone.style.borderColor = 'var(--green)';
+  zone.style.background = 'var(--green-light)';
+}
+
+document.getElementById('ap-cv-zone').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.click(); }
+});
+
+(function() {
+  var ta = document.getElementById('ap-cl');
+  var ct = document.getElementById('ap-cl-count');
+  function upd() { var n = ta.value.length; ct.textContent = n + ' / 1000'; ct.style.color = n > 900 ? '#dc2626' : 'var(--text3)'; }
+  ta.addEventListener('input', upd);
+  upd();
+})();
+</script>
+{% endblock %}
+

@@ -1,0 +1,109 @@
+﻿{% extends 'base.html' %}
+{% block title %}{{ 'Edit Job' if job else 'Post New Job' }} — MOF Jobs{% endblock %}
+{% block page_title %}{{ 'Edit Job' if job else 'Post New Job' }}{% endblock %}
+{% block page_breadcrumb %}{{ company.name }}{% endblock %}
+
+{% block content %}
+<form method="POST" style="max-width:900px">
+  <div class="card" style="padding:24px;margin-bottom:20px">
+    <h3 style="font-size:15px;font-weight:600;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)">Basic Information</h3>
+    <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:16px">
+      <div style="grid-column:span 2">
+        <label class="form-label">Job Title *</label>
+        <input class="form-control" name="title" value="{{ job.title if job else '' }}" required placeholder="e.g. Senior Software Engineer">
+      </div>
+      <div>
+        <label class="form-label">Department</label>
+        <input class="form-control" name="department" value="{{ job.department if job else '' }}" placeholder="e.g. Engineering">
+      </div>
+      <div>
+        <label class="form-label">Location</label>
+        <input class="form-control" name="location" value="{{ job.location if job else '' }}" placeholder="e.g. Slemani, Iraq">
+      </div>
+      <div>
+        <label class="form-label">Job Type</label>
+        <select class="form-control" name="job_type">
+          {% for t in job_types %}
+          <option value="{{ t }}" {% if job and job.type == t %}selected{% endif %}>{{ t }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Experience Level</label>
+        <select class="form-control" name="experience_level">
+          <option value="">— Not specified —</option>
+          {% for exp in exp_levels %}
+          <option value="{{ exp }}" {% if job and job.experience_level == exp %}selected{% endif %}>{{ exp }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="padding:24px;margin-bottom:20px">
+    <h3 style="font-size:15px;font-weight:600;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)">Salary & Benefits</h3>
+    <div class="form-grid" style="grid-template-columns:1fr 1fr 1fr;gap:16px">
+      <div>
+        <label class="form-label">Salary Min (IQD)</label>
+        <input class="form-control" type="number" name="salary_min" value="{{ job.salary_min if job else '' }}" placeholder="e.g. 1500000">
+      </div>
+      <div>
+        <label class="form-label">Salary Max (IQD)</label>
+        <input class="form-control" type="number" name="salary_max" value="{{ job.salary_max if job else '' }}" placeholder="e.g. 2500000">
+      </div>
+      <div>
+        <label class="form-label">Salary Range Label</label>
+        <select class="form-control" name="salary_range">
+          <option value="">— Not specified —</option>
+          {% for r in SALARY_RANGES %}
+            <option value="{{ r }}" {% if job and job.salary_range == r %}selected{% endif %}>{{ r }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div style="margin-top:14px">
+      <label class="form-label">Benefits</label>
+      <textarea class="form-control" name="benefits" rows="3" placeholder="Health insurance, remote work, performance bonus…">{{ job.benefits if job else '' }}</textarea>
+    </div>
+  </div>
+
+  <div class="card" style="padding:24px;margin-bottom:20px">
+    <h3 style="font-size:15px;font-weight:600;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)">Job Details</h3>
+    <div style="margin-bottom:14px">
+      <label class="form-label">Job Description *</label>
+      <textarea class="form-control" name="description" rows="8" required placeholder="Describe the role, responsibilities, and what success looks like…">{{ job.description if job else '' }}</textarea>
+    </div>
+    <div style="margin-bottom:14px">
+      <label class="form-label">Requirements</label>
+      <textarea class="form-control" name="requirements" rows="5" placeholder="List qualifications, education, and required experience…">{{ job.requirements if job else '' }}</textarea>
+    </div>
+    <div>
+      <label class="form-label">Required Skills <span style="font-size:11px;color:var(--text3)">(comma-separated)</span></label>
+      <input class="form-control" name="skills_required" value="{{ job.skills_required if job else '' }}" placeholder="Python, React, Docker, SQL…">
+    </div>
+  </div>
+
+  <div class="card" style="padding:24px;margin-bottom:20px">
+    <h3 style="font-size:15px;font-weight:600;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)">Settings</h3>
+    <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:16px">
+      <div>
+        <label class="form-label">Application Deadline</label>
+        <input class="form-control" type="date" name="closes_at" value="{{ job.closes_at.strftime('%Y-%m-%d') if job and job.closes_at else '' }}">
+      </div>
+      <div style="display:flex;align-items:center;gap:24px;padding-top:28px">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px">
+          <input type="checkbox" name="is_remote" {% if job and job.is_remote %}checked{% endif %} style="width:16px;height:16px"> Remote / Hybrid
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px">
+          <input type="checkbox" name="is_active" {% if not job or job.is_active %}checked{% endif %} style="width:16px;height:16px"> Published
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:12px;justify-content:flex-end;flex-wrap:wrap">
+    <a href="{{ url_for('employer.jobs') }}" class="btn btn-outline">Cancel</a>
+    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> {{ 'Update Job' if job else 'Post Job' }}</button>
+  </div>
+</form>
+{% endblock %}

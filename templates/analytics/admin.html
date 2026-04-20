@@ -1,0 +1,106 @@
+﻿{% extends 'base.html' %}
+{% block title %}Platform Analytics — MOF Jobs{% endblock %}
+{% block page_title %}Platform Analytics{% endblock %}
+{% block page_breadcrumb %}Admin Analytics{% endblock %}
+
+{% block content %}
+<!-- Platform KPIs -->
+<div class="stats-grid" style="margin-bottom:24px">
+  <div class="stat-card"><div class="stat-card-inner">
+    <div class="stat-icon"><i class="bi bi-people"></i></div>
+    <div><div class="stat-num">{{ total_users }}</div><div class="stat-lbl">Total Users</div></div>
+  </div></div>
+  <div class="stat-card"><div class="stat-card-inner">
+    <div class="stat-icon" style="color:#8b5cf6"><i class="bi bi-briefcase"></i></div>
+    <div><div class="stat-num">{{ total_jobs }}</div><div class="stat-lbl">Jobs Posted</div></div>
+  </div></div>
+  <div class="stat-card"><div class="stat-card-inner">
+    <div class="stat-icon" style="color:#f59e0b"><i class="bi bi-send"></i></div>
+    <div><div class="stat-num">{{ total_applications }}</div><div class="stat-lbl">Applications</div></div>
+  </div></div>
+  <div class="stat-card"><div class="stat-card-inner">
+    <div class="stat-icon" style="color:#22c55e"><i class="bi bi-building"></i></div>
+    <div><div class="stat-num">{{ total_companies }}</div><div class="stat-lbl">Companies</div></div>
+  </div></div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px" class="an-layout">
+  <!-- Monthly Users -->
+  <div class="card" style="padding:24px">
+    <h2 style="font-size:15px;font-weight:600;margin-bottom:16px">New Users per Month</h2>
+    <canvas id="usersChart" height="130"></canvas>
+  </div>
+  <!-- Monthly Apps -->
+  <div class="card" style="padding:24px">
+    <h2 style="font-size:15px;font-weight:600;margin-bottom:16px">Applications per Month</h2>
+    <canvas id="appsChart" height="130"></canvas>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px" class="an-layout">
+  <!-- App Status Donut -->
+  <div class="card" style="padding:24px">
+    <h2 style="font-size:15px;font-weight:600;margin-bottom:16px">Application Status Distribution</h2>
+    <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+      <canvas id="statusChart" width="160" height="160" style="max-width:160px"></canvas>
+      <div style="flex:1;font-size:13px">
+        {% for label, count, color in status_breakdown %}
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--border)">
+          <div><span style="width:10px;height:10px;border-radius:50%;background:{{ color }};display:inline-block;margin-right:8px"></span>{{ label }}</div>
+          <b>{{ count }}</b>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Role Distribution -->
+  <div class="card" style="padding:24px">
+    <h2 style="font-size:15px;font-weight:600;margin-bottom:16px">User Roles</h2>
+    {% for role, count, pct in role_breakdown %}
+    <div style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px">
+        <span style="text-transform:capitalize">{{ role }}</span><b>{{ count }} ({{ pct | int }}%)</b>
+      </div>
+      <div style="height:8px;background:var(--border);border-radius:10px;overflow:hidden">
+        <div style="height:100%;width:{{ pct }}%;background:var(--primary);border-radius:10px"></div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Top Companies -->
+<div class="card" style="padding:24px">
+  <h2 style="font-size:15px;font-weight:600;margin-bottom:14px">Top Companies by Applications</h2>
+  {% for co in top_companies %}
+  <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border)">
+    <div style="flex:1;font-size:13px;font-weight:500">{{ co.name }}</div>
+    <div style="display:flex;align-items:center;gap:8px;font-size:13px">
+      <span>{{ co.open_jobs }} open jobs</span>
+      <span style="color:var(--text3)">·</span>
+      <b>{{ co.app_count }} apps</b>
+    </div>
+  </div>
+  {% else %}<p style="color:var(--text3);font-size:13px">No company data yet.</p>{% endfor %}
+</div>
+
+<style>@media(max-width:800px){.an-layout{grid-template-columns:1fr!important}}</style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+const makeBar = (id, labels, data, color) => new Chart(document.getElementById(id), {
+  type: 'bar',
+  data: { labels, datasets: [{ data, backgroundColor: color, borderRadius: 4 }] },
+  options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+});
+makeBar('usersChart', {{ monthly_labels | tojson }}, {{ monthly_users | tojson }}, 'rgba(99,102,241,.7)');
+makeBar('appsChart', {{ monthly_labels | tojson }}, {{ monthly_apps | tojson }}, 'rgba(34,197,94,.7)');
+
+const sd = {{ status_breakdown | tojson }};
+new Chart(document.getElementById('statusChart'), {
+  type: 'doughnut',
+  data: { labels: sd.map(s=>s[0]), datasets: [{ data: sd.map(s=>s[1]), backgroundColor: sd.map(s=>s[2]), borderWidth: 2 }] },
+  options: { cutout: '65%', plugins: { legend: { display: false } } }
+});
+</script>
+{% endblock %}

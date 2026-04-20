@@ -1,0 +1,141 @@
+﻿{% extends 'base.html' %}
+{% block title %}Applications — MOF Jobs{% endblock %}
+{% block page_title %}Applications{% endblock %}
+
+{% block extra_css %}
+<style>
+.sv-app-cards{display:none;flex-direction:column;gap:10px}
+.sv-app-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.sv-app-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px}
+.sv-app-card-name{font-weight:600;font-size:14px;color:var(--text)}
+.sv-app-card-pos{font-size:13px;color:var(--text2);margin-bottom:4px}
+.sv-app-card-meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.sv-app-card-date{font-size:12px;color:var(--text3)}
+@media(max-width:680px){
+  .sv-app-cards{display:flex}
+  .sv-app-table-wrap{display:none}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<form method="GET" class="filter-bar">
+  <div class="filter-row">
+    <div class="filter-search">
+      <label class="msd-label">Search</label>
+      <div style="position:relative">
+        <i class="bi bi-search filter-search-icon"></i>
+        <input type="text" name="q" class="form-control" placeholder="Applicant name or email…" value="{{ q_str }}">
+      </div>
+    </div>
+    <div class="msd" id="msd-status">
+      <label class="msd-label">Status</label>
+      <button type="button" class="msd-btn" onclick="toggleMSD('msd-status')">
+        Status <span class="msd-count"></span><i class="bi bi-chevron-down msd-chevron"></i>
+      </button>
+      <div class="msd-panel">
+        {% for s in ALL_STATUSES %}
+        <label class="msd-option">
+          <input type="checkbox" name="status" value="{{ s }}" {% if s in status_f %}checked{% endif %}>
+          <span>{{ s }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="filter-actions">
+      <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-funnel"></i> Filter</button>
+      <a href="{{ url_for('supervisor.applications') }}" class="btn btn-outline btn-sm">Reset</a>
+    </div>
+  </div>
+</form>
+
+{% if q_str or status_f %}
+<div class="filter-chips">
+  {% if q_str %}<span class="filter-chip"><i class="bi bi-search"></i> {{ q_str }}</span>{% endif %}
+  {% for s in status_f %}<span class="filter-chip"><i class="bi bi-circle-fill" style="font-size:8px"></i> {{ s }}</span>{% endfor %}
+  <a href="{{ url_for('supervisor.applications') }}" class="filter-chip" style="background:#fee2e2;color:#991b1b;border-color:#fca5a5"><i class="bi bi-x-lg"></i> Clear all</a>
+</div>
+{% endif %}
+
+<!-- Desktop table -->
+<div class="sv-app-table-wrap">
+  <div class="table-card">
+    <div class="table-head">
+      <span class="table-head-title">
+        <span class="table-head-count">{{ apps.total }}</span>
+        application{{ 's' if apps.total != 1 }}
+      </span>
+      <div class="export-group">
+        <a href="{{ url_for('supervisor.applications_export', fmt='csv', q=q_str) }}{% for s in status_f %}&status={{ s|urlencode }}{% endfor %}" class="btn-export csv"><i class="bi bi-filetype-csv"></i> CSV</a>
+        <a href="{{ url_for('supervisor.applications_export', fmt='xlsx', q=q_str) }}{% for s in status_f %}&status={{ s|urlencode }}{% endfor %}" class="btn-export xlsx"><i class="bi bi-file-earmark-excel"></i> Excel</a>
+      </div>
+    </div>
+    <div class="table-responsive">
+      <table class="tbl">
+        <thead><tr><th>#</th><th>Applicant</th><th>Position</th><th>Applied</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody>
+          {% for app in apps.items %}
+          <tr>
+            <td data-label="#">{{ app.id }}</td>
+            <td data-label="Applicant" class="td-name">{{ app.applicant.full_name }}</td>
+            <td data-label="Position">{{ app.position.title }}</td>
+            <td data-label="Applied" class="text-muted">{{ app.applied_at.strftime('%b %d, %Y') }}</td>
+            <td data-label="Status"><span class="badge badge-{{ app.status.lower().replace(' ','') }}">{{ app.status }}</span></td>
+            <td data-label="Actions">
+              <div class="d-flex gap-2">
+                <a href="{{ url_for('supervisor.application_detail', app_id=app.id) }}" class="btn btn-outline btn-sm"><i class="bi bi-eye"></i> View</a>
+                <form method="POST" action="{{ url_for('supervisor.application_delete', app_id=app.id) }}"
+                      onsubmit="return confirm('Permanently delete this application from {{ app.applicant.full_name|e }}?')">
+                  <button type="submit" class="btn btn-danger btn-sm"><i class="bi bi-trash"></i></button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="6"><div class="empty-state"><i class="bi bi-inbox"></i> No applications found.</div></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Mobile cards -->
+<div class="sv-app-cards">
+  {% for app in apps.items %}
+  <div class="sv-app-card">
+    <div class="sv-app-card-top">
+      <div>
+        <div class="sv-app-card-name">{{ app.applicant.full_name }}</div>
+        <div class="sv-app-card-pos">{{ app.position.title }}</div>
+      </div>
+      <span class="badge badge-{{ app.status.lower().replace(' ','') }}">{{ app.status }}</span>
+    </div>
+    <div class="sv-app-card-meta">
+      <span class="sv-app-card-date"><i class="bi bi-calendar3"></i> {{ app.applied_at.strftime('%b %d, %Y') }}</span>
+      <a href="{{ url_for('supervisor.application_detail', app_id=app.id) }}" class="btn btn-outline btn-sm"><i class="bi bi-eye"></i> View</a>
+    </div>
+  </div>
+  {% else %}
+  <div class="empty-state"><i class="bi bi-inbox"></i> No applications found.</div>
+  {% endfor %}
+</div>
+
+{% if apps.pages > 1 %}
+<div class="pagination">
+  <a href="{{ url_for('supervisor.applications', page=apps.prev_num, q=q_str) }}{% for s in status_f %}&status={{ s|urlencode }}{% endfor %}"
+     class="page-link {% if not apps.has_prev %}disabled{% endif %}"><i class="bi bi-chevron-left"></i></a>
+  {% for p in apps.iter_pages() %}
+    {% if p %}
+      <a href="{{ url_for('supervisor.applications', page=p, q=q_str) }}{% for s in status_f %}&status={{ s|urlencode }}{% endfor %}"
+         class="page-link {% if p == apps.page %}active{% endif %}">{{ p }}</a>
+    {% else %}
+      <span class="page-link">…</span>
+    {% endif %}
+  {% endfor %}
+  <a href="{{ url_for('supervisor.applications', page=apps.next_num, q=q_str) }}{% for s in status_f %}&status={{ s|urlencode }}{% endfor %}"
+     class="page-link {% if not apps.has_next %}disabled{% endif %}"><i class="bi bi-chevron-right"></i></a>
+</div>
+{% endif %}
+{% endblock %}

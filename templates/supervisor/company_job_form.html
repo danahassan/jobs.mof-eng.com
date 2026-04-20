@@ -1,0 +1,259 @@
+﻿{% extends 'base.html' %}
+{% block title %}{{ 'Edit' if pos else 'Post' }} Job — {{ company.name }} — MOF Jobs{% endblock %}
+{% block page_title %}{{ 'Edit Job' if pos else 'Post New Job' }}{% endblock %}
+
+{% block content %}
+<div class="jf-wrap">
+
+  <!-- Company mini-header -->
+  <div class="card jf-company-header">
+    {% if company.logo_filename %}
+      <img src="{{ url_for('static', filename='uploads/company/' + company.logo_filename) }}"
+           alt="{{ company.name }}" class="jf-header-logo">
+    {% else %}
+      <div class="jf-header-logo-placeholder">{{ company.name[0] }}</div>
+    {% endif %}
+    <div class="jf-header-info">
+      <div style="font-size:17px;font-weight:700;color:var(--text)">{{ company.name }}</div>
+      {% if company.location %}<div style="font-size:12px;color:var(--text3);margin-top:2px"><i class="bi bi-geo-alt"></i> {{ company.location }}</div>{% endif %}
+    </div>
+    <div class="jf-header-actions">
+      <a href="{{ url_for('supervisor.company_dashboard', company_id=company.id) }}" class="btn btn-outline btn-sm">
+        <i class="bi bi-arrow-left"></i> Back to {{ company.name }}
+      </a>
+    </div>
+  </div>
+
+  <form method="POST" id="jf-form">
+    <div class="jf-layout">
+
+      <!-- MAIN COLUMN -->
+      <div class="jf-main">
+
+        <!-- 1 Job Details -->
+        <div class="card jf-section">
+          <div class="jf-section-head">
+            <span class="jf-step">1</span>
+            <div>
+              <div class="jf-section-title"><i class="bi bi-briefcase"></i> Job Details</div>
+              <div class="jf-section-sub">Basic information shown on the listing</div>
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="form-group" style="grid-column:1/-1">
+              <label class="jf-label">Job Title <span class="jf-req">*</span></label>
+              <input type="text" name="title" class="form-control" required
+                     value="{{ pos.title if pos else '' }}" placeholder="e.g. Civil Engineer">
+            </div>
+            <div class="form-group">
+              <label class="jf-label">Department</label>
+              <div class="jf-icon-wrap">
+                <i class="bi bi-diagram-3 jf-icon"></i>
+                <input type="text" name="department" class="form-control jf-has-icon"
+                       value="{{ pos.department if pos else '' }}" placeholder="e.g. Engineering">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="jf-label">Location</label>
+              <div class="jf-icon-wrap">
+                <i class="bi bi-geo-alt jf-icon"></i>
+                <input type="text" name="location" class="form-control jf-has-icon"
+                       value="{{ pos.location if pos else company.location or '' }}">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="jf-label">Employment Type</label>
+              <select name="type" class="form-control">
+                {% for t in ['Full-time','Part-time','Contract','Internship'] %}
+                  <option {% if pos and pos.type == t %}selected{% endif %}>{{ t }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="jf-label">Expected Salary Range <span class="jf-opt">Optional</span></label>
+              <div class="jf-icon-wrap">
+                <i class="bi bi-cash-stack jf-icon"></i>
+                <select name="salary_range" class="form-control jf-has-icon">
+                  <option value="">— Not specified —</option>
+                  {% for r in SALARY_RANGES %}
+                    <option value="{{ r }}" {% if pos and pos.salary_range == r %}selected{% endif %}>{{ r }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="jf-label">Closing Date <span class="jf-opt">Optional</span></label>
+              <div class="jf-icon-wrap">
+                <i class="bi bi-calendar3 jf-icon"></i>
+                <input type="date" name="closes_at" class="form-control jf-has-icon"
+                       value="{{ pos.closes_at.strftime('%Y-%m-%d') if pos and pos.closes_at else '' }}">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2 Description & Requirements -->
+        <div class="card jf-section">
+          <div class="jf-section-head">
+            <span class="jf-step">2</span>
+            <div>
+              <div class="jf-section-title"><i class="bi bi-file-text"></i> Description &amp; Requirements</div>
+              <div class="jf-section-sub">Help candidates understand the role</div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="jf-label" style="display:flex;justify-content:space-between">
+              <span>Job Description</span>
+              <span id="desc-count" class="jf-char-count">0 / 2000</span>
+            </label>
+            <textarea name="description" class="form-control" id="desc-area" maxlength="2000"
+                      style="min-height:140px"
+                      placeholder="Describe the role, responsibilities, and team...">{{ pos.description if pos else '' }}</textarea>
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="jf-label">Requirements</label>
+            <textarea name="requirements" class="form-control"
+                      style="min-height:110px"
+                      placeholder="Required qualifications, experience, skills...">{{ pos.requirements if pos else '' }}</textarea>
+          </div>
+        </div>
+
+        <!-- Submit bar -->
+        <div class="jf-submit-bar">
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-lg"></i> {{ 'Save Changes' if pos else 'Post Job' }}
+          </button>
+          <a href="{{ url_for('supervisor.company_dashboard', company_id=company.id) }}" class="btn btn-outline">Cancel</a>
+        </div>
+
+      </div><!-- /jf-main -->
+
+      <!-- SIDEBAR -->
+      <div class="jf-aside">
+        <div class="card jf-section jf-aside-sticky">
+          <div class="jf-section-head">
+            <span class="jf-step">3</span>
+            <div>
+              <div class="jf-section-title"><i class="bi bi-broadcast"></i> Publishing</div>
+              <div class="jf-section-sub">Control visibility</div>
+            </div>
+          </div>
+          <label class="jf-toggle-row">
+            <div class="jf-toggle-info">
+              <span class="jf-toggle-name">Publish Now</span>
+              <span class="jf-toggle-desc">Visible on job listing &amp; followers notified</span>
+            </div>
+            <div class="jf-toggle-switch">
+              <input type="checkbox" name="is_active" id="is_active" class="jf-toggle-input"
+                     {% if not pos or pos.is_active %}checked{% endif %}>
+              <span class="jf-toggle-track"></span>
+            </div>
+          </label>
+          {% if pos %}
+          <div class="jf-meta-list">
+            <div class="jf-meta-item">
+              <span class="jf-meta-lbl">Applications</span>
+              <span class="jf-meta-val">{{ pos.application_count }}</span>
+            </div>
+            <div class="jf-meta-item">
+              <span class="jf-meta-lbl">Posted</span>
+              <span class="jf-meta-val">{{ pos.created_at.strftime('%b %d, %Y') }}</span>
+            </div>
+            {% if pos.closes_at %}
+            <div class="jf-meta-item">
+              <span class="jf-meta-lbl">Closes</span>
+              <span class="jf-meta-val">{{ pos.closes_at.strftime('%b %d, %Y') }}</span>
+            </div>
+            {% endif %}
+          </div>
+          {% endif %}
+        </div>
+      </div><!-- /jf-aside -->
+
+    </div><!-- /jf-layout -->
+  </form>
+</div>
+
+<style>
+.jf-wrap{width:100%}
+
+/* Layout */
+.jf-layout{display:grid;grid-template-columns:1fr 270px;gap:20px;align-items:start}
+.jf-main{min-width:0}
+.jf-aside{min-width:0}
+.jf-aside-sticky{position:sticky;top:80px}
+
+/* Mini-header */
+.jf-company-header{display:flex;align-items:center;gap:14px;padding:14px 18px;margin-bottom:20px;flex-wrap:wrap}
+.jf-header-logo{width:48px;height:48px;border-radius:10px;object-fit:contain;background:#f8f9fa;border:1px solid var(--border);padding:3px;flex-shrink:0}
+.jf-header-logo-placeholder{width:48px;height:48px;border-radius:10px;background:var(--green-light);color:var(--green);font-size:18px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.jf-header-info{flex:1;min-width:0}
+.jf-header-actions{flex-shrink:0}
+
+/* Section cards */
+.jf-section{margin-bottom:16px;padding:22px 24px}
+.jf-section-head{display:flex;align-items:flex-start;gap:14px;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.jf-step{width:30px;height:30px;border-radius:50%;background:var(--green-light);color:var(--green);font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.jf-section-title{font-size:15px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:7px;line-height:1.3}
+.jf-section-sub{font-size:12px;color:var(--text3);margin-top:3px}
+
+/* Labels */
+.jf-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);display:block;margin-bottom:6px}
+.jf-req{color:#dc2626}
+.jf-opt{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.3px;color:var(--text3);margin-left:4px}
+.jf-char-count{font-size:11px;font-weight:400;text-transform:none;letter-spacing:0;color:var(--text3)}
+
+/* Icon inputs */
+.jf-icon-wrap{position:relative}
+.jf-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:14px;pointer-events:none}
+.jf-has-icon{padding-left:34px!important}
+
+/* Toggle */
+.jf-toggle-row{display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;user-select:none;padding:0}
+.jf-toggle-info{flex:1;min-width:0}
+.jf-toggle-name{font-size:14px;font-weight:600;color:var(--text);display:block}
+.jf-toggle-desc{font-size:12px;color:var(--text3);margin-top:2px;display:block}
+.jf-toggle-switch{flex-shrink:0;position:relative;width:44px;height:24px}
+.jf-toggle-input{position:absolute;opacity:0;width:0;height:0}
+.jf-toggle-track{position:absolute;inset:0;background:#d1d5db;border-radius:12px;transition:background .2s;cursor:pointer;display:block}
+.jf-toggle-track::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.jf-toggle-input:checked~.jf-toggle-track{background:var(--green)}
+.jf-toggle-input:checked~.jf-toggle-track::after{transform:translateX(20px)}
+
+/* Meta list in sidebar */
+.jf-meta-list{margin-top:18px;padding-top:14px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:10px}
+.jf-meta-item{display:flex;justify-content:space-between;align-items:center}
+.jf-meta-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text3)}
+.jf-meta-val{font-size:13px;font-weight:600;color:var(--text)}
+
+/* Submit bar */
+.jf-submit-bar{display:flex;gap:10px;align-items:center;padding:4px 0 28px}
+
+/* Responsive */
+@media(max-width:900px){
+  .jf-layout{grid-template-columns:1fr}
+  .jf-aside-sticky{position:static}
+  /* Move sidebar above submit bar on tablet */
+  .jf-aside{order:-1}
+}
+@media(max-width:768px){
+  .jf-company-header{gap:10px}
+  .jf-header-actions{width:100%}
+  .jf-header-actions .btn{width:100%;justify-content:center}
+  .jf-section{padding:16px}
+  .jf-section-head{gap:10px;margin-bottom:14px;padding-bottom:12px}
+  .jf-submit-bar{position:sticky;bottom:0;background:var(--card);margin:0 -12px;padding:12px 16px 20px;border-top:1px solid var(--border);z-index:100;box-shadow:0 -4px 20px rgba(0,0,0,.1)}
+  .jf-submit-bar .btn{flex:1;justify-content:center}
+}
+</style>
+
+<script>
+(function(){
+  var a=document.getElementById('desc-area');
+  var c=document.getElementById('desc-count');
+  if(!a||!c) return;
+  function upd(){ var n=a.value.length; c.textContent=n+' / 2000'; c.style.color=n>1800?'#dc2626':'var(--text3)'; }
+  a.addEventListener('input',upd); upd();
+})();
+</script>
+{% endblock %}

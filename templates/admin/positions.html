@@ -1,0 +1,256 @@
+﻿{% extends 'base.html' %}
+{% block title %}Positions — MOF Jobs{% endblock %}
+{% block page_title %}Positions{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Desktop table ── */
+.positions-page .kpi-card{position:relative;overflow:hidden}
+.positions-page .kpi-card::after{content:'';position:absolute;left:0;right:0;top:0;height:2px;background:linear-gradient(90deg,#198754,#22c55e);opacity:.2}
+.positions-page .section-header{margin-bottom:14px}
+.positions-page .table-card{border-radius:14px}
+.positions-page .tbl thead th{position:sticky;top:0;z-index:2;background:#f8fafb}
+.positions-page .tbl tbody tr td{background:#fff}
+.positions-page .tbl .td-name{font-weight:700;color:var(--text);max-width:240px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.positions-page .type-pill{display:inline-flex;align-items:center;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:600;background:#f8fafb;border:1px solid var(--border);color:var(--text2)}
+.positions-page .pos-actions{display:flex;gap:6px;align-items:center}
+.positions-page .pos-actions form{margin:0}
+
+/* ── Mobile cards ── */
+.pos-cards{display:none;flex-direction:column;gap:10px;margin-bottom:20px}
+.pos-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow)}
+.pos-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px}
+.pos-card-title{font-size:14px;font-weight:700;color:var(--text);line-height:1.3}
+.pos-card-dept{font-size:12px;color:var(--text3);margin-top:2px}
+.pos-card-meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;align-items:center}
+.pos-card-tag{display:inline-flex;align-items:center;gap:4px;background:#f4f6f8;border:1px solid var(--border);border-radius:20px;padding:3px 9px;font-size:11px;color:var(--text2)}
+.pos-card-actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.pos-card-actions .btn{justify-content:center;padding:7px 10px}
+.pos-card-actions .toggle-form{grid-column:1/3}
+.pos-card-actions .delete-form{grid-column:3}
+
+/* KPI strip: 2-col on all screens by default, scale up with width */
+.positions-page .kpi-strip{grid-template-columns:repeat(2,1fr);gap:8px}
+.positions-page .kpi-card{padding:12px}
+.positions-page .kpi-val{font-size:20px}
+@media(min-width:600px){
+  .positions-page .kpi-strip{grid-template-columns:repeat(3,1fr);gap:10px}
+}
+@media(min-width:900px){
+  .positions-page .kpi-strip{grid-template-columns:repeat(5,1fr);gap:12px}
+  .positions-page .kpi-card{padding:14px 16px}
+  .positions-page .kpi-val{font-size:24px}
+}
+@media(max-width:768px){
+  .positions-page .section-header > div{display:flex;gap:8px;flex-wrap:wrap;width:100%}
+  .positions-page .export-group{flex:1}
+  .pos-cards{display:flex}
+  .pos-table-wrap{display:none}
+}
+@media(max-width:430px){
+  .pos-card-actions{grid-template-columns:1fr 1fr}
+  .pos-card-actions .toggle-form{grid-column:1/-1}
+  .pos-card-actions .delete-form{grid-column:auto}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="positions-page">
+<!-- KPI Strip -->
+<div class="kpi-strip">
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#e8f5ee;color:#198754"><i class="bi bi-briefcase-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_active }}</div><div class="kpi-lbl">Active</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#f8f9fa;color:#6c757d"><i class="bi bi-archive-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_inactive }}</div><div class="kpi-lbl">Inactive</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#ede9fe;color:#7c3aed"><i class="bi bi-file-earmark-person-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_total_apps }}</div><div class="kpi-lbl">Total Apps</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#fff7ed;color:#ea580c"><i class="bi bi-clock-history"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_closing }}</div><div class="kpi-lbl">Closing Soon</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#eff6ff;color:#2563eb"><i class="bi bi-calendar-plus"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_new_30d }}</div><div class="kpi-lbl">Added (30d)</div></div>
+  </div>
+</div>
+
+<!-- Filter Bar -->
+<form method="GET" class="filter-bar">
+  <div class="filter-row">
+    <div class="filter-search">
+      <label class="msd-label">Search</label>
+      <div style="position:relative">
+        <i class="bi bi-search filter-search-icon"></i>
+        <input type="text" name="q" class="form-control" placeholder="Title or department…" value="{{ q_str }}">
+      </div>
+    </div>
+    <div class="msd" id="msd-type">
+      <label class="msd-label">Type</label>
+      <button type="button" class="msd-btn" onclick="toggleMSD('msd-type')">
+        Type <span class="msd-count"></span><i class="bi bi-chevron-down msd-chevron"></i>
+      </button>
+      <div class="msd-panel">
+        {% for t in POSITION_TYPES %}
+        <label class="msd-option">
+          <input type="checkbox" name="type" value="{{ t }}" {% if t in types_f %}checked{% endif %}>
+          <span>{{ t }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="filter-group">
+      <label>Company</label>
+      <select name="company_id" class="form-control">
+        <option value="">All Companies</option>
+        {% for c in all_companies %}
+        <option value="{{ c.id }}" {% if c.id == company_f %}selected{% endif %}>{{ c.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Status</label>
+      <select name="status" class="form-control">
+        <option value="">All</option>
+        <option value="active" {% if status_f == 'active' %}selected{% endif %}>Active</option>
+        <option value="inactive" {% if status_f == 'inactive' %}selected{% endif %}>Inactive</option>
+      </select>
+    </div>
+    <div class="filter-actions">
+      <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-funnel"></i> Filter</button>
+      <a href="{{ url_for('admin.positions') }}" class="btn btn-outline btn-sm">Reset</a>
+    </div>
+  </div>
+</form>
+{% if q_str or types_f or company_f or status_f %}
+<div class="filter-chips">
+  {% if q_str %}<span class="filter-chip"><i class="bi bi-search"></i> {{ q_str }}</span>{% endif %}
+  {% for t in types_f %}<span class="filter-chip"><i class="bi bi-briefcase"></i> {{ t }}</span>{% endfor %}
+  {% if company_f %}<span class="filter-chip"><i class="bi bi-building"></i> Company filter active</span>{% endif %}
+  {% if status_f %}<span class="filter-chip"><i class="bi bi-circle-fill" style="font-size:8px"></i> {{ status_f|capitalize }}</span>{% endif %}
+  <a href="{{ url_for('admin.positions') }}" class="filter-chip" style="background:#fee2e2;color:#991b1b;border-color:#fca5a5"><i class="bi bi-x-lg"></i> Clear all</a>
+</div>
+{% endif %}
+
+<div class="section-header">
+  <span class="text-muted text-sm">{{ positions.total }} position{{ 's' if positions.total != 1 }}</span>
+  <div class="d-flex gap-2 align-center">
+    <div class="export-group">
+      <a href="{{ url_for('admin.positions_export', fmt='csv') }}" class="btn-export csv"><i class="bi bi-filetype-csv"></i> CSV</a>
+      <a href="{{ url_for('admin.positions_export', fmt='xlsx') }}" class="btn-export xlsx"><i class="bi bi-file-earmark-excel"></i> Excel</a>
+    </div>
+    <a href="{{ url_for('admin.position_new') }}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> New Position</a>
+  </div>
+</div>
+
+<!-- Mobile cards -->
+<div class="pos-cards">
+  {% for pos in positions.items %}
+  <div class="pos-card">
+    <div class="pos-card-top">
+      <div>
+        <div class="pos-card-title">{{ pos.title }}</div>
+        {% if pos.department %}<div class="pos-card-dept"><i class="bi bi-diagram-3"></i> {{ pos.department }}</div>{% endif %}
+      </div>
+      {% if pos.is_active %}<span class="badge badge-active">Active</span>
+      {% else %}<span class="badge badge-inactive">Inactive</span>{% endif %}
+    </div>
+    <div class="pos-card-meta">
+      <span class="pos-card-tag"><i class="bi bi-briefcase"></i> {{ pos.type }}</span>
+      <span class="pos-card-tag"><i class="bi bi-people"></i> {{ pos.application_count }} app{{ 's' if pos.application_count != 1 }}</span>
+      {% if pos.closes_at %}
+      <span class="pos-card-tag {% if pos.is_closing_soon %}text-warning{% endif %}">
+        <i class="bi bi-clock"></i> {{ pos.closes_at.strftime('%b %d, %Y') }}
+      </span>
+      {% endif %}
+    </div>
+    <div class="pos-card-actions">
+      <a href="{{ url_for('admin.position_detail', pos_id=pos.id) }}" class="btn btn-outline btn-sm"><i class="bi bi-eye"></i> View</a>
+      <a href="{{ url_for('admin.position_edit', pos_id=pos.id) }}" class="btn btn-outline btn-sm"><i class="bi bi-pencil"></i> Edit</a>
+      <form method="POST" action="{{ url_for('admin.position_delete', pos_id=pos.id) }}" class="delete-form"
+            onsubmit="return confirm('Delete \'{{ pos.title|e }}\'? This will remove all {{ pos.application_count }} application(s) too.')">
+        <button type="submit" class="btn btn-danger btn-sm" style="width:100%;justify-content:center"><i class="bi bi-trash"></i></button>
+      </form>
+      <form method="POST" action="{{ url_for('admin.position_toggle', pos_id=pos.id) }}" class="toggle-form">
+        <button type="submit" class="btn btn-outline btn-sm" style="width:100%;justify-content:center">
+          <i class="bi bi-toggle-{{ 'on' if pos.is_active else 'off' }}"></i>
+          {{ 'Deactivate' if pos.is_active else 'Activate' }}
+        </button>
+      </form>
+    </div>
+  </div>
+  {% else %}
+  <div class="empty-state"><i class="bi bi-briefcase"></i><p>No positions found. <a href="{{ url_for('admin.positions') }}">Clear filters</a> or <a href="{{ url_for('admin.position_new') }}">create one</a>.</p></div>
+  {% endfor %}
+</div>
+
+<!-- Desktop table -->
+<div class="pos-table-wrap">
+<div class="table-card">
+  <div class="table-responsive">
+    <table class="tbl">
+      <thead>
+        <tr><th>Title</th><th>Department</th><th>Type</th><th>Apps</th><th>Closes</th><th>Status</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for pos in positions.items %}
+        <tr>
+          <td data-label="Title" class="td-name">{{ pos.title }}</td>
+          <td data-label="Dept" class="text-muted">{{ pos.department or '—' }}</td>
+          <td data-label="Type" class="text-muted"><span class="type-pill">{{ pos.type }}</span></td>
+          <td data-label="Apps"><span class="badge badge-future apps-pill">{{ pos.application_count }}</span></td>
+          <td data-label="Closes" class="text-muted {% if pos.is_closing_soon %}text-warning{% endif %}">
+            {{ pos.closes_at.strftime('%b %d, %Y') if pos.closes_at else '—' }}
+          </td>
+          <td data-label="Status">
+            {% if pos.is_active %}<span class="badge badge-active">Active</span>
+            {% else %}<span class="badge badge-inactive">Inactive</span>{% endif %}
+          </td>
+          <td data-label="Actions">
+            <div class="pos-actions">
+              <a href="{{ url_for('admin.position_detail', pos_id=pos.id) }}" class="btn btn-outline btn-sm"><i class="bi bi-eye"></i> View</a>
+              <a href="{{ url_for('admin.position_edit', pos_id=pos.id) }}" class="btn btn-outline btn-sm"><i class="bi bi-pencil"></i> Edit</a>
+              <form method="POST" action="{{ url_for('admin.position_toggle', pos_id=pos.id) }}">
+                <button type="submit" class="btn btn-outline btn-sm">
+                  <i class="bi bi-toggle-{{ 'on' if pos.is_active else 'off' }}"></i>
+                  {{ 'Deactivate' if pos.is_active else 'Activate' }}
+                </button>
+              </form>
+              <form method="POST" action="{{ url_for('admin.position_delete', pos_id=pos.id) }}"
+                    onsubmit="return confirm('Delete \'{{ pos.title|e }}\'? This will remove all {{ pos.application_count }} application(s) too.')">
+                <button type="submit" class="btn btn-danger btn-sm"><i class="bi bi-trash"></i></button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7"><div class="empty-state"><i class="bi bi-briefcase"></i>No positions found. <a href="{{ url_for('admin.positions') }}">Clear filters</a> or <a href="{{ url_for('admin.position_new') }}">create one</a>.</div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+</div>
+
+{% if positions.pages > 1 %}
+<div class="pagination">
+  <a href="{{ url_for('admin.positions', page=positions.prev_num, q=q_str, status=status_f, company_id=company_f) }}"
+     class="page-link {% if not positions.has_prev %}disabled{% endif %}"><i class="bi bi-chevron-left"></i></a>
+  {% for p in positions.iter_pages() %}
+    {% if p %}
+      <a href="{{ url_for('admin.positions', page=p, q=q_str, status=status_f, company_id=company_f) }}"
+         class="page-link {% if p == positions.page %}active{% endif %}">{{ p }}</a>
+    {% else %}<span class="page-link">…</span>{% endif %}
+  {% endfor %}
+  <a href="{{ url_for('admin.positions', page=positions.next_num, q=q_str, status=status_f, company_id=company_f) }}"
+     class="page-link {% if not positions.has_next %}disabled{% endif %}"><i class="bi bi-chevron-right"></i></a>
+</div>
+{% endif %}
+</div>
+{% endblock %}

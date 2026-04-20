@@ -1,0 +1,80 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>New Job Alert — MOF Jobs</title>
+<style>
+  body { margin: 0; padding: 0; background: #f0f2f5; font-family: 'Segoe UI', Arial, sans-serif; font-size: 14px; color: #0f1923; }
+  .wrap { max-width: 580px; margin: 32px auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+  .header { background: #0f1923; padding: 28px 32px; }
+  .logo-text { color: #fff; font-size: 18px; font-weight: 700; }
+  .logo-sub { color: rgba(255,255,255,0.4); font-size: 11px; }
+  .body { padding: 28px 32px; }
+  .company-row { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+  .company-logo { width: 52px; height: 52px; border-radius: 10px; background: #e8f5ee; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 20px; color: #198754; flex-shrink: 0; }
+  .company-logo img { width: 100%; height: 100%; object-fit: contain; border-radius: 10px; }
+  .company-name { font-size: 16px; font-weight: 700; }
+  .company-sub { font-size: 12px; color: #6b7a8d; margin-top: 2px; }
+  .job-card { background: #f8fbf9; border: 1.5px solid #d1ead9; border-radius: 10px; padding: 18px 20px; margin: 16px 0; }
+  .job-title { font-size: 17px; font-weight: 700; color: #0f1923; margin-bottom: 6px; }
+  .job-meta { font-size: 12px; color: #6b7a8d; margin-bottom: 12px; }
+  .job-meta span { margin-right: 12px; }
+  .btn-cta { display: inline-block; background: #198754; color: #fff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 14px; margin-top: 8px; }
+  p { color: #4a5a6a; line-height: 1.7; }
+  .footer { background: #f8fafb; padding: 16px 32px; font-size: 11px; color: #9aabb8; border-top: 1px solid #e4e8ed; }
+  .unsubscribe { color: #9aabb8; text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div class="logo-text">MOF Jobs</div>
+    <div class="logo-sub">Managing Of Future Engineering</div>
+  </div>
+  <div class="body">
+    <p>Hi {{ user.full_name.split()[0] }},</p>
+    <p>A new job has been posted at a company you follow:</p>
+
+    <div class="company-row">
+      <div class="company-logo">
+        {% if company.logo_filename %}
+          <img src="{{ site_url }}/static/uploads/company/{{ company.logo_filename }}" alt="{{ company.name }}">
+        {% else %}
+          {{ company.name[0] }}
+        {% endif %}
+      </div>
+      <div>
+        <div class="company-name">{{ company.name }}</div>
+        <div class="company-sub">{{ company.industry or '' }}{% if company.industry and company.location %} · {% endif %}{{ company.location or '' }}</div>
+      </div>
+    </div>
+
+    <div class="job-card">
+      <div class="job-title">{{ position.title }}</div>
+      <div class="job-meta">
+        <span>📍 {{ position.location }}</span>
+        <span>💼 {{ position.type }}</span>
+        {% if position.salary_range %}<span>💰 {{ position.salary_range }}</span>{% endif %}
+        {% if position.closes_at %}<span>⏰ Closes {{ position.closes_at.strftime('%b %d, %Y') }}</span>{% endif %}
+      </div>
+      {% if position.description %}
+        <p style="font-size:13px;color:#4a5a6a;margin:0">{{ position.description[:200] }}{% if position.description|length > 200 %}…{% endif %}</p>
+      {% endif %}
+      <a href="{{ site_url }}{{ url_for('jobs.detail', job_id=position.id) }}" class="btn-cta">View &amp; Apply →</a>
+    </div>
+
+    <p style="font-size:12px;color:#9aabb8">
+      You received this email because you are following {{ company.name }} on MOF Jobs.
+    </p>
+  </div>
+  <div class="footer" style="text-align:center">
+    <img src="https://mof-eng.com/wp-content/uploads/2025/05/cropped-MOF-LOGO-transparent--100x46.png"
+         alt="MOF Engineering" width="72" style="display:block;margin:0 auto 10px;filter:brightness(0);opacity:.55"
+         onerror="this.style.display='none'">
+    MOF Engineering Co. — Slemani, Iraq<br>
+    <a href="{{ site_url }}{{ url_for('jobs.listing') }}" class="unsubscribe">Browse all jobs</a>
+  </div>
+</div>
+</body>
+</html>

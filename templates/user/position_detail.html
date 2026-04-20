@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+{% block title %}{{ pos.title }} — MOF Jobs{% endblock %}
+{% block page_title %}{{ pos.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Position detail layout ── */
+.pos-layout{display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start}
+.pos-sidebar{position:sticky;top:70px}
+.pos-meta{display:flex;flex-wrap:wrap;gap:8px 16px;margin-bottom:16px}
+.pos-meta span{display:inline-flex;align-items:center;gap:5px;font-size:13px;color:var(--text2)}
+.pos-meta span.closing-soon{color:#d97706}
+
+@media(max-width:768px){
+  .pos-layout{grid-template-columns:1fr;gap:12px}
+  .pos-sidebar{position:static;order:-1}
+  .pos-sidebar-card{display:flex;flex-direction:row;align-items:center;gap:14px;flex-wrap:wrap}
+  .pos-title-block{flex:1;min-width:0;margin-bottom:0!important}
+  .pos-title-block .pos-title{font-size:14px}
+  .pos-cta-wrap{flex-shrink:0}
+  .pos-cta-wrap .btn{white-space:nowrap}
+  .pos-back{display:none}
+  .pos-public-wrap{padding:16px!important}
+  .pos-public-layout{grid-template-columns:1fr!important;gap:12px}
+  .pos-public-layout .pos-sidebar{position:static;order:-1}
+  .pos-public-layout .pos-sidebar-card{display:flex;flex-direction:row;align-items:center;gap:14px;flex-wrap:wrap}
+}
+
+@media(max-width:480px){
+  .pos-sidebar-card{flex-direction:column;align-items:stretch;gap:10px}
+  .pos-cta-wrap .btn,.pos-cta-wrap a{width:100%;justify-content:center;text-align:center;display:flex}
+  .pos-cta-wrap{width:100%}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pos-layout">
+  <div>
+    <div class="card mb-3">
+      <div class="pos-meta">
+        {% if pos.department %}<span><i class="bi bi-building"></i> {{ pos.department }}</span>{% endif %}
+        <span><i class="bi bi-geo-alt"></i> {{ pos.location }}</span>
+        <span><i class="bi bi-briefcase"></i> {{ pos.type }}</span>
+        {% if pos.salary_range %}<span><i class="bi bi-cash"></i> {{ pos.salary_range }}</span>{% endif %}
+        {% if pos.closes_at %}
+          <span class="{% if pos.is_closing_soon %}closing-soon{% endif %}">
+            <i class="bi bi-clock"></i> Closes {{ pos.closes_at.strftime('%b %d, %Y') }}
+          </span>
+        {% endif %}
+      </div>
+      {% if pos.description %}
+      <div class="card-title">About this role</div>
+      <p style="font-size:13px;line-height:1.8;white-space:pre-wrap;color:var(--text2);margin-bottom:16px">{{ pos.description }}</p>
+      {% endif %}
+      {% if pos.requirements %}
+      <div class="card-title">Requirements</div>
+      <p style="font-size:13px;line-height:1.8;white-space:pre-wrap;color:var(--text2)">{{ pos.requirements }}</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="pos-sidebar">
+    <div class="card pos-sidebar-card">
+      <div class="pos-title-block" style="margin-bottom:12px">
+        <div class="pos-title" style="font-family:var(--font-head);font-size:15px;font-weight:600;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ pos.title }}</div>
+        <div class="text-sm text-muted">MOF Engineering — {{ pos.location }}</div>
+      </div>
+      <div class="pos-cta-wrap">
+        {% if already_applied %}
+          <div class="alert alert-info" style="margin-bottom:8px;font-size:12px"><i class="bi bi-check-circle"></i> Already applied</div>
+          <a href="{{ url_for('user.my_applications') }}" class="btn btn-outline btn-sm" style="width:100%;justify-content:center">View Applications</a>
+        {% elif current_user.is_authenticated and current_user.role == 'user' %}
+          <a href="{{ url_for('user.apply', pos_id=pos.id) }}" class="btn btn-primary" style="width:100%;justify-content:center">
+            <i class="bi bi-send"></i> Apply Now
+          </a>
+        {% elif current_user.is_authenticated %}
+          <div style="background:#f1f5f9;border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;font-size:12px;color:var(--text2);text-align:center">
+            <i class="bi bi-info-circle"></i> Staff accounts cannot apply.
+          </div>
+        {% else %}
+          <a href="{{ url_for('auth.login') }}" class="btn btn-primary" style="width:100%;justify-content:center">
+            <i class="bi bi-box-arrow-in-right"></i> Sign in to Apply
+          </a>
+          <a href="{{ url_for('auth.register') }}" class="btn btn-outline mt-2" style="width:100%;justify-content:center">
+            Create Account
+          </a>
+        {% endif %}
+      </div>
+    </div>
+    <div class="mt-2 pos-back">
+      <a href="{{ url_for('user.browse') }}" class="btn btn-outline btn-sm"><i class="bi bi-arrow-left"></i> All Positions</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block public_content %}
+<div class="pos-public-wrap" style="max-width:860px;margin:0 auto;padding:24px">
+  <a href="{{ url_for('user.browse') }}" class="btn btn-outline btn-sm mb-3"><i class="bi bi-arrow-left"></i> All Positions</a>
+  <div class="pos-layout pos-public-layout" style="grid-template-columns:1fr 280px">
+    <div class="card">
+      <h2 style="font-family:var(--font-head);font-size:20px;margin-bottom:10px">{{ pos.title }}</h2>
+      <div class="pos-meta">
+        {% if pos.department %}<span><i class="bi bi-building"></i> {{ pos.department }}</span>{% endif %}
+        <span><i class="bi bi-geo-alt"></i> {{ pos.location }}</span>
+        <span><i class="bi bi-briefcase"></i> {{ pos.type }}</span>
+        {% if pos.salary_range %}<span><i class="bi bi-cash"></i> {{ pos.salary_range }}</span>{% endif %}
+        {% if pos.closes_at %}
+          <span class="{% if pos.is_closing_soon %}closing-soon{% endif %}">
+            <i class="bi bi-clock"></i> Closes {{ pos.closes_at.strftime('%b %d, %Y') }}
+          </span>
+        {% endif %}
+      </div>
+      {% if pos.description %}
+      <div class="card-title">About this role</div>
+      <p style="font-size:13px;line-height:1.8;white-space:pre-wrap;color:var(--text2);margin-bottom:16px">{{ pos.description }}</p>
+      {% endif %}
+      {% if pos.requirements %}
+      <div class="card-title">Requirements</div>
+      <p style="font-size:13px;line-height:1.8;white-space:pre-wrap;color:var(--text2)">{{ pos.requirements }}</p>
+      {% endif %}
+    </div>
+    <div class="pos-sidebar" style="top:24px">
+      <div class="card pos-sidebar-card">
+        <div class="pos-title-block" style="margin-bottom:12px">
+          <div class="pos-title" style="font-family:var(--font-head);font-size:15px;font-weight:600;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ pos.title }}</div>
+          <div class="text-sm text-muted">MOF Engineering — {{ pos.location }}</div>
+        </div>
+        <div class="pos-cta-wrap">
+          <a href="{{ url_for('auth.login') }}" class="btn btn-primary" style="width:100%;justify-content:center">
+            <i class="bi bi-send"></i> Apply Now
+          </a>
+          <div class="text-sm text-muted mt-2" style="text-align:center">Sign in or register to apply</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

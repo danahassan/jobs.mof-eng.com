@@ -1,0 +1,111 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Welcome to MOF Jobs</title>
+<style>
+  body{margin:0;padding:0;background:#f0f4f8;font-family:'Segoe UI',Arial,sans-serif}
+  .wrapper{max-width:580px;margin:32px auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #dde3ea;box-shadow:0 4px 16px rgba(0,0,0,.07)}
+  .header{background:linear-gradient(135deg,#1a2332 0%,#198754 100%);padding:32px 36px 28px}
+  .header-logo{color:#fff;font-size:20px;font-weight:700;letter-spacing:-0.3px}
+  .header-tagline{color:rgba(255,255,255,.65);font-size:13px;margin-top:4px}
+  .hero-banner{background:#e8f5ee;border-left:4px solid #198754;padding:18px 24px;margin:0}
+  .hero-icon{font-size:36px;margin-bottom:8px}
+  .hero-title{font-size:22px;font-weight:700;color:#1a2332;margin:0}
+  .body{padding:28px 36px}
+  .greeting{font-size:16px;color:#1a2332;margin-bottom:12px}
+  .text{font-size:14px;color:#4a5568;line-height:1.6;margin-bottom:16px}
+  .info-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px 20px;margin:20px 0}
+  .info-row{display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-bottom:1px solid #edf2f7}
+  .info-row:last-child{border:none}
+  .info-label{color:#718096;font-weight:500}
+  .info-value{color:#1a2332;font-weight:600}
+  .cta-btn{display:inline-block;background:#198754;color:#fff;text-decoration:none;padding:13px 28px;border-radius:7px;font-weight:600;font-size:14px;margin:8px 0}
+  .steps{counter-reset:step-counter;list-style:none;padding:0;margin:16px 0}
+  .steps li{display:flex;align-items:flex-start;gap:12px;padding:8px 0;border-bottom:1px solid #edf2f7;font-size:13px;color:#4a5568}
+  .steps li:last-child{border:none}
+  .step-num{background:#198754;color:#fff;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px}
+  .divider{height:1px;background:#edf2f7;margin:24px 0}
+  .signature{font-size:13px;color:#4a5568}
+  .sig-name{font-weight:700;color:#1a2332;font-size:14px}
+  .sig-title{color:#718096;font-size:12px}
+  .footer{background:#f8fafc;padding:16px 36px;border-top:1px solid #e2e8f0}
+  .footer-text{font-size:11px;color:#a0aec0;line-height:1.6;text-align:center}
+  .footer-text a{color:#198754}
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-logo">MOF Engineering — Careers</div>
+    <div class="header-tagline">Managing Of Future Engineering Company · Slemani, Iraq</div>
+  </div>
+
+  <!-- Hero -->
+  <div class="hero-banner">
+    <div class="hero-icon">🎉</div>
+    <div class="hero-title">Welcome aboard, {{ user.full_name.split()[0] }}!</div>
+  </div>
+
+  <!-- Body -->
+  <div class="body">
+    <p class="greeting">Dear <strong>{{ user.full_name }}</strong>,</p>
+    <p class="text">
+      Your account on the <strong>MOF Engineering Jobs Portal</strong> has been successfully created.
+      We're excited to have you with us and look forward to helping you find your next great opportunity.
+    </p>
+
+    <!-- Account details -->
+    <div class="info-box">
+      <div class="info-row">
+        <span class="info-label">Account Email</span>
+        <span class="info-value">{{ user.email }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Account Type</span>
+        <span class="info-value">Job Seeker</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Registration Date</span>
+        <span class="info-value">{{ user.created_at.strftime('%B %d, %Y') if user.created_at else 'Today' }}</span>
+      </div>
+    </div>
+
+    <p class="text" style="font-weight:600;color:#1a2332">Here's how to get started:</p>
+    <ul class="steps">
+      <li><span class="step-num">1</span><span>Log in and <strong>complete your profile</strong> — a strong profile increases your visibility to recruiters.</span></li>
+      <li><span class="step-num">2</span><span><strong>Browse open positions</strong> and save jobs that match your skills and interests.</span></li>
+      <li><span class="step-num">3</span><span>Submit your application with a tailored cover letter and up-to-date CV.</span></li>
+      <li><span class="step-num">4</span><span><strong>Track your applications</strong> in real time from your personal dashboard.</span></li>
+    </ul>
+
+    <div style="text-align:center;margin:24px 0">
+      <a href="https://jobs.mof-eng.com" class="cta-btn">Browse Open Positions →</a>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="signature">
+      <div>Best regards,</div>
+      <div class="sig-name" style="margin-top:6px">MOF Engineering — Talent Acquisition Team</div>
+      <div class="sig-title">Jobs Portal · jobs.mof-eng.com</div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div class="footer-text">
+      <img src="https://mof-eng.com/wp-content/uploads/2025/05/cropped-MOF-LOGO-transparent--100x46.png"
+           alt="MOF Engineering" width="72" style="display:block;margin:0 auto 12px;filter:brightness(0);opacity:.55"
+           onerror="this.style.display='none'">
+      This email was sent to <strong>{{ user.email }}</strong> because you registered on the MOF Jobs portal.<br>
+      If you did not create this account, please contact us at
+      <a href="mailto:careers@mof-eng.com">careers@mof-eng.com</a> immediately.<br><br>
+      MOF Engineering Company · Slemani, Iraq · <a href="https://mof-eng.com">mof-eng.com</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

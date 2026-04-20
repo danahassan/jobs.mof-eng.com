@@ -1,0 +1,168 @@
+﻿{% extends 'base.html' %}
+{% block title %}{{ 'Edit' if pos else 'New' }} Position — MOF Jobs{% endblock %}
+{% block page_title %}{{ 'Edit' if pos else 'New' }} Position{% endblock %}
+
+{% block content %}
+<style>
+.pf-grid{display:grid;grid-template-columns:1fr 280px;gap:20px;align-items:start}
+.pf-sidebar{position:sticky;top:76px;display:flex;flex-direction:column;gap:16px}
+.pf-notify-box{background:var(--bg);border:1px solid var(--border);border-radius:8px;
+  padding:14px 18px;display:flex;flex-direction:column;gap:10px}
+.pf-notify-opt{display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-weight:400;margin:0}
+.pf-active-row{display:flex;align-items:center;gap:8px;padding-top:4px}
+.pf-stat-row{display:flex;flex-direction:column;gap:6px}
+.pf-stat{display:flex;justify-content:space-between;align-items:center;font-size:13px;
+  padding:7px 0;border-bottom:1px solid var(--border)}
+.pf-stat:last-child{border-bottom:none}
+.pf-stat-lbl{color:var(--text3);font-size:12px}
+.pf-stat-val{font-weight:600;color:var(--text)}
+@media(max-width:860px){
+  .pf-grid{grid-template-columns:1fr 240px}
+}
+@media(max-width:680px){
+  .pf-grid{grid-template-columns:1fr}
+  .pf-sidebar{position:static}
+}
+</style>
+
+<div class="pf-grid">
+
+  <!-- MAIN FORM -->
+  <div class="card">
+    <form method="POST" enctype="multipart/form-data">
+      <div class="form-grid">
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Job Title *</label>
+          <input type="text" name="title" class="form-control" required value="{{ pos.title if pos else '' }}" placeholder="e.g. Civil Engineer">
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Company <span class="text-muted">(link this position to a company)</span></label>
+          <select name="company_id" class="form-control">
+            <option value="">— No company / General position —</option>
+            {% for c in companies %}
+              <option value="{{ c.id }}" {% if pos and pos.company_id == c.id %}selected{% endif %}>{{ c.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Department</label>
+          <input type="text" name="department" class="form-control" value="{{ pos.department if pos else '' }}" placeholder="e.g. Engineering">
+        </div>
+        <div class="form-group">
+          <label>Location</label>
+          <input type="text" name="location" class="form-control" value="{{ pos.location if pos else 'Slemani, Iraq' }}">
+        </div>
+        <div class="form-group">
+          <label>Employment Type</label>
+          <select name="type" class="form-control">
+            {% for t in ['Full-time','Part-time','Contract','Internship'] %}
+              <option {% if pos and pos.type == t %}selected{% endif %}>{{ t }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Salary Range <span class="text-muted">(optional)</span></label>
+          <input type="text" name="salary_range" class="form-control" value="{{ pos.salary_range if pos else '' }}" placeholder="e.g. 800,000–1,200,000 IQD">
+        </div>
+        <div class="form-group">
+          <label>Closing Date <span class="text-muted">(optional)</span></label>
+          <input type="date" name="closes_at" class="form-control" value="{{ pos.closes_at.strftime('%Y-%m-%d') if pos and pos.closes_at else '' }}">
+        </div>
+        <div class="form-group pf-active-row" style="grid-column:1/-1">
+          <input type="checkbox" name="is_active" id="is_active" {% if not pos or pos.is_active %}checked{% endif %}>
+          <label for="is_active" style="margin:0;cursor:pointer">Active (visible to applicants)</label>
+        </div>
+
+        <!-- Notify followers -->
+        <div class="form-group" style="grid-column:1/-1">
+          <label style="display:block;margin-bottom:8px;font-weight:600">Email Notification to Followers</label>
+          <div class="pf-notify-box">
+            <label class="pf-notify-opt">
+              <input type="radio" name="notify_users" value="0" checked style="accent-color:var(--text);margin-top:2px">
+              <span>
+                <strong>No notification</strong>
+                <span style="display:block;font-size:12px;color:var(--text3)">Post silently — company followers will not be emailed about this position.</span>
+              </span>
+            </label>
+            <label class="pf-notify-opt">
+              <input type="radio" name="notify_users" value="1" style="accent-color:var(--green);margin-top:2px">
+              <span>
+                <strong style="color:var(--green)">Notify followers by email</strong>
+                <span style="display:block;font-size:12px;color:var(--text3)">Send a job alert email to all users following the linked company.</span>
+              </span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Job Description</label>
+        <textarea name="description" class="form-control" style="min-height:130px" placeholder="Describe the role, responsibilities, and team...">{{ pos.description if pos else '' }}</textarea>
+      </div>
+      <div class="form-group">
+        <label>Requirements</label>
+        <textarea name="requirements" class="form-control" style="min-height:100px" placeholder="Required qualifications, experience, skills...">{{ pos.requirements if pos else '' }}</textarea>
+      </div>
+
+      <div class="d-flex gap-2" style="flex-wrap:wrap">
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> {{ 'Save Changes' if pos else 'Create Position' }}</button>
+        <a href="{{ url_for('admin.positions') }}" class="btn btn-outline">Cancel</a>
+      </div>
+    </form>
+  </div>
+
+  <!-- SIDEBAR (edit only) -->
+  {% if pos %}
+  <div class="pf-sidebar">
+
+    <!-- Position summary -->
+    <div class="card">
+      <div class="card-title"><i class="bi bi-info-circle-fill" style="color:var(--green)"></i> Position Info</div>
+      <div class="pf-stat-row">
+        <div class="pf-stat">
+          <span class="pf-stat-lbl">Status</span>
+          <span class="badge badge-{{ 'active' if pos.is_active else 'inactive' }}">{{ 'Active' if pos.is_active else 'Inactive' }}</span>
+        </div>
+        <div class="pf-stat">
+          <span class="pf-stat-lbl">Applications</span>
+          <span class="pf-stat-val">{{ pos.application_count }}</span>
+        </div>
+        <div class="pf-stat">
+          <span class="pf-stat-lbl">Views</span>
+          <span class="pf-stat-val">{{ pos.views_count }}</span>
+        </div>
+        <div class="pf-stat">
+          <span class="pf-stat-lbl">Created</span>
+          <span class="pf-stat-val">{{ pos.created_at.strftime('%b %d, %Y') }}</span>
+        </div>
+        {% if pos.closes_at %}
+        <div class="pf-stat">
+          <span class="pf-stat-lbl">Closes</span>
+          <span class="pf-stat-val">{{ pos.closes_at.strftime('%b %d, %Y') }}</span>
+        </div>
+        {% endif %}
+      </div>
+      <a href="{{ url_for('admin.applications', position_id=pos.id) }}" class="btn btn-outline btn-sm"
+         style="width:100%;justify-content:center;margin-top:12px">
+        <i class="bi bi-people"></i> View Applications
+      </a>
+    </div>
+
+    <!-- Danger zone -->
+    <div class="card" style="border-color:#fca5a5">
+      <div class="card-title" style="color:#dc2626"><i class="bi bi-trash3-fill"></i> Danger Zone</div>
+      <p style="font-size:12px;color:var(--text3);margin:0 0 12px">Permanently deletes this position and all {{ pos.application_count }} associated application(s). This cannot be undone.</p>
+      <form method="POST" action="{{ url_for('admin.position_delete', pos_id=pos.id) }}"
+            onsubmit="return confirm('Delete position &quot;{{ pos.title }}&quot; and all its applications? This cannot be undone.')">
+        <button type="submit" class="btn btn-sm"
+                style="width:100%;justify-content:center;background:#fef2f2;color:#dc2626;border:1px solid #fca5a5">
+          <i class="bi bi-trash3"></i> Delete Position
+        </button>
+      </form>
+    </div>
+
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

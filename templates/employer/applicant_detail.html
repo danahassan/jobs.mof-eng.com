@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+{% block title %}{{ app.applicant.full_name }} — Application{% endblock %}
+{% block page_title %}Application Review{% endblock %}
+{% block page_breadcrumb %}{{ app.position.title }}{% endblock %}
+
+{% block content %}
+<div style="display:grid;grid-template-columns:1fr 360px;gap:20px" class="apd-grid">
+
+  <!-- Left: Candidate profile -->
+  <div>
+    <!-- Header card -->
+    <div class="card" style="padding:24px;margin-bottom:20px">
+      <div style="display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap">
+        <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#1a56db,#7c3aed);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:24px;flex-shrink:0">{{ app.applicant.initials }}</div>
+        <div style="flex:1">
+          <h2 style="font-size:20px;font-weight:700;margin-bottom:4px">{{ app.applicant.full_name }}</h2>
+          {% if app.applicant.headline %}<p style="font-size:14px;color:var(--text2);margin-bottom:6px">{{ app.applicant.headline }}</p>{% endif %}
+          <div style="font-size:13px;color:var(--text3);display:flex;flex-wrap:wrap;gap:12px">
+            <span><i class="bi bi-envelope"></i> {{ app.applicant.email }}</span>
+            {% if app.applicant.phone %}<span><i class="bi bi-phone"></i> {{ app.applicant.phone }}</span>{% endif %}
+            {% if app.applicant.location_city %}<span><i class="bi bi-geo-alt"></i> {{ app.applicant.location_city }}</span>{% endif %}
+          </div>
+          <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+            {% if app.applicant.linkedin_url %}<a href="{{ app.applicant.linkedin_url }}" target="_blank" class="btn btn-outline btn-sm"><i class="bi bi-linkedin"></i></a>{% endif %}
+            {% if app.applicant.github_url %}<a href="{{ app.applicant.github_url }}" target="_blank" class="btn btn-outline btn-sm"><i class="bi bi-github"></i></a>{% endif %}
+            {% if app.cv_filename %}<a href="{{ url_for('employer.download_cv', filename=app.cv_filename) }}" class="btn btn-primary btn-sm" target="_blank"><i class="bi bi-file-earmark-pdf"></i> Download CV</a>{% endif %}
+            <a href="{{ url_for('messages.compose') }}?to={{ app.applicant.id }}" class="btn btn-outline btn-sm"><i class="bi bi-chat"></i> Message</a>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <span class="badge badge-{{ app.status.lower().replace(' ','') }}" style="font-size:13px;padding:6px 14px">{{ app.status }}</span>
+          <div style="font-size:11px;color:var(--text3);margin-top:6px">Applied {{ app.applied_at.strftime('%b %d, %Y') }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bio -->
+    {% if app.applicant.bio %}
+    <div class="card" style="padding:20px;margin-bottom:16px">
+      <h3 style="font-size:14px;font-weight:600;margin-bottom:10px">About</h3>
+      <p style="font-size:13px;line-height:1.7;color:var(--text2)">{{ app.applicant.bio }}</p>
+    </div>
+    {% endif %}
+
+    <!-- Cover Letter -->
+    {% if app.cover_letter %}
+    <div class="card" style="padding:20px;margin-bottom:16px">
+      <h3 style="font-size:14px;font-weight:600;margin-bottom:10px"><i class="bi bi-chat-text" style="color:#1a56db;margin-right:6px"></i>Cover Letter</h3>
+      <p style="font-size:13px;line-height:1.7;white-space:pre-wrap;color:var(--text2)">{{ app.cover_letter }}</p>
+    </div>
+    {% endif %}
+
+    <!-- Skills -->
+    {% if app.applicant.skills.count() > 0 %}
+    <div class="card" style="padding:20px;margin-bottom:16px">
+      <h3 style="font-size:14px;font-weight:600;margin-bottom:12px"><i class="bi bi-tools" style="color:#1a56db;margin-right:6px"></i>Skills</h3>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        {% for s in app.applicant.skills.all() %}
+        <span style="background:var(--bg);border:1px solid var(--border);padding:5px 14px;border-radius:20px;font-size:12px">{{ s.name }} <span style="color:var(--text3);font-size:10px">{{ s.proficiency }}</span></span>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Experience -->
+    {% for e in app.applicant.experiences.order_by('start_date desc').all() %}
+    {% if loop.first %}<div class="card" style="padding:20px;margin-bottom:16px"><h3 style="font-size:14px;font-weight:600;margin-bottom:14px"><i class="bi bi-briefcase" style="color:#1a56db;margin-right:6px"></i>Experience</h3>{% endif %}
+    <div style="{% if not loop.last %}padding-bottom:14px;border-bottom:1px solid var(--border);margin-bottom:14px;{% endif %}">
+      <div style="font-size:14px;font-weight:600">{{ e.title }}</div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:6px">{{ e.company or '' }} {% if e.start_date %}· {{ e.start_date.strftime('%b %Y') }} – {{ e.end_date.strftime('%b %Y') if e.end_date else 'Present' }}{% endif %}</div>
+      {% if e.description %}<p style="font-size:12px;color:var(--text2);line-height:1.6">{{ e.description }}</p>{% endif %}
+    </div>
+    {% if loop.last %}</div>{% endif %}
+    {% endfor %}
+
+    <!-- Education -->
+    {% for e in app.applicant.educations.all() %}
+    {% if loop.first %}<div class="card" style="padding:20px;margin-bottom:16px"><h3 style="font-size:14px;font-weight:600;margin-bottom:14px"><i class="bi bi-mortarboard" style="color:#1a56db;margin-right:6px"></i>Education</h3>{% endif %}
+    <div style="{% if not loop.last %}padding-bottom:14px;border-bottom:1px solid var(--border);margin-bottom:14px;{% endif %}">
+      <div style="font-size:14px;font-weight:600">{{ e.degree or '' }} {{ e.field or '' }}</div>
+      <div style="font-size:12px;color:var(--text3)">{{ e.institution }} {% if e.start_year %}· {{ e.start_year }} – {{ e.end_year or 'Present' }}{% endif %}</div>
+    </div>
+    {% if loop.last %}</div>{% endif %}
+    {% endfor %}
+
+    <!-- Timeline -->
+    {% if history %}
+    <div class="card" style="padding:20px">
+      <h3 style="font-size:14px;font-weight:600;margin-bottom:14px"><i class="bi bi-clock-history" style="color:#1a56db;margin-right:6px"></i>Activity Timeline</h3>
+      <div class="timeline">
+        {% for h in history %}
+        <div class="timeline-item">
+          <div style="font-size:13px;font-weight:500">{{ h.new_status or 'Note' }}</div>
+          {% if h.note %}<div style="font-size:12px;color:var(--text2);margin-top:2px">{{ h.note }}</div>{% endif %}
+          <div style="font-size:11px;color:var(--text3);margin-top:4px">{{ h.created_at.strftime('%b %d, %Y %H:%M') }} by {{ h.changed_by.full_name if h.changed_by else 'System' }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Right sidebar: Actions -->
+  <div>
+    <!-- Stage update -->
+    <div class="card" style="padding:20px;margin-bottom:16px">
+      <h3 style="font-size:14px;font-weight:600;margin-bottom:14px">Update Stage</h3>
+      <form method="POST" action="{{ url_for('employer.applicant_stage', app_id=app.id) }}">
+        <select name="status" class="form-control" style="margin-bottom:10px">
+          {% for s in statuses %}
+          <option value="{{ s }}" {% if app.status == s %}selected{% endif %}>{{ s }}</option>
+          {% endfor %}
+        </select>
+        <textarea name="note" class="form-control" rows="3" placeholder="Add a note (optional)…" style="margin-bottom:12px"></textarea>
+        <button type="submit" class="btn btn-primary" style="width:100%">Update Stage</button>
+      </form>
+    </div>
+
+    <!-- Schedule Interview -->
+    <div class="card" style="padding:20px;margin-bottom:16px">
+      <h3 style="font-size:14px;font-weight:600;margin-bottom:14px"><i class="bi bi-calendar-plus"></i> Schedule Interview</h3>
+      <form method="POST" action="{{ url_for('employer.schedule_interview', app_id=app.id) }}">
+        <div style="margin-bottom:10px">
+          <label class="form-label">Date & Time</label>
+          <input class="form-control" type="datetime-local" name="scheduled_at" required>
+        </div>
+        <div style="margin-bottom:10px">
+          <label class="form-label">Location / Link</label>
+          <input class="form-control" name="location" placeholder="Zoom, Google Meet, or room…">
+        </div>
+        <textarea name="notes" class="form-control" rows="2" placeholder="Notes for the interview…" style="margin-bottom:12px"></textarea>
+        <button type="submit" class="btn btn-primary" style="width:100%">Schedule</button>
+      </form>
+    </div>
+
+    <!-- Upcoming Interviews -->
+    {% if interviews %}
+    <div class="card" style="padding:20px">
+      <h3 style="font-size:14px;font-weight:600;margin-bottom:14px">Interviews</h3>
+      {% for iv in interviews %}
+      <div style="{% if not loop.last %}padding-bottom:12px;border-bottom:1px solid var(--border);margin-bottom:12px{% endif %}">
+        <div style="font-size:13px;font-weight:500"><i class="bi bi-calendar-event" style="color:#1a56db;margin-right:6px"></i>{{ iv.scheduled_at.strftime('%b %d, %Y at %H:%M') }}</div>
+        {% if iv.location %}<div style="font-size:12px;color:var(--text3);margin-top:2px">{{ iv.location }}</div>{% endif %}
+        {% if iv.result %}<span class="badge {{ 'badge-hired' if iv.result == 'Pass' else 'badge-rejected' }}" style="margin-top:6px;display:inline-block">{{ iv.result }}</span>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<style>
+@media(max-width:768px){.apd-grid{grid-template-columns:1fr!important}}
+.timeline{padding-left:20px;border-left:2px solid var(--border)}
+.timeline-item{position:relative;padding:0 0 16px 16px}
+.timeline-item::before{content:'';position:absolute;left:-5px;top:4px;width:8px;height:8px;border-radius:50%;background:var(--primary);border:2px solid var(--card)}
+</style>
+{% endblock %}

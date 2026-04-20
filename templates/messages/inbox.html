@@ -1,0 +1,80 @@
+﻿{% extends 'base.html' %}
+{% block title %}Messages — MOF Jobs{% endblock %}
+{% block page_title %}Messages{% endblock %}
+{% block page_breadcrumb %}Inbox{% endblock %}
+
+{% block content %}
+<!-- KPI Strip -->
+<div class="kpi-strip">
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#e8f5ee;color:#198754"><i class="bi bi-chat-dots-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_conversations }}</div><div class="kpi-lbl">Conversations</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#fee2e2;color:#dc2626"><i class="bi bi-envelope-exclamation-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_unread }}</div><div class="kpi-lbl">Unread</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#eff6ff;color:#2563eb"><i class="bi bi-calendar-day"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_today }}</div><div class="kpi-lbl">Today</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#ede9fe;color:#7c3aed"><i class="bi bi-chat-square-text-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_total_msgs }}</div><div class="kpi-lbl">Total Messages</div></div>
+  </div>
+</div>
+
+<div class="section-header">
+  <h2><i class="bi bi-chat-dots-fill" style="color:var(--green);margin-right:8px"></i>Messages{% if total_unread %} <span class="badge badge-new">{{ total_unread }} unread</span>{% endif %}</h2>
+  <div class="d-flex gap-2 align-center">
+    <div class="export-group">
+      <a href="{{ url_for('messages.export', fmt='csv') }}" class="btn-export csv"><i class="bi bi-filetype-csv"></i> CSV</a>
+      <a href="{{ url_for('messages.export', fmt='xlsx') }}" class="btn-export xlsx"><i class="bi bi-file-earmark-excel"></i> Excel</a>
+    </div>
+    <a href="{{ url_for('messages.compose') }}" class="btn btn-primary btn-sm"><i class="bi bi-pencil-fill"></i> New Message</a>
+  </div>
+</div>
+
+{% if conversations %}
+<div class="card" style="padding:0;overflow:hidden">
+  {% for conv in conversations %}
+  <a href="{{ url_for('messages.thread', partner_id=conv.partner.id) }}"
+     style="display:flex;align-items:center;gap:14px;padding:16px 20px;border-bottom:1px solid var(--border);text-decoration:none;transition:background 0.15s;{% if conv.unread %}background:#f8fffe;{% endif %}"
+     onmouseover="this.style.background='#f3faf5'" onmouseout="this.style.background='{% if conv.unread %}#f8fffe{% else %}#fff{% endif %}'">
+    <div class="avatar" style="flex-shrink:0;{% if conv.unread %}border-color:var(--green){% endif %}">
+      {{ conv.partner.initials }}
+    </div>
+    <div style="flex:1;min-width:0">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:3px">
+        <span style="font-size:14px;font-weight:{% if conv.unread %}700{% else %}500{% endif %};color:var(--text)">
+          {{ conv.partner.full_name }}
+          <span class="badge badge-{{ conv.partner.role }} ml-1" style="font-size:10px">{{ conv.partner.role|capitalize }}</span>
+        </span>
+        <span style="font-size:11px;color:var(--text3);white-space:nowrap">
+          {{ conv.last_msg.created_at.strftime('%b %d, %H:%M') if conv.last_msg else '' }}
+        </span>
+      </div>
+      <div style="font-size:13px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:400px">
+        {% if conv.last_msg %}
+          {% if conv.last_msg.sender_id == current_user.id %}<span style="color:var(--text3)">You: </span>{% endif %}
+          {{ conv.last_msg.body[:80] }}{% if conv.last_msg.body|length > 80 %}…{% endif %}
+        {% endif %}
+      </div>
+    </div>
+    {% if conv.unread %}
+    <div style="background:var(--green);color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">
+      {{ conv.unread }}
+    </div>
+    {% endif %}
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+  <i class="bi bi-chat-dots"></i>
+  <h3 style="font-size:16px;color:var(--text2);margin-bottom:8px">No messages yet</h3>
+  <p>Start a conversation by clicking <strong>New Message</strong>.</p>
+  <a href="{{ url_for('messages.compose') }}" class="btn btn-primary btn-sm mt-3"><i class="bi bi-pencil-fill"></i> New Message</a>
+</div>
+{% endif %}
+{% endblock %}

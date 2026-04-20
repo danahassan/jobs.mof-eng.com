@@ -1,0 +1,177 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Settings — Admin{% endblock %}
+{% block page_title %}Settings{% endblock %}
+{% block page_breadcrumb %}System Settings{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Layout ──────────────────────────────────────────────── */
+.st-grid{display:grid;grid-template-columns:220px 1fr;gap:20px;align-items:start}
+.st-sidebar{position:sticky;top:76px;display:flex;flex-direction:column;gap:4px}
+.st-nav-item{display:flex;align-items:center;gap:10px;padding:9px 14px;border-radius:8px;
+  font-size:13px;font-weight:600;color:var(--text2);text-decoration:none;cursor:pointer;
+  transition:background .12s,color .12s;border:none;background:none;width:100%;text-align:left}
+.st-nav-item:hover{background:var(--bg);color:var(--text)}
+.st-nav-item.active{background:var(--green-light);color:var(--green)}
+.st-nav-item i{font-size:15px;width:18px;text-align:center;flex-shrink:0}
+.st-nav-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;
+  color:var(--text3);padding:14px 14px 6px;display:block}
+
+/* ── Section panels ──────────────────────────────────────── */
+.st-panel{display:none}
+.st-panel.active{display:block}
+.st-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);
+  padding:24px 28px;margin-bottom:16px}
+.st-card:last-child{margin-bottom:0}
+.st-card-header{display:flex;align-items:center;gap:12px;margin-bottom:20px;
+  padding-bottom:14px;border-bottom:1px solid var(--border)}
+.st-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;
+  justify-content:center;font-size:17px;flex-shrink:0}
+.st-icon.green{background:var(--green-light);color:var(--green)}
+.st-icon.blue{background:#dbeafe;color:#2563eb}
+.st-icon.amber{background:#fef3c7;color:#d97706}
+.st-card-title{font-size:15px;font-weight:700;color:var(--text)}
+.st-card-sub{font-size:12px;color:var(--text3);margin-top:2px}
+.form-label-sm{font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px;display:block}
+.form-hint{font-size:11px;color:var(--text3);margin-top:4px}
+.info-row{display:flex;justify-content:space-between;align-items:center;
+  padding:10px 0;border-bottom:1px solid var(--border);font-size:13px}
+.info-row:last-child{border-bottom:none}
+.info-key{color:var(--text2)}
+.info-val{font-weight:600;color:var(--text);font-family:monospace;font-size:12px}
+.info-val.masked{letter-spacing:3px}
+.st-save-btn{background:var(--green);color:#fff;border:none;border-radius:8px;
+  padding:9px 22px;font-size:14px;font-weight:600;cursor:pointer;
+  transition:background .15s,transform .1s;display:inline-flex;align-items:center;gap:7px}
+.st-save-btn:hover{background:#157347;transform:translateY(-1px)}
+.st-save-btn.blue{background:#2563eb}
+.st-save-btn.blue:hover{background:#1d4ed8}
+.test-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:4px}
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media(max-width:760px){
+  .st-grid{grid-template-columns:1fr}
+  .st-sidebar{position:static;flex-direction:row;flex-wrap:wrap;gap:6px;
+    background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:10px}
+  .st-nav-label{display:none}
+  .st-nav-item{flex:none;padding:7px 12px;font-size:12px}
+}
+@media(max-width:480px){
+  .st-card{padding:16px}
+  .st-card-header{gap:10px;margin-bottom:14px;padding-bottom:12px}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="st-grid">
+
+  <!-- SIDEBAR NAV -->
+  <div class="st-sidebar">
+    <span class="st-nav-label">Settings</span>
+    <button class="st-nav-item active" data-panel="email" onclick="switchPanel('email',this)">
+      <i class="bi bi-envelope-fill"></i> Email
+    </button>
+    {# Future sections — add more buttons here:
+    <button class="st-nav-item" data-panel="general" onclick="switchPanel('general',this)">
+      <i class="bi bi-sliders"></i> General
+    </button>
+    #}
+  </div>
+
+  <!-- CONTENT PANELS -->
+  <div class="st-panels">
+
+    <!-- ── EMAIL PANEL ───────────────────────────────────── -->
+    <div class="st-panel active" id="panel-email">
+
+      <!-- Email Sender -->
+      <div class="st-card">
+        <div class="st-card-header">
+          <div class="st-icon green"><i class="bi bi-envelope-fill"></i></div>
+          <div>
+            <div class="st-card-title">Email Sender</div>
+            <div class="st-card-sub">Customize the "From" name and address for all outgoing emails</div>
+          </div>
+        </div>
+        <form method="POST" action="{{ url_for('admin.settings_save') }}">
+          <div style="margin-bottom:16px">
+            <label class="form-label-sm" for="mail_from_name">From Name</label>
+            <input type="text" id="mail_from_name" name="mail_from_name"
+                   class="form-control" value="{{ mail_from_name }}" placeholder="MOF Jobs">
+            <div class="form-hint">Display name shown in recipients' inbox, e.g. <em>MOF Jobs</em></div>
+          </div>
+          <div style="margin-bottom:22px">
+            <label class="form-label-sm" for="mail_from_address">From Address</label>
+            <input type="email" id="mail_from_address" name="mail_from_address"
+                   class="form-control" value="{{ mail_from_address }}" placeholder="no-reply@mof-eng.com">
+            <div class="form-hint">Must be a valid mailbox on the configured SMTP server</div>
+          </div>
+          <button type="submit" class="st-save-btn">
+            <i class="bi bi-floppy-fill"></i> Save Sender Settings
+          </button>
+        </form>
+      </div>
+
+      <!-- SMTP Info (read-only) -->
+      <div class="st-card">
+        <div class="st-card-header">
+          <div class="st-icon blue"><i class="bi bi-server"></i></div>
+          <div>
+            <div class="st-card-title">SMTP Configuration</div>
+            <div class="st-card-sub">Server credentials are set via the <code>.env</code> file</div>
+          </div>
+        </div>
+        <div class="info-row"><span class="info-key">Server</span><span class="info-val">{{ mail_server }}</span></div>
+        <div class="info-row"><span class="info-key">Port</span><span class="info-val">{{ mail_port }} (TLS)</span></div>
+        <div class="info-row"><span class="info-key">Username</span><span class="info-val">{{ mail_username }}</span></div>
+        <div class="info-row"><span class="info-key">Password</span><span class="info-val masked">••••••••••</span></div>
+        <div class="info-row"><span class="info-key">Current Sender</span><span class="info-val">{{ mail_from_name }} &lt;{{ mail_from_address }}&gt;</span></div>
+        <div style="margin-top:16px;padding:11px 14px;background:#f0fdf4;border:1px solid #bbf7d0;
+                    border-radius:8px;font-size:12px;color:#166534;display:flex;gap:8px;align-items:flex-start">
+          <i class="bi bi-info-circle-fill" style="flex-shrink:0;margin-top:1px"></i>
+          <span>To change the SMTP server, port, or password edit the <strong>.env</strong> file and restart the application.</span>
+        </div>
+      </div>
+
+      <!-- Test Email -->
+      <div class="st-card">
+        <div class="st-card-header">
+          <div class="st-icon amber"><i class="bi bi-envelope-check-fill"></i></div>
+          <div>
+            <div class="st-card-title">Test Email Delivery</div>
+            <div class="st-card-sub">Send a test message to verify the SMTP configuration is working</div>
+          </div>
+        </div>
+        <form method="POST" action="{{ url_for('admin.test_email') }}">
+          <label class="form-label-sm" for="recipient">Recipient address</label>
+          <div class="test-row">
+            <input type="email" id="recipient" name="recipient"
+                   class="form-control" value="{{ current_user.email }}"
+                   placeholder="recipient@example.com" style="max-width:320px">
+            <button type="submit" class="st-save-btn blue">
+              <i class="bi bi-send-fill"></i> Send Test Email
+            </button>
+          </div>
+          <div class="form-hint" style="margin-top:8px">
+            Sent from <strong>{{ mail_from_name }} &lt;{{ mail_from_address }}&gt;</strong>
+          </div>
+        </form>
+      </div>
+
+    </div><!-- /panel-email -->
+
+  </div><!-- /st-panels -->
+
+</div><!-- /st-grid -->
+
+<script>
+function switchPanel(id, btn) {
+  document.querySelectorAll('.st-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.st-nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + id)?.classList.add('active');
+  btn.classList.add('active');
+}
+</script>
+{% endblock %}

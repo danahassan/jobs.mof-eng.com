@@ -1,0 +1,299 @@
+﻿{% extends 'base.html' %}
+{% block title %}My Application — {{ app.position.title }}{% endblock %}
+{% block page_title %}My Application{% endblock %}
+
+{% block content %}
+<style>
+.app-hero{background:linear-gradient(135deg,var(--navy) 0%,#1a2d3f 60%,#1e3a52 100%);
+  border-radius:var(--radius-lg,12px);padding:24px 28px;margin-bottom:20px;position:relative;overflow:hidden}
+.app-hero::before{content:'';position:absolute;top:-40px;right:-40px;width:200px;height:200px;
+  border-radius:50%;background:rgba(25,135,84,.07)}
+.app-hero-title{color:#fff;font-size:22px;font-weight:800;line-height:1.2}
+.app-hero-sub{color:rgba(255,255,255,.55);font-size:13px;margin-top:3px}
+.app-hero-meta{display:flex;gap:18px;margin-top:14px;flex-wrap:wrap}
+.app-hero-meta-item{color:rgba(255,255,255,.6);font-size:12px;display:flex;align-items:center;gap:5px}
+.app-hero-meta-item strong{color:rgba(255,255,255,.9)}
+.status-large{font-size:12px;font-weight:700;padding:5px 16px;border-radius:20px;letter-spacing:.3px}
+/* Status journey steps */
+.journey{display:flex;gap:0;margin:20px 0 8px;position:relative}
+.journey::before{content:'';position:absolute;top:18px;left:0;right:0;height:2px;background:var(--border);z-index:0}
+.journey-step{flex:1;display:flex;flex-direction:column;align-items:center;position:relative;z-index:1}
+.journey-dot{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:14px;border:2px solid var(--border);background:#fff;transition:all .2s}
+.journey-dot.done{background:var(--green);border-color:var(--green);color:#fff}
+.journey-dot.current{background:#fff;border-color:var(--green);color:var(--green);
+  box-shadow:0 0 0 4px var(--green-light)}
+.journey-dot.future{background:#f8f9fa;border-color:#dde1e7;color:var(--text3)}
+.journey-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;
+  margin-top:6px;text-align:center;color:var(--text3)}
+.journey-label.done, .journey-label.current{color:var(--text)}
+.chat-thread{display:flex;flex-direction:column;gap:8px;max-height:360px;overflow-y:auto;
+  padding:12px;background:#f8fafb;border-radius:10px;border:1px solid var(--border)}
+.chat-thread::-webkit-scrollbar{width:4px}
+.chat-thread::-webkit-scrollbar-thumb{background:var(--border2,#d1d9e0);border-radius:4px}
+.chat-bubble{max-width:82%;padding:9px 13px;border-radius:12px;font-size:13px;line-height:1.5;word-break:break-word}
+.bubble-out{background:var(--green);color:#fff;border-bottom-right-radius:4px;margin-left:auto}
+.bubble-in{background:#fff;color:var(--text);border:1px solid var(--border);border-bottom-left-radius:4px}
+.bubble-out .chat-meta{color:rgba(255,255,255,.65);font-size:10px;margin-top:4px;text-align:right;display:flex;align-items:center;justify-content:flex-end;gap:8px}
+.bubble-in .chat-meta{color:var(--text3);font-size:10px;margin-top:4px}
+.bubble-del{background:none;border:none;padding:0;cursor:pointer;color:rgba(255,255,255,.4);font-size:11px;line-height:1;display:inline-flex;align-items:center;transition:color .15s}
+.bubble-del:hover{color:rgba(255,255,255,.9)}
+.chat-empty{text-align:center;padding:20px 12px;color:var(--text3);font-size:13px}
+/* Grid layout */
+.ad-grid{display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start}
+.ad-sidebar{position:sticky;top:76px;display:flex;flex-direction:column;gap:16px}
+@media(max-width:900px){
+  .ad-grid{grid-template-columns:1fr}
+  .ad-sidebar{position:static}
+}
+@media(max-width:500px){
+  .app-hero{padding:16px 16px}
+  .app-hero-title{font-size:17px}
+  .app-hero-meta{gap:10px}
+  .journey-label{font-size:9px}
+  .journey-dot{width:28px;height:28px;font-size:12px}
+}
+</style>
+
+<!-- HERO HEADER -->
+<div class="app-hero">
+  <div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap">
+    <div style="flex:1;min-width:0">
+      <div class="app-hero-title">{{ app.position.title }}</div>
+      <div class="app-hero-sub">
+        {% if app.position.company %}{{ app.position.company.name }}{% endif %}
+        {% if app.position.location %}&nbsp;·&nbsp;<i class="bi bi-geo-alt-fill"></i> {{ app.position.location }}{% endif %}
+      </div>
+      <div class="app-hero-meta">
+        <div class="app-hero-meta-item"><i class="bi bi-calendar3"></i> Applied <strong>{{ app.applied_at.strftime('%b %d, %Y') }}</strong></div>
+        <div class="app-hero-meta-item"><i class="bi bi-broadcast"></i> via <strong>{{ app.source }}</strong></div>        {% if app.expected_salary %}<div class="app-hero-meta-item"><i class="bi bi-cash-stack"></i> Expected: <strong>{{ app.expected_salary }}</strong></div>{% endif %}        {% if app.assigned_to %}<div class="app-hero-meta-item"><i class="bi bi-person-badge-fill"></i> Your contact: <strong>{{ app.assigned_to.full_name }}</strong></div>{% endif %}
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0">
+      <span class="badge badge-{{ app.status.lower().replace(' ','') }} status-large">{{ app.status }}</span>
+      <a href="{{ url_for('user.my_applications') }}" style="color:rgba(255,255,255,.5);font-size:12px">
+        <i class="bi bi-arrow-left"></i> My Applications
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN GRID -->
+<div class="ad-grid">
+
+  <!-- LEFT COLUMN -->
+  <div>
+
+    <!-- APPLICATION JOURNEY -->
+    <div class="card mb-3">
+      <div class="card-title"><i class="bi bi-signpost-split-fill" style="color:var(--green)"></i> Application Journey</div>
+      {% set journey_steps = [
+        ('New', 'bi bi-envelope-open'),
+        ('Under Review', 'bi bi-search'),
+        ('Interview', 'bi bi-camera-video'),
+        ('Future Consideration', 'bi bi-bookmark-star'),
+        ('Offer', 'bi bi-gift'),
+        ('Hired', 'bi bi-trophy')
+      ] %}
+      {% set status_order = ['New', 'Under Review', 'Interview', 'Future Consideration', 'Offer', 'Hired'] %}
+      {% if app.status not in ['Rejected', 'Withdrawn'] %}
+      <div class="journey">
+        {% for step_name, step_icon in journey_steps %}
+          {% set step_idx = status_order.index(step_name) if step_name in status_order else 0 %}
+          {% set cur_idx = status_order.index(app.status) if app.status in status_order else 0 %}
+          {% if step_idx < cur_idx %}
+            {% set dot_class = 'done' %}
+          {% elif step_idx == cur_idx %}
+            {% set dot_class = 'current' %}
+          {% else %}
+            {% set dot_class = 'future' %}
+          {% endif %}
+          <div class="journey-step">
+            <div class="journey-dot {{ dot_class }}">
+              <i class="{{ step_icon }}"></i>
+            </div>
+            <div class="journey-label {{ dot_class }}">{{ step_name }}</div>
+          </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div style="text-align:center;padding:16px">
+        <span class="badge badge-{{ app.status.lower() }}" style="font-size:14px;padding:8px 20px">{{ app.status }}</span>
+        <p class="text-muted text-sm" style="margin-top:8px">This application has been closed.</p>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- COVER LETTER -->
+    {% if app.cover_letter %}
+    <div class="card mb-3">
+      <div class="card-title"><i class="bi bi-file-earmark-text-fill" style="color:var(--green)"></i> Your Cover Letter</div>
+      <p style="font-size:13px;line-height:1.8;white-space:pre-wrap;color:var(--text2);margin:0">{{ app.cover_letter }}</p>
+    </div>
+    {% endif %}
+
+    <!-- CV SUBMITTED -->
+    {% if app.cv_filename %}
+    <div class="card mb-3">
+      <div class="card-title"><i class="bi bi-file-earmark-pdf-fill" style="color:var(--green)"></i> CV Submitted</div>
+      <div style="display:flex;align-items:center;gap:14px;padding:6px 0">
+        <i class="bi bi-file-earmark-pdf" style="font-size:36px;color:#dc2626;flex-shrink:0"></i>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ app.cv_original or app.cv_filename }}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px">Uploaded with application</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <a href="{{ url_for('user.application_cv', app_id=app.id) }}" target="_blank"
+           class="btn btn-outline btn-sm" style="flex:1;justify-content:center">
+          <i class="bi bi-eye"></i> View CV
+        </a>
+        <a href="{{ url_for('user.application_cv', app_id=app.id) }}" download
+           class="btn btn-primary btn-sm" style="flex:1;justify-content:center">
+          <i class="bi bi-download"></i> Download
+        </a>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- INTERVIEWS -->
+    {% if interviews %}
+    <div class="card mb-3">
+      <div class="card-title"><i class="bi bi-camera-video-fill" style="color:var(--green)"></i> Interview Schedule</div>
+      {% for iv in interviews %}
+      <div style="background:#f8fafb;border-radius:9px;padding:14px 16px;margin-bottom:8px;border:1px solid var(--border)">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
+          <div style="font-weight:700;font-size:14px;color:var(--green)">
+            <i class="bi bi-calendar-event"></i> {{ iv.scheduled_at.strftime('%A, %B %d, %Y') }}
+          </div>
+          <div style="font-size:13px;font-weight:500;color:var(--text)">{{ iv.scheduled_at.strftime('%I:%M %p') }}</div>
+        </div>
+        {% if iv.location %}<div style="margin-top:8px;display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text2)"><i class="bi bi-geo-alt-fill" style="color:var(--green)"></i> {{ iv.location }}</div>{% endif %}
+        {% if iv.notes %}<div class="text-sm" style="color:var(--text2);margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">{{ iv.notes }}</div>{% endif %}
+        {% if iv.result %}<div style="margin-top:8px"><span class="badge badge-{{ 'active' if iv.result == 'Pass' else 'rejected' }}">Result: {{ iv.result }}</span></div>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- STATUS HISTORY -->
+    <div class="card">
+      <div class="card-title"><i class="bi bi-clock-history" style="color:var(--green)"></i> Status History</div>
+      <div class="timeline">
+        {% for h in history %}
+        <div class="tl-item">
+          <div class="tl-dot done"></div>
+          <div class="tl-title">
+            {% if h.new_status %}Status updated to <strong>{{ h.new_status }}</strong>{% endif %}
+          </div>
+          <div class="tl-date">{{ h.created_at.strftime('%B %d, %Y at %H:%M') }}</div>
+        </div>
+        {% else %}
+        <div class="text-muted text-sm">Your application has been received and is being reviewed.</div>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT STICKY SIDEBAR -->
+  <div class="ad-sidebar">
+
+    <!-- APPLICATION SUMMARY CARD -->
+    <div class="card" style="background:var(--green);border:none">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="color:rgba(255,255,255,.7);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Current Status</span>
+          <span class="badge" style="background:rgba(255,255,255,.2);color:#fff;font-size:13px">{{ app.status }}</span>
+        </div>
+        <div style="color:rgba(255,255,255,.8);font-size:12px">
+          {% if app.status == 'New' %}Your application has been received and is in the queue.
+          {% elif app.status == 'Under Review' %}The team is reviewing your application.
+          {% elif app.status == 'Interview' %}Congratulations! You've been shortlisted for an interview.
+          {% elif app.status == 'Offer' %}An offer is being prepared for you.
+          {% elif app.status == 'Hired' %}Welcome to the team!
+          {% elif app.status == 'Rejected' %}Thank you for your interest. This role was not a match.
+          {% elif app.status == 'Future Consideration' %}You're on our talent pool for future opportunities.
+          {% else %}{{ app.status }}{% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- MESSAGE THREAD -->
+    <div class="card">
+      {% if partner %}
+      <div class="card-title" style="justify-content:space-between">
+        <span><i class="bi bi-chat-dots-fill" style="color:var(--green)"></i> Messages</span>
+        <a href="{{ url_for('messages.thread', partner_id=partner.id) }}" class="text-sm" style="color:var(--text3);font-weight:500">Full thread <i class="bi bi-arrow-right"></i></a>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:8px;background:#f8fafb;border-radius:8px;margin-bottom:10px;border:1px solid var(--border)">
+        <div class="avatar" style="width:30px;height:30px;font-size:11px;flex-shrink:0">{{ partner.initials }}</div>
+        <div>
+          <div style="font-size:12px;font-weight:600">{{ partner.full_name }}</div>
+          <div style="font-size:11px;color:var(--text3)">{{ 'Supervisor' if partner.role == 'supervisor' else 'HR Team' }}</div>
+        </div>
+      </div>
+      {% if thread_messages %}
+      <div class="chat-thread" id="chatThread">
+        {% for msg in thread_messages %}
+        <div class="chat-bubble {{ 'bubble-out' if msg.sender_id == current_user.id else 'bubble-in' }}">
+          {{ msg.body }}
+          <div class="chat-meta">
+            <span>{{ 'You' if msg.sender_id == current_user.id else msg.sender.full_name.split()[0] }} · {{ msg.created_at.strftime('%b %d, %H:%M') }}</span>
+            {% if msg.sender_id == current_user.id %}
+            <form method="POST" action="{{ url_for('messages.delete_message', msg_id=msg.id) }}"
+                  onsubmit="return confirm('Delete this message?')" style="display:inline">
+              <input type="hidden" name="next" value="{{ url_for('user.application_detail', app_id=app.id) }}">
+              <button type="submit" class="bubble-del" title="Delete message"><i class="bi bi-trash3"></i></button>
+            </form>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="chat-empty"><i class="bi bi-chat-dots" style="font-size:24px;display:block;margin-bottom:8px;opacity:.4"></i>No messages yet</div>
+      {% endif %}
+      <form method="POST" action="{{ url_for('messages.send') }}" style="margin-top:10px" id="chatForm">
+        <input type="hidden" name="receiver_id" value="{{ partner.id }}">
+        <input type="hidden" name="next" value="{{ url_for('user.application_detail', app_id=app.id) }}">
+        <div style="display:flex;gap:8px;align-items:flex-end">
+          <textarea name="body" id="chatBody" class="form-control" rows="2"
+                    placeholder="Message {{ partner.full_name.split()[0] }}…"
+                    style="min-height:58px;resize:none;font-size:13px" required></textarea>
+          <button type="submit" class="btn btn-primary" style="flex-shrink:0;height:58px;padding:0 14px" title="Send (Ctrl+Enter)">
+            <i class="bi bi-send-fill"></i>
+          </button>
+        </div>
+      </form>
+      {% else %}
+      <div class="card-title"><i class="bi bi-chat-dots-fill" style="color:var(--green)"></i> Messages</div>
+      <div class="chat-empty"><i class="bi bi-person-x" style="font-size:24px;display:block;margin-bottom:8px;opacity:.4"></i>No supervisor assigned yet.<br>Check back soon.</div>
+      {% endif %}
+    </div>
+
+    <!-- POSITION DETAILS -->
+    <div class="card">
+      <div class="card-title"><i class="bi bi-briefcase-fill" style="color:var(--green)"></i> Position Details</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        {% if app.position.employment_type %}<div style="font-size:12px"><span class="text-muted">Type:</span> <strong>{{ app.position.employment_type }}</strong></div>{% endif %}
+        {% if app.position.department %}<div style="font-size:12px"><span class="text-muted">Department:</span> <strong>{{ app.position.department }}</strong></div>{% endif %}
+        {% if app.position.location %}<div style="font-size:12px"><span class="text-muted">Location:</span> <strong>{{ app.position.location }}</strong></div>{% endif %}
+        {% if app.position.salary_range %}<div style="font-size:12px"><span class="text-muted">Salary:</span> <strong>{{ app.position.salary_range }}</strong></div>{% endif %}
+      </div>
+      <a href="{{ url_for('user.position_detail', pos_id=app.position.id) }}" class="btn btn-outline btn-sm" style="width:100%;justify-content:center;margin-top:12px">
+        <i class="bi bi-arrow-up-right-square"></i> View Full Job Posting
+      </a>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const ct = document.getElementById('chatThread');
+if (ct) ct.scrollTop = ct.scrollHeight;
+document.getElementById('chatBody')?.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); document.getElementById('chatForm').submit(); }
+});
+</script>
+{% endblock %}

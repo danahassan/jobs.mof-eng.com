@@ -1,0 +1,149 @@
+﻿{% extends 'base.html' %}
+{% block title %}{{ job.title }} — MOF Jobs{% endblock %}
+{% block page_title %}Job Detail{% endblock %}
+{% block page_breadcrumb %}{{ job.title }}{% endblock %}
+
+{% block content %}
+<div style="display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start" class="jd-layout">
+
+  <!-- Main Content -->
+  <div>
+    <div class="card" style="padding:28px;margin-bottom:20px">
+      <div style="display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap">
+        <div style="width:64px;height:64px;border-radius:12px;background:var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;border:1px solid var(--border)">
+          {% if job.company and job.company.logo_filename %}
+          <img src="/static/uploads/company/{{ job.company.logo_filename }}" style="width:100%;height:100%;object-fit:contain;padding:4px">
+          {% else %}<i class="bi bi-building" style="font-size:24px;color:var(--text3)"></i>{% endif %}
+        </div>
+        <div style="flex:1">
+          <h1 style="font-size:22px;font-weight:700;margin-bottom:6px">{{ job.title }}</h1>
+          <div style="font-size:14px;color:var(--text3);margin-bottom:10px">
+            {% if job.company %}<a href="{{ url_for('companies.profile', slug=job.company.slug) }}" style="color:var(--primary);font-weight:500">{{ job.company.name }}</a>{% else %}<b>MOF Engineering</b>{% endif %}
+            {% if job.location %} · <i class="bi bi-geo-alt"></i> {{ job.location }}{% endif %}
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <span style="background:var(--bg);border:1px solid var(--border);padding:4px 12px;border-radius:20px;font-size:12px">{{ job.type }}</span>
+            {% if job.is_remote %}<span style="background:#ede9fe;border:1px solid #ddd6fe;padding:4px 12px;border-radius:20px;font-size:12px;color:#7c3aed">Remote</span>{% endif %}
+            {% if job.experience_level %}<span style="background:var(--bg);border:1px solid var(--border);padding:4px 12px;border-radius:20px;font-size:12px">{{ job.experience_level }}</span>{% endif %}
+            {% if job.salary_range %}<span style="background:#f0fdf4;border:1px solid #bbf7d0;padding:4px 12px;border-radius:20px;font-size:12px;color:#16a34a">{{ job.salary_range }}</span>
+            {% elif job.salary_min %}<span style="background:#f0fdf4;border:1px solid #bbf7d0;padding:4px 12px;border-radius:20px;font-size:12px;color:#16a34a">{{ '{:,}'.format(job.salary_min) }}{% if job.salary_max %} – {{ '{:,}'.format(job.salary_max) }}{% endif %} IQD</span>{% endif %}
+            {% if job.department %}<span style="background:var(--bg);border:1px solid var(--border);padding:4px 12px;border-radius:20px;font-size:12px">{{ job.department }}</span>{% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Description -->
+    {% if job.description %}
+    <div class="card" style="padding:24px;margin-bottom:16px">
+      <h2 style="font-size:16px;font-weight:600;margin-bottom:14px">Job Description</h2>
+      <div style="font-size:14px;line-height:1.8;color:var(--text2);white-space:pre-wrap">{{ job.description }}</div>
+    </div>
+    {% endif %}
+
+    <!-- Requirements -->
+    {% if job.requirements %}
+    <div class="card" style="padding:24px;margin-bottom:16px">
+      <h2 style="font-size:16px;font-weight:600;margin-bottom:14px">Requirements</h2>
+      <div style="font-size:14px;line-height:1.8;color:var(--text2);white-space:pre-wrap">{{ job.requirements }}</div>
+    </div>
+    {% endif %}
+
+    <!-- Skills -->
+    {% if job.skills_required %}
+    <div class="card" style="padding:24px;margin-bottom:16px">
+      <h2 style="font-size:16px;font-weight:600;margin-bottom:14px">Required Skills</h2>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        {% for skill in job.skills_required.split(',') %}
+        {% set s = skill.strip() %}
+        {% if s %}<span style="background:var(--bg);border:1px solid var(--border);padding:5px 14px;border-radius:20px;font-size:12px">{{ s }}</span>{% endif %}
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Benefits -->
+    {% if job.benefits %}
+    <div class="card" style="padding:24px;margin-bottom:16px">
+      <h2 style="font-size:16px;font-weight:600;margin-bottom:14px">Benefits</h2>
+      <div style="font-size:14px;line-height:1.8;color:var(--text2);white-space:pre-wrap">{{ job.benefits }}</div>
+    </div>
+    {% endif %}
+
+    <!-- Related Jobs -->
+    {% if related %}
+    <div class="section-header"><h2>Similar Jobs</h2></div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      {% for r in related %}
+      <div class="card" style="padding:16px 20px">
+        <a href="{{ url_for('jobs.detail', job_id=r.id) }}" style="font-size:14px;font-weight:500;color:var(--text1);text-decoration:none">{{ r.title }}</a>
+        <div style="font-size:12px;color:var(--text3);margin-top:2px">{{ r.type }}{% if r.location %} · {{ r.location }}{% endif %}</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Sidebar -->
+  <div>
+    <!-- Apply / Saved -->
+    <div class="card" style="padding:20px;margin-bottom:16px">
+      {% if not current_user.is_authenticated %}
+        <a href="{{ url_for('auth.login') }}" class="btn btn-primary" style="width:100%;margin-bottom:10px"><i class="bi bi-person-fill"></i> Log in to Apply</a>
+      {% elif already_applied %}
+        <div style="text-align:center;padding:14px 0;font-size:15px;color:#16a34a;font-weight:600"><i class="bi bi-check-circle-fill"></i> Already Applied</div>
+        <a href="{{ url_for('user.my_applications') }}" class="btn btn-outline" style="width:100%">View My Applications</a>
+      {% else %}
+        <a href="{{ url_for('user.apply', pos_id=job.id) }}" class="btn btn-primary" style="width:100%;margin-bottom:10px;font-size:15px"><i class="bi bi-send-fill"></i> Apply Now</a>
+        <button class="btn btn-outline save-btn" data-job-id="{{ job.id }}" style="width:100%">
+          <i class="bi bi-bookmark{% if saved %}-fill{% endif %}"></i> {{ 'Saved' if saved else 'Save Job' }}
+        </button>
+      {% endif %}
+      {% if job.closes_at %}
+      <div style="margin-top:12px;font-size:12px;color:{% if job.is_closing_soon %}#dc2626{% else %}var(--text3){% endif %};text-align:center">
+        <i class="bi bi-clock{% if job.is_closing_soon %} text-danger{% endif %}"></i> Deadline: {{ job.closes_at.strftime('%B %d, %Y') }}
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Job Info -->
+    <div class="card" style="padding:20px;margin-bottom:16px">
+      <h3 style="font-size:14px;font-weight:600;margin-bottom:12px">Job Details</h3>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--text3)">Type</span><span>{{ job.type }}</span></div>
+        {% if job.experience_level %}<div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--text3)">Experience</span><span>{{ job.experience_level }}</span></div>{% endif %}
+        {% if job.department %}<div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--text3)">Department</span><span>{{ job.department }}</span></div>{% endif %}
+        <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--text3)">Remote</span><span>{{ 'Yes' if job.is_remote else 'No' }}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--text3)">Posted</span><span>{{ job.created_at.strftime('%b %d, %Y') }}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--text3)">Views</span><span>{{ job.views_count or 0 }}</span></div>
+      </div>
+    </div>
+
+    <!-- Company Card -->
+    {% if job.company %}
+    <div class="card" style="padding:20px">
+      <h3 style="font-size:14px;font-weight:600;margin-bottom:12px">About {{ job.company.name }}</h3>
+      <div style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:12px">{{ (job.company.description or '')[:200] }}{% if (job.company.description or '')|length > 200 %}…{% endif %}</div>
+      <a href="{{ url_for('companies.profile', slug=job.company.slug) }}" class="btn btn-outline btn-sm" style="width:100%;text-align:center">View Company Profile</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<style>
+@media(max-width:900px){.jd-layout{grid-template-columns:1fr!important}}
+</style>
+<script>
+const saveBtn = document.querySelector('.save-btn');
+if (saveBtn) {
+  saveBtn.addEventListener('click', async () => {
+    const jobId = saveBtn.dataset.jobId;
+    const resp = await fetch(`/api/v1/jobs/${jobId}/save`, {method:'POST', credentials:'include'});
+    if (resp.status === 401) { location.href = '/login'; return; }
+    const data = await resp.json();
+    saveBtn.querySelector('i').className = data.saved ? 'bi bi-bookmark-fill' : 'bi bi-bookmark';
+    saveBtn.childNodes[1].textContent = data.saved ? ' Saved' : ' Save Job';
+  });
+}
+</script>
+{% endblock %}

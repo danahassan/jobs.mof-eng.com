@@ -1,0 +1,134 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% if is_admin %}Admin{% else %}Supervisor{% endif %} Account — MOF Jobs</title>
+<style>
+  body{margin:0;padding:0;background:#f0f4f8;font-family:'Segoe UI',Arial,sans-serif}
+  .wrapper{max-width:580px;margin:32px auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #dde3ea;box-shadow:0 4px 16px rgba(0,0,0,.07)}
+  .header{background:{% if is_admin %}linear-gradient(135deg,#1a2332 0%,#7c3aed 100%){% else %}linear-gradient(135deg,#1a2332 0%,#2563eb 100%){% endif %};padding:32px 36px 28px}
+  .header-logo{color:#fff;font-size:20px;font-weight:700;letter-spacing:-0.3px}
+  .header-tagline{color:rgba(255,255,255,.65);font-size:13px;margin-top:4px}
+  .hero-banner{background:{% if is_admin %}#f5f3ff{% else %}#eff6ff{% endif %};border-left:4px solid {% if is_admin %}#7c3aed{% else %}#2563eb{% endif %};padding:18px 24px;margin:0}
+  .hero-icon{font-size:36px;margin-bottom:8px}
+  .hero-title{font-size:22px;font-weight:700;color:#1a2332;margin:0}
+  .body{padding:28px 36px}
+  .greeting{font-size:16px;color:#1a2332;margin-bottom:12px}
+  .text{font-size:14px;color:#4a5568;line-height:1.6;margin-bottom:16px}
+  .credential-box{background:#1a2332;border-radius:8px;padding:20px 24px;margin:20px 0}
+  .cred-title{color:rgba(255,255,255,.6);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px}
+  .cred-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.1)}
+  .cred-row:last-child{border:none}
+  .cred-label{color:rgba(255,255,255,.6);font-size:13px}
+  .cred-value{color:#fff;font-weight:600;font-size:14px;font-family:monospace}
+  .warning-box{background:#fef9c3;border:1px solid #fde68a;border-radius:8px;padding:14px 18px;margin:16px 0;font-size:13px;color:#92400e;display:flex;gap:10px}
+  .info-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px 20px;margin:20px 0}
+  .info-row{display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-bottom:1px solid #edf2f7}
+  .info-row:last-child{border:none}
+  .info-label{color:#718096;font-weight:500}
+  .info-value{color:#1a2332;font-weight:600}
+  .cta-btn{display:inline-block;background:{% if is_admin %}#7c3aed{% else %}#2563eb{% endif %};color:#fff;text-decoration:none;padding:13px 28px;border-radius:7px;font-weight:600;font-size:14px;margin:8px 0}
+  .perm-list{list-style:none;padding:0;margin:12px 0}
+  .perm-list li{font-size:13px;color:#4a5568;padding:5px 0;display:flex;align-items:center;gap:8px}
+  .perm-list li::before{content:'✓';color:{% if is_admin %}#7c3aed{% else %}#2563eb{% endif %};font-weight:700}
+  .divider{height:1px;background:#edf2f7;margin:24px 0}
+  .signature{font-size:13px;color:#4a5568}
+  .sig-name{font-weight:700;color:#1a2332;font-size:14px}
+  .sig-title{color:#718096;font-size:12px}
+  .footer{background:#f8fafc;padding:16px 36px;border-top:1px solid #e2e8f0}
+  .footer-text{font-size:11px;color:#a0aec0;line-height:1.6;text-align:center}
+  .footer-text a{color:{% if is_admin %}#7c3aed{% else %}#2563eb{% endif %}}
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-logo">MOF Engineering — Careers Administration</div>
+    <div class="header-tagline">Managing Of Future Engineering Company · Slemani, Iraq</div>
+  </div>
+
+  <!-- Hero -->
+  <div class="hero-banner">
+    <div class="hero-icon">{% if is_admin %}🛡️{% else %}🔐{% endif %}</div>
+    <div class="hero-title">Your {% if is_admin %}Admin{% else %}Supervisor{% endif %} Account is Active</div>
+  </div>
+
+  <!-- Body -->
+  <div class="body">
+    <p class="greeting">Dear <strong>{{ user.full_name }}</strong>,</p>
+    <p class="text">
+      Your <strong>{% if is_admin %}Administrator{% else %}Supervisor{% endif %}</strong> account on the MOF Engineering Jobs Portal has been created by the system administrator.
+      {% if is_admin %}You have full administrative access to manage users, positions, applications, system settings, and all portal operations.{% else %}You now have access to the recruitment management dashboard where you can review applications, conduct candidate evaluations, and coordinate hiring decisions.{% endif %}
+    </p>
+
+    <!-- Credentials -->
+    <div class="credential-box">
+      <div class="cred-title">Your Login Credentials</div>
+      <div class="cred-row">
+        <span class="cred-label">Portal URL</span>
+        <span class="cred-value">jobs.mof-eng.com</span>
+      </div>
+      <div class="cred-row">
+        <span class="cred-label">Email / Username</span>
+        <span class="cred-value">{{ user.email }}</span>
+      </div>
+      <div class="cred-row">
+        <span class="cred-label">Temporary Password</span>
+        <span class="cred-value">{{ temp_password }}</span>
+      </div>
+    </div>
+
+    <!-- Security warning -->
+    <div class="warning-box">
+      <span style="font-size:18px">⚠️</span>
+      <span>For security, please <strong>change your password immediately</strong> after your first login. Temporary passwords should never be kept.</span>
+    </div>
+
+    <!-- Permissions -->
+    <p class="text" style="font-weight:600;color:#1a2332;margin-bottom:8px">As {% if is_admin %}an administrator{% else %}a supervisor{% endif %}, you can:</p>
+    <ul class="perm-list">
+      {% if is_admin %}
+      <li>Manage all users, roles, and account permissions</li>
+      <li>Create, edit, and publish job positions</li>
+      <li>Access full application pipeline and audit trail</li>
+      <li>Configure system settings and email notifications</li>
+      <li>View analytics, reports, and platform activity</li>
+      {% else %}
+      <li>Review and evaluate job applications assigned to you</li>
+      <li>Update application statuses and leave internal notes</li>
+      <li>Schedule and manage candidate interviews</li>
+      <li>Communicate with applicants via the messaging system</li>
+      <li>View position details and applicant profiles</li>
+      {% endif %}
+    </ul>
+
+    <div style="text-align:center;margin:24px 0">
+      <a href="https://jobs.mof-eng.com/login" class="cta-btn">{% if is_admin %}Log In to Admin Panel →{% else %}Log In to Your Dashboard →{% endif %}</a>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="signature">
+      <div>Best regards,</div>
+      <div class="sig-name" style="margin-top:6px">MOF Engineering — System Administration</div>
+      <div class="sig-title">Jobs Portal · jobs.mof-eng.com</div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div class="footer-text">
+      <img src="https://mof-eng.com/wp-content/uploads/2025/05/cropped-MOF-LOGO-transparent--100x46.png"
+           alt="MOF Engineering" width="72" style="display:block;margin:0 auto 12px;filter:brightness(0);opacity:.55"
+           onerror="this.style.display='none'">
+      This is a confidential system-generated email sent to <strong>{{ user.email }}</strong>.<br>
+      If you did not expect this account, contact the admin at
+      <a href="mailto:admin@mof-eng.com">admin@mof-eng.com</a> immediately.<br><br>
+      MOF Engineering Company · Slemani, Iraq · <a href="https://mof-eng.com">mof-eng.com</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

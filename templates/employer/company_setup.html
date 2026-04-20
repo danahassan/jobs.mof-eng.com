@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block title %}Company Profile Setup{% endblock %}
+{% block page_title %}Company Profile{% endblock %}
+{% block page_breadcrumb %}{{ 'Edit' if company else 'Setup' }}{% endblock %}
+
+{% block content %}
+<form method="POST" enctype="multipart/form-data" style="max-width:800px">
+  {% if company %}
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;margin-bottom:20px;display:flex;align-items:center;gap:16px">
+    {% if company.logo_filename %}
+    <img src="/static/uploads/company/{{ company.logo_filename }}" style="width:64px;height:64px;border-radius:12px;object-fit:cover">
+    {% else %}
+    <div style="width:64px;height:64px;border-radius:12px;background:var(--border);display:flex;align-items:center;justify-content:center;font-size:22px">🏢</div>
+    {% endif %}
+    <div>
+      <div style="font-size:16px;font-weight:600">{{ company.name }}</div>
+      <div style="font-size:13px;color:var(--text3)"><a href="{{ url_for('companies.profile', slug=company.slug) }}" target="_blank">View public profile →</a></div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="card" style="padding:24px;margin-bottom:20px">
+    <h3 style="font-size:15px;font-weight:600;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)">Company Details</h3>
+    <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:16px">
+      <div style="grid-column:span 2">
+        <label class="form-label">Company Name *</label>
+        <input class="form-control" name="name" value="{{ company.name if company else '' }}" required placeholder="Your company name">
+      </div>
+      <div>
+        <label class="form-label">Industry</label>
+        <input class="form-control" name="industry" value="{{ company.industry if company else '' }}" placeholder="e.g. Engineering, Technology, Finance">
+      </div>
+      <div>
+        <label class="form-label">Company Size</label>
+        <select class="form-control" name="size">
+          <option value="">— Select size —</option>
+          {% for s in sizes %}
+          <option value="{{ s }}" {% if company and company.size == s %}selected{% endif %}>{{ s }} employees</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Headquarters / Location</label>
+        <input class="form-control" name="location" value="{{ company.location if company else '' }}" placeholder="e.g. Slemani, Iraq">
+      </div>
+      <div>
+        <label class="form-label">Founded Year</label>
+        <input class="form-control" type="number" name="founded_year" value="{{ company.founded_year if company else '' }}" placeholder="e.g. 2010" min="1900" max="2030">
+      </div>
+      <div style="grid-column:span 2">
+        <label class="form-label">Website</label>
+        <input class="form-control" name="website" value="{{ company.website if company else '' }}" placeholder="https://www.example.com">
+      </div>
+      <div style="grid-column:span 2">
+        <label class="form-label">About the Company</label>
+        <textarea class="form-control" name="description" rows="6" placeholder="Describe your company, culture, mission and what makes you a great place to work…">{{ company.description if company else '' }}</textarea>
+      </div>
+      <div style="grid-column:span 2">
+        <label class="form-label">Company Logo</label>
+        <input class="form-control" type="file" name="logo" accept=".png,.jpg,.jpeg,.webp,.svg">
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">PNG, JPG, SVG — max 2MB. Recommended: 400×400px square.</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:12px;justify-content:flex-end;flex-wrap:wrap">
+    {% if company %}<a href="{{ url_for('employer.dashboard') }}" class="btn btn-outline">Cancel</a>{% endif %}
+    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> {{ 'Save Changes' if company else 'Create Company Profile' }}</button>
+  </div>
+</form>
+{% endblock %}

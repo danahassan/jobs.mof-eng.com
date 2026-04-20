@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0f1923">
+  <title>Offline - MOF Jobs</title>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;font-family:'Plus Jakarta Sans','Segoe UI',Arial,sans-serif;background:radial-gradient(circle at top,#1a2c3d 0%,#0f1923 58%,#0a1017 100%);color:#fff;display:flex;align-items:center;justify-content:center;padding:24px}
+    .card{width:min(100%,560px);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:24px;padding:32px 28px;box-shadow:0 20px 60px rgba(0,0,0,.28);backdrop-filter:blur(12px)}
+    .brand{display:flex;align-items:center;gap:14px;margin-bottom:22px}
+    .brand img{width:58px;height:58px;border-radius:16px;object-fit:cover}
+    .brand-title{font-size:24px;font-weight:800;letter-spacing:-.03em}
+    .brand-sub{font-size:12px;color:rgba(255,255,255,.56);margin-top:3px}
+    .badge{display:inline-flex;align-items:center;gap:8px;background:rgba(25,135,84,.18);color:#7fe0a9;border:1px solid rgba(74,222,128,.22);padding:8px 12px;border-radius:999px;font-size:12px;font-weight:700;margin-bottom:16px}
+    h1{margin:0 0 10px;font-size:30px;line-height:1.08;letter-spacing:-.04em}
+    p{margin:0;color:rgba(255,255,255,.72);font-size:15px;line-height:1.7}
+    .tips{margin:22px 0 0;padding:0;list-style:none;display:grid;gap:10px}
+    .tips li{display:flex;gap:10px;align-items:flex-start;background:rgba(255,255,255,.04);border-radius:14px;padding:12px 14px;color:rgba(255,255,255,.78);font-size:14px}
+    .tips strong{color:#fff}
+    .actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:24px}
+    .btn{display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:0 18px;border-radius:12px;text-decoration:none;font-weight:700;font-size:14px}
+    .btn-primary{background:#198754;color:#fff}
+    .btn-secondary{background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.1)}
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="brand">
+      <img src="/static/icons/icon-192.png" alt="MOF Jobs">
+      <div>
+        <div class="brand-title">MOF Jobs</div>
+        <div class="brand-sub">Managing Of Future Engineering</div>
+      </div>
+    </div>
+    <div class="badge">Offline Mode</div>
+    <h1>You are offline right now.</h1>
+    <p>The portal is still installed and can open cached pages, but live data needs an internet connection. Reconnect to continue working normally.</p>
+    <ul class="tips">
+      <li><strong>Cached pages:</strong> pages you visited recently may still open offline.</li>
+      <li><strong>Install:</strong> once added to your home screen, the portal launches like an app.</li>
+      <li><strong>Retry:</strong> reconnect and reopen the portal to refresh the latest jobs and dashboards.</li>
+    </ul>
+    <div class="actions">
+      <a class="btn btn-primary" href="/" onclick="location.reload()">Try Again</a>
+      <a class="btn btn-secondary" href="/login">Open Login</a>
+    </div>
+  </main>
+</body>
+</html>

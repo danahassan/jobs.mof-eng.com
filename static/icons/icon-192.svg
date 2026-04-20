@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <rect width="192" height="192" rx="36" fill="#0f1923"/>
+  <rect x="0" y="0" width="192" height="6" rx="3" fill="#198754"/>
+  <rect x="0" y="186" width="192" height="6" rx="3" fill="#198754" opacity="0.3"/>
+  <text x="96" y="116" text-anchor="middle" dominant-baseline="middle"
+        font-family="'Arial Black',Arial,sans-serif" font-weight="900"
+        font-size="108" fill="#198754" letter-spacing="-4">M</text>
+  <text x="96" y="162" text-anchor="middle" dominant-baseline="middle"
+        font-family="Arial,sans-serif" font-weight="700"
+        font-size="22" fill="rgba(255,255,255,0.5)" letter-spacing="5">JOBS</text>
+</svg>

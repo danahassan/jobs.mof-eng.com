@@ -1,0 +1,169 @@
+﻿{% extends 'base.html' %}
+{% block title %}Applications — MOF Jobs{% endblock %}
+{% block page_title %}Applications{% endblock %}
+
+{% block content %}
+<!-- KPI Strip -->
+<div class="kpi-strip">
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#ede9fe;color:#7c3aed"><i class="bi bi-inbox-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_total }}</div><div class="kpi-lbl">Total</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#eff6ff;color:#2563eb"><i class="bi bi-calendar-check"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_new_7d }}</div><div class="kpi-lbl">New (7d)</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#fff7ed;color:#ea580c"><i class="bi bi-hourglass-split"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_pending }}</div><div class="kpi-lbl">Pending</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#fef3c7;color:#d97706"><i class="bi bi-camera-video-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_interview }}</div><div class="kpi-lbl">Interview</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#e8f5ee;color:#198754"><i class="bi bi-patch-check-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_hired }}</div><div class="kpi-lbl">Hired</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#fee2e2;color:#dc2626"><i class="bi bi-x-circle-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_rejected }}</div><div class="kpi-lbl">Rejected</div></div>
+  </div>
+</div>
+
+<!-- Filter Bar -->
+<form method="GET" class="filter-bar">
+  <div class="filter-row">
+    <div class="filter-search">
+      <label class="msd-label">Search</label>
+      <div style="position:relative">
+        <i class="bi bi-search filter-search-icon"></i>
+        <input type="text" name="q" class="form-control" placeholder="Applicant name or email…" value="{{ search }}">
+      </div>
+    </div>
+    <div class="msd" id="msd-status">
+      <label class="msd-label">Status</label>
+      <button type="button" class="msd-btn" onclick="toggleMSD('msd-status')">
+        Status <span class="msd-count"></span><i class="bi bi-chevron-down msd-chevron"></i>
+      </button>
+      <div class="msd-panel">
+        {% for s in ALL_STATUSES %}
+        <label class="msd-option">
+          <input type="checkbox" name="status" value="{{ s }}" {% if s in status_f %}checked{% endif %}>
+          <span>{{ s }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="msd" id="msd-source">
+      <label class="msd-label">Source</label>
+      <button type="button" class="msd-btn" onclick="toggleMSD('msd-source')">
+        Source <span class="msd-count"></span><i class="bi bi-chevron-down msd-chevron"></i>
+      </button>
+      <div class="msd-panel">
+        {% for s in SOURCES %}
+        <label class="msd-option">
+          <input type="checkbox" name="source" value="{{ s }}" {% if s in source_f %}checked{% endif %}>
+          <span>{{ s }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="filter-group">
+      <label>Position</label>
+      <select name="position_id" class="form-control">
+        <option value="">All Positions</option>
+        {% for pos in all_positions %}
+          <option value="{{ pos.id }}" {% if pos.id == position_f %}selected{% endif %}>{{ pos.title }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Assigned To</label>
+      <select name="assigned_to" class="form-control">
+        <option value="">Anyone</option>
+        {% for sup in supervisors %}
+          <option value="{{ sup.id }}" {% if sup.id == assigned_f %}selected{% endif %}>{{ sup.full_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="filter-actions">
+      <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-funnel"></i> Filter</button>
+      <a href="{{ url_for('admin.applications') }}" class="btn btn-outline btn-sm">Reset</a>
+    </div>
+  </div>
+</form>
+{% if search or status_f or source_f or position_f or assigned_f %}
+<div class="filter-chips">
+  {% if search %}<span class="filter-chip"><i class="bi bi-search"></i> {{ search }}</span>{% endif %}
+  {% for s in status_f %}<span class="filter-chip"><i class="bi bi-circle-fill" style="font-size:8px"></i> {{ s }}</span>{% endfor %}
+  {% for s in source_f %}<span class="filter-chip"><i class="bi bi-box-arrow-in-right"></i> {{ s }}</span>{% endfor %}
+  {% if position_f %}<span class="filter-chip"><i class="bi bi-briefcase"></i> Position filter active</span>{% endif %}
+  {% if assigned_f %}<span class="filter-chip"><i class="bi bi-person"></i> Assigned filter active</span>{% endif %}
+  <a href="{{ url_for('admin.applications') }}" class="filter-chip" style="background:#fee2e2;color:#991b1b;border-color:#fca5a5"><i class="bi bi-x-lg"></i> Clear all</a>
+</div>
+{% endif %}
+
+<div class="table-card">
+  <div class="table-head">
+    <span style="font-family:var(--font-head);font-size:13px;font-weight:600">
+      {{ apps.total }} application{{ 's' if apps.total != 1 }}
+    </span>
+    <div class="export-group">
+      <a href="{{ url_for('admin.applications_export', fmt='csv') }}" class="btn-export csv"><i class="bi bi-filetype-csv"></i> CSV</a>
+      <a href="{{ url_for('admin.applications_export', fmt='xlsx') }}" class="btn-export xlsx"><i class="bi bi-file-earmark-excel"></i> Excel</a>
+    </div>
+  </div>
+  <div class="table-responsive">
+    <table class="tbl">
+      <thead>
+        <tr><th>#</th><th>Applicant</th><th>Position</th><th>Source</th><th>Applied</th><th>Status</th><th>Assigned To</th><th>Action</th></tr>
+      </thead>
+      <tbody>
+        {% for app in apps.items %}
+        <tr>
+          <td data-label="#">{{ app.id }}</td>
+          <td data-label="Applicant" class="td-name">{{ app.applicant.full_name }}</td>
+          <td data-label="Position">{{ app.position.title }}</td>
+          <td data-label="Source" class="text-muted">{{ app.source }}</td>
+          <td data-label="Applied" class="text-muted" style="white-space:nowrap">
+            {{ app.applied_at.strftime('%b %d, %Y') }}<br>
+            <span style="font-size:11px;color:var(--text3)">{{ app.applied_at.strftime('%H:%M') }}</span>
+          </td>
+          <td data-label="Status"><span class="badge badge-{{ app.status.lower().replace(' ','') }}">{{ app.status }}</span></td>
+          <td data-label="Assigned" class="text-muted">{{ app.assigned_to.full_name if app.assigned_to else '—' }}</td>
+          <td data-label="Action">
+            <div class="d-flex gap-2">
+              <a href="{{ url_for('admin.application_detail', app_id=app.id) }}" class="btn btn-outline btn-sm"><i class="bi bi-eye"></i> View</a>
+              <form method="POST" action="{{ url_for('admin.application_delete', app_id=app.id) }}"
+                    onsubmit="return confirm('Permanently delete this application from {{ app.applicant.full_name|e }}?')">
+                <button type="submit" class="btn btn-danger btn-sm"><i class="bi bi-trash"></i></button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td data-label="#" colspan="8"><div class="empty-state"><i class="bi bi-inbox"></i>No applications found.</div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if apps.pages > 1 %}
+<div class="pagination">
+  <a href="{{ url_for('admin.applications', page=apps.prev_num, q=search, position_id=position_f, assigned_to=assigned_f) }}"
+     class="page-link {% if not apps.has_prev %}disabled{% endif %}"><i class="bi bi-chevron-left"></i></a>
+  {% for p in apps.iter_pages() %}
+    {% if p %}
+      <a href="{{ url_for('admin.applications', page=p, q=search, position_id=position_f, assigned_to=assigned_f) }}"
+         class="page-link {% if p == apps.page %}active{% endif %}">{{ p }}</a>
+    {% else %}
+      <span class="page-link">…</span>
+    {% endif %}
+  {% endfor %}
+  <a href="{{ url_for('admin.applications', page=apps.next_num, q=search, position_id=position_f, assigned_to=assigned_f) }}"
+     class="page-link {% if not apps.has_next %}disabled{% endif %}"><i class="bi bi-chevron-right"></i></a>
+</div>
+{% endif %}
+{% endblock %}

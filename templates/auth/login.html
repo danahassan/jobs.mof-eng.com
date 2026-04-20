@@ -1,0 +1,593 @@
+{% extends 'base.html' %}
+{% block title %}Sign In — MOF Jobs{% endblock %}
+
+{% block public_content %}
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap');
+
+/* ─── BASE ─── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+/* ══════════════════════════════════════════════════════
+   PAGE SHELL
+══════════════════════════════════════════════════════ */
+.lp-page{font-family:'Plus Jakarta Sans',sans-serif;min-height:100vh;display:flex;flex-direction:column}
+
+/* ══════════════════════════════════════════════════════
+   MOBILE HERO BANNER  (visible only ≤960px)
+══════════════════════════════════════════════════════ */
+.lp-mob-hero{
+  display:none;
+  background:#040c14;
+  position:relative;overflow:hidden;flex-shrink:0;
+}
+.lp-mob-hero::before{
+  content:'';position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse 90% 80% at 5% 15%, rgba(25,135,84,.3) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 60% at 95% 90%, rgba(13,110,63,.22) 0%, transparent 55%);
+}
+.lp-mob-hero::after{
+  content:'';position:absolute;inset:0;
+  background-image:radial-gradient(circle,rgba(255,255,255,.045) 1px,transparent 1px);
+  background-size:22px 22px;
+}
+.lp-mob-inner{position:relative;z-index:1;padding:22px 20px 26px}
+.lp-mob-topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.lp-mob-logo{display:flex;align-items:center;gap:8px}
+.lp-mob-logo img{height:24px;filter:brightness(0) invert(1);opacity:.85}
+.lp-mob-logo-name{color:#fff;font-size:14px;font-weight:700;letter-spacing:-.3px}
+.lp-mob-browse{font-size:11px;font-weight:600;color:rgba(255,255,255,.45);text-decoration:none;padding:5px 11px;border:1px solid rgba(255,255,255,.14);border-radius:16px;transition:all .2s}
+.lp-mob-browse:hover{color:#fff;border-color:rgba(255,255,255,.3);text-decoration:none}
+.lp-mob-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(25,135,84,.18);border:1px solid rgba(25,135,84,.35);color:#4ade80;font-size:10px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;padding:4px 10px;border-radius:16px;margin-bottom:10px}
+.lp-mob-badge::before{content:'';width:5px;height:5px;background:#4ade80;border-radius:50%;animation:dot-blink 2s ease-in-out infinite}
+@keyframes dot-blink{0%,100%{opacity:1}50%{opacity:.2}}
+.lp-mob-h1{font-size:clamp(19px,5vw,24px);font-weight:900;color:#fff;letter-spacing:-.6px;line-height:1.15;margin-bottom:6px}
+.lp-mob-h1 .ac{color:#4ade80}
+.lp-mob-sub{font-size:12px;color:rgba(255,255,255,.38);line-height:1.6;margin-bottom:16px;max-width:340px}
+.lp-mob-stats{display:flex;gap:20px;padding-top:4px}
+.lp-mob-stat-num{font-size:17px;font-weight:900;color:#fff;letter-spacing:-.5px;line-height:1}
+.lp-mob-stat-num .ac{color:#4ade80}
+.lp-mob-stat-lbl{font-size:9.5px;font-weight:600;color:rgba(255,255,255,.28);text-transform:uppercase;letter-spacing:.4px;margin-top:2px}
+/* Scrollable job chips row */
+.lp-mob-jobs{display:flex;gap:7px;overflow-x:auto;margin-top:14px;padding-bottom:4px;scrollbar-width:none}
+.lp-mob-jobs::-webkit-scrollbar{display:none}
+.lp-mob-chip{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:5px 12px;white-space:nowrap;flex-shrink:0;text-decoration:none;transition:all .18s}
+.lp-mob-chip:hover{background:rgba(74,222,128,.08);border-color:rgba(74,222,128,.3);text-decoration:none}
+.lp-mob-chip-title{font-size:11.5px;font-weight:600;color:rgba(255,255,255,.75)}
+.lp-mob-chip-tag{font-size:9.5px;font-weight:700;color:#4ade80}
+
+/* ══════════════════════════════════════════════════════
+   MAIN SPLIT LAYOUT
+══════════════════════════════════════════════════════ */
+.lp-wrap{display:flex;flex:1}
+
+/* ══════════════════════════════════════════════════════
+   LEFT HERO PANEL (desktop)
+══════════════════════════════════════════════════════ */
+.lp-hero{
+  flex:1;position:relative;
+  display:flex;flex-direction:column;
+  overflow:hidden;
+  background:#040c14;
+}
+/* Depth gradient overlay */
+.lp-hero::after{
+  content:'';position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:linear-gradient(180deg,rgba(4,12,20,0) 60%,rgba(4,12,20,.75) 100%);
+}
+/* Dot grid */
+.lp-grid{
+  position:absolute;inset:0;z-index:0;
+  background-image:radial-gradient(circle,rgba(255,255,255,.052) 1px,transparent 1px);
+  background-size:26px 26px;
+}
+/* Colour washes */
+.lp-glow{position:absolute;border-radius:50%;z-index:0}
+.lp-glow-1{width:580px;height:580px;background:radial-gradient(circle,rgba(25,135,84,.26) 0%,transparent 70%);top:-160px;left:-140px}
+.lp-glow-2{width:460px;height:460px;background:radial-gradient(circle,rgba(13,110,63,.2) 0%,transparent 70%);bottom:-110px;right:-90px}
+.lp-glow-3{width:220px;height:220px;background:radial-gradient(circle,rgba(74,222,128,.09) 0%,transparent 70%);top:42%;left:45%;transform:translate(-50%,-50%);animation:glow3-pulse 6s ease-in-out infinite}
+@keyframes glow3-pulse{0%,100%{opacity:.6;transform:translate(-50%,-50%) scale(1)}50%{opacity:1;transform:translate(-50%,-50%) scale(1.4)}}
+/* Floating orbs */
+.orb{position:absolute;border-radius:50%;filter:blur(68px);z-index:0;animation:orb-drift 12s ease-in-out infinite}
+.orb-1{width:300px;height:300px;background:#198754;opacity:.16;top:-50px;left:-80px;animation-delay:0s}
+.orb-2{width:200px;height:200px;background:#0d5e3a;opacity:.2;bottom:6%;right:-40px;animation-delay:5s}
+.orb-3{width:120px;height:120px;background:#86efac;opacity:.07;top:36%;left:36%;animation-delay:2.5s}
+@keyframes orb-drift{0%,100%{transform:translate(0,0)}33%{transform:translate(12px,-16px)}66%{transform:translate(-8px,10px)}}
+
+.lp-inner{position:relative;z-index:2;display:flex;flex-direction:column;height:100%}
+
+/* Top bar */
+.lp-topbar{padding:26px 38px 0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.lp-logo{display:flex;align-items:center;gap:9px}
+.lp-logo img{height:30px;filter:brightness(0) invert(1);opacity:.88}
+.lp-logo-words{display:flex;flex-direction:column;gap:0}
+.lp-logo-name{color:#fff;font-size:14.5px;font-weight:700;letter-spacing:-.3px;line-height:1.2}
+.lp-logo-sub{font-size:10px;font-weight:500;color:rgba(255,255,255,.28);letter-spacing:.4px;text-transform:uppercase}
+.lp-now-badge{display:flex;align-items:center;gap:6px;background:rgba(25,135,84,.16);border:1px solid rgba(25,135,84,.32);color:#4ade80;font-size:10px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;padding:5px 12px;border-radius:20px}
+.lp-now-badge::before{content:'';width:5px;height:5px;background:#4ade80;border-radius:50%;animation:dot-blink 2s ease-in-out infinite}
+
+/* Headline */
+.lp-headline{padding:28px 38px 0;flex-shrink:0}
+.lp-h1{font-size:clamp(27px,3.2vw,43px);font-weight:900;color:#fff;line-height:1.1;letter-spacing:-1.2px;margin-bottom:12px}
+.lp-h1 .ac{color:#4ade80}
+.lp-sub{font-size:13.5px;color:rgba(255,255,255,.4);line-height:1.75;max-width:380px}
+
+/* Accent line */
+.lp-accent-line{width:42px;height:3px;background:linear-gradient(90deg,#198754,#4ade80);border-radius:3px;margin:18px 38px 0;flex-shrink:0}
+
+/* Stats */
+.lp-stats{display:flex;padding:16px 38px 18px;flex-shrink:0;gap:0}
+.lp-stat{flex:1;padding:10px 0;text-align:center}
+.lp-stat:first-child{text-align:left}
+.lp-stat:last-child{text-align:right}
+.lp-stat-num{font-size:23px;font-weight:900;color:#fff;letter-spacing:-1px;line-height:1}
+.lp-stat-num .ac{color:#4ade80}
+.lp-stat-lbl{font-size:9.5px;font-weight:600;color:rgba(255,255,255,.28);text-transform:uppercase;letter-spacing:.5px;margin-top:3px}
+
+/* Feature list */
+.lp-features{display:flex;flex-direction:column;gap:9px;padding:0 38px 18px;flex-shrink:0}
+.lp-feature{display:flex;align-items:center;gap:10px;font-size:12.5px;color:rgba(255,255,255,.48)}
+.lp-fi{width:26px;height:26px;border-radius:7px;background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.2);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;color:#4ade80}
+
+/* Jobs scroll */
+.lp-jobs-section{flex:1;display:flex;flex-direction:column;overflow:hidden;padding:0 38px 20px}
+.lp-jobs-label{font-size:9.5px;font-weight:700;color:rgba(255,255,255,.2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;flex-shrink:0}
+.lp-jobs-scroll{flex:1;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.07) transparent}
+.lp-jobs-scroll::-webkit-scrollbar{width:3px}
+.lp-jobs-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:2px}
+.lp-job{display:block;text-decoration:none;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.055);border-radius:10px;padding:11px 13px;margin-bottom:6px;transition:all .2s ease}
+.lp-job:hover{background:rgba(74,222,128,.055);border-color:rgba(74,222,128,.32);transform:translateX(3px);text-decoration:none}
+.lp-job-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:5px;gap:8px}
+.lp-job-title{font-size:12.5px;font-weight:600;color:#e8f0f8;line-height:1.3}
+.lp-job-type{font-size:9.5px;font-weight:700;padding:2px 8px;border-radius:10px;background:rgba(74,222,128,.1);color:#4ade80;border:1px solid rgba(74,222,128,.2);white-space:nowrap;flex-shrink:0}
+.lp-job-meta{display:flex;gap:8px;flex-wrap:wrap}
+.lp-job-meta span{font-size:10.5px;color:rgba(255,255,255,.26);display:flex;align-items:center;gap:3px}
+.lp-job-meta .remote{color:rgba(74,222,128,.6)}
+.lp-view-all{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px;padding:9px;border:1px dashed rgba(255,255,255,.1);border-radius:8px;font-size:11.5px;font-weight:600;color:rgba(255,255,255,.2);text-decoration:none;transition:all .2s}
+.lp-view-all:hover{border-color:rgba(74,222,128,.3);color:#4ade80;background:rgba(74,222,128,.03);text-decoration:none}
+.lp-jobs-empty{text-align:center;padding:28px 0;color:rgba(255,255,255,.15);font-size:13px}
+
+/* Hero footer */
+.lp-hero-foot{padding:14px 38px;border-top:1px solid rgba(255,255,255,.05);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.lp-hero-foot-text{font-size:10.5px;color:rgba(255,255,255,.17)}
+.lp-hero-foot a{font-size:10.5px;color:rgba(255,255,255,.2);text-decoration:none;transition:color .2s}
+.lp-hero-foot a:hover{color:#4ade80}
+
+/* ══════════════════════════════════════════════════════
+   RIGHT FORM PANEL
+══════════════════════════════════════════════════════ */
+.lp-form-panel{
+  width:490px;flex-shrink:0;
+  background:#ffffff;
+  display:flex;flex-direction:column;
+  position:relative;overflow-y:auto;
+}
+/* Animated shimmer bar at top */
+.lp-form-panel::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;z-index:10;
+  background:linear-gradient(90deg,#0d6e3f,#198754,#4ade80,#22c55e,#198754,#0d6e3f);
+  background-size:300% 100%;
+  animation:bar-shimmer 5s linear infinite;
+}
+@keyframes bar-shimmer{0%{background-position:0% 0%}100%{background-position:300% 0%}}
+
+.lp-form-body{
+  flex:1;display:flex;flex-direction:column;
+  justify-content:center;align-items:center;
+  padding:52px 52px;
+}
+.lp-form-inner{width:100%;max-width:370px}
+
+/* Mobile brand header (hidden on desktop) */
+.lpf-mob-brand{display:none;flex-direction:column;align-items:center;padding-bottom:24px;margin-bottom:24px;border-bottom:1px solid #f0f4f8}
+.lpf-mob-icon{width:50px;height:50px;border-radius:14px;background:linear-gradient(135deg,#198754,#0d5e3a);display:flex;align-items:center;justify-content:center;font-size:21px;color:#fff;margin-bottom:10px;box-shadow:0 6px 18px rgba(25,135,84,.28)}
+.lpf-mob-name{font-size:17px;font-weight:800;color:#08121c;letter-spacing:-.3px}
+.lpf-mob-sub{font-size:11.5px;color:#94a3b8;margin-top:2px}
+
+/* Form heading */
+.lpf-eyebrow{display:inline-flex;align-items:center;gap:6px;font-size:10.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:#198754;margin-bottom:10px}
+.lpf-eyebrow::before{content:'';width:5px;height:5px;background:#198754;border-radius:50%;display:inline-block}
+.lpf-title{font-size:30px;font-weight:900;color:#07101a;letter-spacing:-1.1px;margin-bottom:5px;line-height:1.1}
+.lpf-subtitle{font-size:13.5px;color:#94a3b8;line-height:1.55;margin-bottom:26px}
+
+/* Flash messages */
+.lpf-flash{display:flex;align-items:flex-start;gap:9px;border-radius:10px;padding:11px 14px;font-size:13px;line-height:1.45;margin-bottom:18px}
+.lpf-flash i{margin-top:1px;flex-shrink:0}
+.lpf-flash.danger{background:#fef2f2;border:1px solid #fecaca;color:#dc2626}
+.lpf-flash.success{background:#f0fdf4;border:1px solid #bbf7d0;color:#16a34a}
+.lpf-flash.info{background:#eff6ff;border:1px solid #bfdbfe;color:#2563eb}
+
+/* Form groups */
+.lpf-group{margin-bottom:16px}
+.lpf-label-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+.lpf-label{font-size:10.5px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.5px}
+.lpf-lbl-link{font-size:12px;font-weight:600;color:#198754;text-decoration:none}
+.lpf-lbl-link:hover{text-decoration:underline}
+
+/* Input wrapper */
+.lpf-field{position:relative}
+.lpf-fi{
+  position:absolute;left:13px;top:50%;transform:translateY(-50%);
+  color:#c0ccd8;font-size:14px;pointer-events:none;
+  transition:color .18s;
+}
+.lpf-field:focus-within .lpf-fi{color:#198754}
+.lpf-input{
+  width:100%;padding:13px 13px 13px 41px;
+  border:1.5px solid #e2e8f0;border-radius:11px;
+  font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;color:#0f1923;
+  background:#f8fafc;transition:all .2s;outline:none;
+}
+.lpf-input:focus{border-color:#198754;background:#fff;box-shadow:0 0 0 3.5px rgba(25,135,84,.1)}
+.lpf-input::placeholder{color:#bec9d3}
+.lpf-input.has-tog{padding-right:44px}
+
+/* Password toggle */
+.lpf-tog{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#bec9d3;padding:4px;font-size:14px;transition:color .18s}
+.lpf-tog:hover{color:#475569}
+
+/* Remember row */
+.lpf-check-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;margin-top:2px}
+.lpf-check-lbl{display:flex;align-items:center;gap:7px;font-size:13px;color:#64748b;cursor:pointer;user-select:none}
+.lpf-check-lbl input{width:15px;height:15px;accent-color:#198754;cursor:pointer}
+
+/* Submit */
+.lpf-btn{
+  width:100%;padding:14px 20px;
+  border:none;border-radius:11px;cursor:pointer;
+  font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;font-weight:700;
+  color:#fff;
+  background:linear-gradient(135deg,#1a9660 0%,#198754 40%,#0d6e3f 100%);
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  letter-spacing:-.1px;
+  box-shadow:0 4px 18px rgba(25,135,84,.3),0 1px 4px rgba(25,135,84,.18);
+  transition:all .22s;position:relative;overflow:hidden;
+}
+.lpf-btn::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,.14) 0%,transparent 60%);
+  opacity:0;transition:opacity .22s;
+}
+.lpf-btn:hover::before{opacity:1}
+.lpf-btn:hover{box-shadow:0 8px 26px rgba(25,135,84,.4),0 2px 8px rgba(25,135,84,.2);transform:translateY(-1px)}
+.lpf-btn:active{transform:translateY(0);box-shadow:0 3px 10px rgba(25,135,84,.22)}
+.lpf-btn-icon{width:24px;height:24px;background:rgba(255,255,255,.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px}
+
+/* Divider */
+.lpf-sep{display:flex;align-items:center;gap:10px;margin:20px 0}
+.lpf-sep::before,.lpf-sep::after{content:'';flex:1;height:1px;background:#e9eef5}
+.lpf-sep span{font-size:11px;color:#94a3b8;white-space:nowrap;font-weight:500}
+
+/* Register */
+.lpf-reg-btn{
+  width:100%;padding:13px 20px;
+  background:#fff;border:1.5px solid #e2e8f0;border-radius:11px;
+  font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:600;
+  color:#3d4f63;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  text-decoration:none;transition:all .2s;
+}
+.lpf-reg-btn:hover{border-color:#198754;color:#198754;background:#f0fdf4;text-decoration:none}
+
+/* Browse link */
+.lpf-browse-row{margin-top:20px;text-align:center}
+.lpf-browse-row a{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:#94a3b8;text-decoration:none;transition:color .2s}
+.lpf-browse-row a:hover{color:#198754;text-decoration:none}
+
+/* Trust strip */
+.lpf-trust{display:flex;align-items:center;justify-content:center;gap:18px;margin-top:22px;padding-top:20px;border-top:1px solid #f1f5f9}
+.lpf-trust-item{display:flex;align-items:center;gap:5px;font-size:10.5px;color:#94a3b8;font-weight:500}
+.lpf-trust-item i{font-size:11px;color:#64748b}
+
+/* ══════════════════════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════════════════════ */
+@media(max-width:960px){
+  /* Show mobile hero, hide desktop hero */
+  .lp-mob-hero{display:block}
+  .lp-hero{display:none}
+  /* Form panel fills remaining width */
+  .lp-form-panel{width:100%}
+  /* Show mobile brand header inside form */
+  .lpf-mob-brand{display:flex}
+  /* Adjust form body padding */
+  .lp-form-body{padding:28px 28px 44px;justify-content:flex-start}
+  /* Wrap fills viewport minus mobile hero */
+  .lp-wrap{flex:1}
+}
+@media(max-width:540px){
+  .lp-form-body{padding:24px 20px 44px}
+  .lpf-title{font-size:26px}
+}
+@media(max-width:360px){
+  .lp-form-body{padding:20px 16px 40px}
+}
+</style>
+
+<!-- ══════════════════════════════════════════════════════
+     MOBILE HERO BANNER  (≤960px only)
+══════════════════════════════════════════════════════ -->
+<div class="lp-mob-hero">
+  <div class="lp-mob-inner">
+    <!-- top bar -->
+    <div class="lp-mob-topbar">
+      <div class="lp-mob-logo">
+        <img src="https://mof-eng.com/wp-content/uploads/2025/05/cropped-MOF-LOGO-transparent--100x46.png"
+             alt="MOF Engineering"
+             onerror="this.style.display='none'">
+        <div class="lp-mob-logo-name">MOF Engineering</div>
+      </div>
+      <a href="{{ url_for('user.browse') }}" class="lp-mob-browse">Browse Jobs</a>
+    </div>
+
+    <!-- badge -->
+    <div class="lp-mob-badge">Now Hiring</div>
+
+    <!-- headline -->
+    <div class="lp-mob-h1">Build Your Career<br>with <span class="ac">MOF Engineering</span></div>
+    <div class="lp-mob-sub">Apply for open roles and track your applications in real time — fully online.</div>
+
+    <!-- stats -->
+    <div class="lp-mob-stats">
+      <div>
+        <div class="lp-mob-stat-num"><span class="ac">{{ positions|length }}</span></div>
+        <div class="lp-mob-stat-lbl">Open Roles</div>
+      </div>
+      <div>
+        <div class="lp-mob-stat-num">100<span class="ac">%</span></div>
+        <div class="lp-mob-stat-lbl">Online</div>
+      </div>
+      <div>
+        <div class="lp-mob-stat-num"><span class="ac">Fast</span></div>
+        <div class="lp-mob-stat-lbl">Response</div>
+      </div>
+    </div>
+
+    <!-- scrollable job chips -->
+    {% if positions %}
+    <div class="lp-mob-jobs">
+      {% for pos in positions[:8] %}
+      <a href="{{ url_for('user.browse') }}" class="lp-mob-chip">
+        <span class="lp-mob-chip-title">{{ pos.title }}</span>
+        <span class="lp-mob-chip-tag">{{ pos.type or 'FT' }}</span>
+      </a>
+      {% endfor %}
+      <a href="{{ url_for('user.browse') }}" class="lp-mob-chip">
+        <span class="lp-mob-chip-title">All positions →</span>
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     MAIN LAYOUT
+══════════════════════════════════════════════════════ -->
+<div class="lp-page">
+<div class="lp-wrap">
+
+  <!-- ══ LEFT HERO (desktop) ══ -->
+  <div class="lp-hero">
+    <div class="lp-grid"></div>
+    <div class="lp-glow lp-glow-1"></div>
+    <div class="lp-glow lp-glow-2"></div>
+    <div class="lp-glow lp-glow-3"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+
+    <div class="lp-inner">
+      <!-- Top bar -->
+      <div class="lp-topbar">
+        <div class="lp-logo">
+          <img src="https://mof-eng.com/wp-content/uploads/2025/05/cropped-MOF-LOGO-transparent--100x46.png"
+               alt="MOF Engineering"
+               onerror="this.style.display='none'">
+          <div class="lp-logo-words">
+            <div class="lp-logo-name">MOF Engineering</div>
+            <div class="lp-logo-sub">Jobs Portal</div>
+          </div>
+        </div>
+        <div class="lp-now-badge">Now Hiring</div>
+      </div>
+
+      <!-- Headline -->
+      <div class="lp-headline">
+        <h1 class="lp-h1">Build Your<br>Career with<br><span class="ac">MOF Engineering</span></h1>
+        <p class="lp-sub">Join the team shaping infrastructure and engineering excellence across Iraq. Apply, track, and grow — all in one place.</p>
+      </div>
+
+      <!-- Accent line -->
+      <div class="lp-accent-line"></div>
+
+      <!-- Stats -->
+      <div class="lp-stats">
+        <div class="lp-stat">
+          <div class="lp-stat-num"><span class="ac">{{ positions|length }}</span></div>
+          <div class="lp-stat-lbl">Open Roles</div>
+        </div>
+        <div class="lp-stat">
+          <div class="lp-stat-num">100<span class="ac">%</span></div>
+          <div class="lp-stat-lbl">Online Process</div>
+        </div>
+        <div class="lp-stat">
+          <div class="lp-stat-num"><span class="ac">Fast</span></div>
+          <div class="lp-stat-lbl">Response</div>
+        </div>
+      </div>
+
+      <!-- Features -->
+      <div class="lp-features">
+        <div class="lp-feature">
+          <div class="lp-fi"><i class="bi bi-person-check-fill"></i></div>
+          <span>Apply directly and track every stage of your application</span>
+        </div>
+        <div class="lp-feature">
+          <div class="lp-fi"><i class="bi bi-bell-fill"></i></div>
+          <span>Get instant email alerts for status updates and new openings</span>
+        </div>
+        <div class="lp-feature">
+          <div class="lp-fi"><i class="bi bi-shield-check-fill"></i></div>
+          <span>Secure, private and professional end-to-end hiring process</span>
+        </div>
+      </div>
+
+      <!-- Job cards -->
+      <div class="lp-jobs-section">
+        {% if positions %}
+        <div class="lp-jobs-label">{{ positions|length }} position{{ 's' if positions|length != 1 }} open right now</div>
+        <div class="lp-jobs-scroll">
+          {% for pos in positions %}
+          <a href="{{ url_for('user.browse') }}" class="lp-job">
+            <div class="lp-job-top">
+              <div class="lp-job-title">{{ pos.title }}</div>
+              <span class="lp-job-type">{{ pos.type or 'Full-time' }}</span>
+            </div>
+            <div class="lp-job-meta">
+              {% if pos.department %}<span><i class="bi bi-building" style="font-size:9px"></i> {{ pos.department }}</span>{% endif %}
+              {% if pos.location %}<span><i class="bi bi-geo-alt" style="font-size:9px"></i> {{ pos.location }}</span>{% endif %}
+              {% if pos.salary_range %}<span><i class="bi bi-cash" style="font-size:9px"></i> {{ pos.salary_range }}</span>{% endif %}
+              {% if pos.is_remote %}<span class="remote"><i class="bi bi-wifi" style="font-size:9px"></i> Remote</span>{% endif %}
+            </div>
+          </a>
+          {% endfor %}
+          <a href="{{ url_for('user.browse') }}" class="lp-view-all">
+            <i class="bi bi-briefcase"></i> View all open positions
+          </a>
+        </div>
+        {% else %}
+        <div class="lp-jobs-empty">
+          <i class="bi bi-briefcase" style="font-size:26px;display:block;margin-bottom:8px;opacity:.35"></i>
+          No open positions at the moment
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Footer -->
+      <div class="lp-hero-foot">
+        <span class="lp-hero-foot-text">© 2026 MOF Engineering Company · Slemani, Iraq</span>
+        <a href="https://mof-eng.com" target="_blank" rel="noopener noreferrer">mof-eng.com ↗</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ RIGHT FORM PANEL ══ -->
+  <div class="lp-form-panel">
+    <div class="lp-form-body">
+      <div class="lp-form-inner">
+
+        <!-- Mobile brand header -->
+        <div class="lpf-mob-brand">
+          <div class="lpf-mob-icon"><i class="bi bi-briefcase-fill"></i></div>
+          <div class="lpf-mob-name">MOF Engineering Careers</div>
+          <div class="lpf-mob-sub">Managing of Future Engineering · Slemani, Iraq</div>
+        </div>
+
+        <!-- Heading -->
+        <div class="lpf-eyebrow">Jobs Portal</div>
+        <div class="lpf-title">Welcome back</div>
+        <div class="lpf-subtitle">Sign in to your account to continue</div>
+
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% for cat, msg in messages %}
+          <div class="lpf-flash {{ cat }}">
+            <i class="bi bi-{{ 'check-circle-fill' if cat == 'success' else 'info-circle-fill' if cat == 'info' else 'exclamation-circle-fill' }}"></i>
+            {{ msg }}
+          </div>
+          {% endfor %}
+        {% endwith %}
+
+        <form method="POST" autocomplete="on" novalidate>
+          {% if request.args.get('next') %}
+          <input type="hidden" name="next" value="{{ request.args.get('next') }}">
+          {% endif %}
+          <!-- Email or Phone -->
+          <div class="lpf-group">
+            <div class="lpf-label-row">
+              <span class="lpf-label">Email or Phone Number</span>
+            </div>
+            <div class="lpf-field">
+              <i class="bi bi-person lpf-fi"></i>
+              <input type="text" name="email"
+                     class="lpf-input"
+                     required autofocus autocomplete="username"
+                     placeholder="you@example.com or 07701234567">
+            </div>
+          </div>
+
+          <!-- Password -->
+          <div class="lpf-group">
+            <div class="lpf-label-row">
+              <span class="lpf-label">Password</span>
+              <a href="{{ url_for('auth.forgot_password') }}" class="lpf-lbl-link">Forgot password?</a>
+            </div>
+            <div class="lpf-field">
+              <i class="bi bi-lock lpf-fi"></i>
+              <input type="password" name="password" id="lpPw"
+                     class="lpf-input has-tog"
+                     required autocomplete="current-password"
+                     placeholder="••••••••">
+              <button type="button" class="lpf-tog" onclick="lpTogglePw()" aria-label="Toggle password visibility">
+                <i class="bi bi-eye" id="lpPwIcon"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Remember -->
+          <div class="lpf-check-row">
+            <label class="lpf-check-lbl">
+              <input type="checkbox" name="remember">
+              Keep me signed in
+            </label>
+          </div>
+
+          <!-- Submit -->
+          <button type="submit" class="lpf-btn">
+            Sign In
+            <span class="lpf-btn-icon"><i class="bi bi-arrow-right"></i></span>
+          </button>
+        </form>
+
+        <div class="lpf-sep"><span>Don't have an account yet?</span></div>
+
+        <a href="{{ url_for('auth.register') }}" class="lpf-reg-btn">
+          <i class="bi bi-person-plus"></i>
+          Create a Candidate Account
+        </a>
+
+        <div class="lpf-browse-row">
+          <a href="{{ url_for('user.browse') }}">
+            <i class="bi bi-arrow-left"></i>
+            Browse open jobs without signing in
+          </a>
+        </div>
+
+        <div class="lpf-trust">
+          <div class="lpf-trust-item"><i class="bi bi-shield-check-fill"></i> Secure Login</div>
+          <div class="lpf-trust-item"><i class="bi bi-lock-fill"></i> Encrypted</div>
+          <div class="lpf-trust-item"><i class="bi bi-eye-slash-fill"></i> Private</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div><!-- end lp-wrap -->
+</div><!-- end lp-page -->
+
+<script>
+function lpTogglePw() {
+  const pw = document.getElementById('lpPw');
+  const ic = document.getElementById('lpPwIcon');
+  if (pw.type === 'password') {
+    pw.type = 'text';
+    ic.className = 'bi bi-eye-slash';
+  } else {
+    pw.type = 'password';
+    ic.className = 'bi bi-eye';
+  }
+}
+</script>
+{% endblock %}

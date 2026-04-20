@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0f1923">
+  <title>Opening MOF Jobs</title>
+  <style>
+    body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0f1923;color:#fff;font-family:'Plus Jakarta Sans','Segoe UI',Arial,sans-serif}
+    .wrap{text-align:center;padding:24px}
+    .logo{width:72px;height:72px;border-radius:18px;object-fit:cover;margin:0 auto 14px;display:block}
+    .title{font-weight:700;font-size:20px;letter-spacing:-0.02em}
+    .sub{margin-top:8px;font-size:13px;color:rgba(255,255,255,0.68)}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <img class="logo" src="/static/icons/icon-192.png" alt="MOF Jobs">
+    <div class="title">Opening MOF Jobs</div>
+    <div class="sub">Please wait...</div>
+  </main>
+  <script>
+    window.location.replace("{{ target_url }}");
+  </script>
+</body>
+</html>

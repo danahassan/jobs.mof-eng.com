@@ -1,0 +1,455 @@
+{% extends 'base.html' %}
+{% block title %}Application #{{ app.id }} — {{ app.applicant.full_name }}{% endblock %}
+{% block page_title %}Application #{{ app.id }}{% endblock %}
+
+{% block content %}
+<style>
+/* ── Hero ──────────────────────────────────────────────────── */
+.app-hero{background:linear-gradient(135deg,var(--navy) 0%,#1a2d3f 60%,#1e3a52 100%);
+  border-radius:var(--radius-lg,12px);padding:24px 28px;margin-bottom:20px;position:relative;overflow:hidden}
+.app-hero::before{content:'';position:absolute;top:-40px;right:-40px;width:200px;height:200px;
+  border-radius:50%;background:rgba(25,135,84,.07);pointer-events:none}
+.app-hero-inner{display:flex;align-items:flex-start;gap:16px}
+.app-hero-body{flex:1;min-width:0}
+.app-hero-right{display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0}
+.app-hero-name{color:#fff;font-size:22px;font-weight:800;line-height:1.2}
+.app-hero-sub{color:rgba(255,255,255,.55);font-size:13px;margin-top:3px}
+.app-hero-meta{display:flex;gap:14px;margin-top:14px;flex-wrap:wrap}
+.app-hero-meta-item{color:rgba(255,255,255,.6);font-size:12px;display:flex;align-items:center;gap:5px}
+.app-hero-meta-item strong{color:rgba(255,255,255,.9)}
+.status-large{font-size:12px;font-weight:700;padding:5px 14px;border-radius:20px;letter-spacing:.3px}
+.app-hero-cv-btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;
+  font-size:12px;white-space:nowrap}
+.app-hero-back{color:rgba(255,255,255,.5);font-size:12px;text-decoration:none;white-space:nowrap}
+.app-hero-back:hover{color:rgba(255,255,255,.8)}
+
+/* ── Main grid ─────────────────────────────────────────────── */
+.ad-grid{display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start}
+.ad-sidebar{position:sticky;top:76px;display:flex;flex-direction:column;gap:16px}
+
+/* ── Profile blocks ────────────────────────────────────────── */
+.profile-block{margin-top:16px;padding-top:16px;border-top:1px solid var(--border)}
+.profile-block-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;
+  color:var(--text3);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.skill-chip{display:inline-block;background:var(--green-light);color:var(--green);
+  font-size:12px;font-weight:600;padding:3px 10px;border-radius:6px;margin:2px}
+.exp-item{padding:10px 0;border-bottom:1px solid var(--border)}
+.exp-item:last-child{border-bottom:none;padding-bottom:0}
+.exp-title{font-size:13px;font-weight:600;color:var(--text)}
+.exp-company{font-size:12px;color:var(--green);font-weight:500}
+.exp-dates{font-size:11px;color:var(--text3);margin-top:2px}
+.exp-desc{font-size:12px;color:var(--text2);margin-top:4px;line-height:1.5}
+.info-grid{display:flex;flex-wrap:wrap;gap:16px}
+.info-pair{display:flex;flex-direction:column;gap:2px;min-width:120px}
+.info-pair .lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text3)}
+.info-pair .val{font-size:13px;font-weight:600;color:var(--text)}
+.lang-cert-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+
+/* ── Chat ──────────────────────────────────────────────────── */
+.chat-thread{display:flex;flex-direction:column;gap:8px;max-height:300px;overflow-y:auto;
+  padding:12px;background:#f8fafb;border-radius:10px;border:1px solid var(--border)}
+.chat-thread::-webkit-scrollbar{width:4px}
+.chat-thread::-webkit-scrollbar-thumb{background:var(--border2,#d1d9e0);border-radius:4px}
+.chat-bubble{max-width:82%;padding:9px 13px;border-radius:12px;font-size:13px;line-height:1.5;word-break:break-word}
+.bubble-out{background:var(--green);color:#fff;border-bottom-right-radius:4px;margin-left:auto}
+.bubble-in{background:#fff;color:var(--text);border:1px solid var(--border);border-bottom-left-radius:4px}
+.bubble-out .chat-meta{color:rgba(255,255,255,.65);font-size:10px;margin-top:4px;text-align:right}
+.bubble-in .chat-meta{color:var(--text3);font-size:10px;margin-top:4px}
+.chat-empty{text-align:center;padding:20px 12px;color:var(--text3);font-size:13px}
+
+/* ── Responsive ────────────────────────────────────────────── */
+@media(max-width:960px){.ad-grid{grid-template-columns:1fr 300px}}
+@media(max-width:820px){
+  .ad-grid{grid-template-columns:1fr}
+  .ad-sidebar{position:static}
+}
+@media(max-width:680px){
+  /* ── Hero compact ── */
+  .app-hero{padding:14px 16px;margin-bottom:14px}
+  .app-hero-inner{flex-direction:column;gap:10px}
+  .app-hero-name{font-size:17px}
+  .app-hero-sub{font-size:12px;margin-top:2px}
+  .app-hero-meta{gap:6px 12px;margin-top:8px}
+  .app-hero-meta-item{font-size:11px}
+  .app-hero-avatar{width:42px!important;height:42px!important;font-size:14px!important}
+  /* Right section becomes a horizontal action bar below the body */
+  .app-hero-right{flex-direction:row;align-items:center;flex-wrap:wrap;gap:8px;
+    width:100%;padding-top:10px;border-top:1px solid rgba(255,255,255,.12)}
+  .app-hero-back{margin-left:auto;font-size:11px}
+
+  /* ── Grid: sidebar FIRST on mobile ── */
+  .ad-grid{display:flex;flex-direction:column}
+  .ad-sidebar{order:-1}
+
+  /* ── Info pairs → clean label:value list ── */
+  .info-grid{display:flex;flex-direction:column;gap:0}
+  .info-pair{flex-direction:row;justify-content:space-between;align-items:baseline;
+    gap:8px;padding:7px 0;border-bottom:1px solid var(--border);min-width:0}
+  .info-pair:last-child{border-bottom:none}
+  .info-pair .lbl{white-space:nowrap;flex-shrink:0}
+  .info-pair .val{text-align:right;font-size:12px;word-break:break-all;min-width:0}
+
+  /* ── Lang/cert stack ── */
+  .lang-cert-grid{grid-template-columns:1fr}
+
+  /* ── Chat ── */
+  .chat-bubble{max-width:90%}
+  .chat-thread{max-height:220px}
+
+  /* ── Timeline ── */
+  .tl-date{font-size:11px;flex-wrap:wrap;gap:4px}
+
+  /* ── Forms ── */
+  .form-control{font-size:14px}
+}
+</style>
+
+<!-- HERO HEADER -->
+<div class="app-hero">
+  <div class="app-hero-inner">
+    <div style="display:flex;align-items:flex-start;gap:12px;flex:1;min-width:0">
+      <div class="avatar app-hero-avatar" style="width:58px;height:58px;font-size:20px;flex-shrink:0;
+           border:3px solid rgba(255,255,255,.15)">{{ app.applicant.initials }}</div>
+      <div class="app-hero-body">
+        <div class="app-hero-name">{{ app.applicant.full_name }}</div>
+        <div class="app-hero-sub">
+          {{ app.applicant.headline or app.applicant.email or '' }}
+          {% if app.applicant.location_city %}&nbsp;·&nbsp;<i class="bi bi-geo-alt-fill"></i> {{ app.applicant.location_city }}{% endif %}
+        </div>
+        <div class="app-hero-meta">
+          <div class="app-hero-meta-item"><i class="bi bi-briefcase-fill"></i> <strong>{{ app.position.title }}</strong></div>
+          {% if app.position.company %}<div class="app-hero-meta-item"><i class="bi bi-building"></i> <strong>{{ app.position.company.name }}</strong></div>{% endif %}
+          <div class="app-hero-meta-item"><i class="bi bi-calendar3"></i> Applied <strong>{{ app.applied_at.strftime('%b %d, %Y') }}</strong></div>
+          <div class="app-hero-meta-item"><i class="bi bi-broadcast"></i> via <strong>{{ app.source }}</strong></div>
+          {% if app.assigned_to %}<div class="app-hero-meta-item"><i class="bi bi-person-badge-fill"></i> <strong>{{ app.assigned_to.full_name }}</strong></div>{% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="app-hero-right">
+      <span class="badge badge-{{ app.status.lower().replace(' ','') }} status-large">{{ app.status }}</span>
+      {% if app.cv_filename %}
+      <a href="{{ url_for('admin.download_cv', filename=app.cv_filename) }}" class="btn btn-sm app-hero-cv-btn">
+        <i class="bi bi-file-earmark-pdf"></i> {{ app.cv_original or 'Download CV' }}
+      </a>
+      {% endif %}
+      <a href="{{ url_for('admin.applications') }}" class="app-hero-back">
+        <i class="bi bi-arrow-left"></i> Back to Applications
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN GRID -->
+<div class="ad-grid">
+
+  <!-- LEFT COLUMN -->
+  <div>
+
+    <!-- APPLICANT PROFILE -->
+    <div class="card mb-3">
+      <div class="card-title"><i class="bi bi-person-vcard-fill" style="color:var(--green)"></i> Applicant Profile</div>
+      <div class="info-grid" style="margin-bottom:4px">
+        <div class="info-pair"><div class="lbl">Email</div><a href="mailto:{{ app.applicant.email }}" class="val">{{ app.applicant.email }}</a></div>
+        {% if app.applicant.phone %}<div class="info-pair"><div class="lbl">Phone</div><div class="val">{{ app.applicant.phone }}</div></div>{% endif %}
+        {% if app.applicant.nationality %}<div class="info-pair"><div class="lbl">Nationality</div><div class="val">{{ app.applicant.nationality }}</div></div>{% endif %}
+        {% if app.applicant.gender %}<div class="info-pair"><div class="lbl">Gender</div><div class="val">{{ app.applicant.gender }}</div></div>{% endif %}
+        {% if app.applicant.date_of_birth %}<div class="info-pair"><div class="lbl">Date of Birth</div><div class="val">{{ app.applicant.date_of_birth.strftime('%b %d, %Y') }}</div></div>{% endif %}
+      </div>
+      {% if app.applicant.linkedin_url or app.applicant.portfolio_url or app.applicant.github_url %}
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+        {% if app.applicant.linkedin_url %}<a href="{{ app.applicant.linkedin_url }}" target="_blank" class="btn btn-outline btn-sm"><i class="bi bi-linkedin"></i> LinkedIn</a>{% endif %}
+        {% if app.applicant.portfolio_url %}<a href="{{ app.applicant.portfolio_url }}" target="_blank" class="btn btn-outline btn-sm"><i class="bi bi-globe2"></i> Portfolio</a>{% endif %}
+        {% if app.applicant.github_url %}<a href="{{ app.applicant.github_url }}" target="_blank" class="btn btn-outline btn-sm"><i class="bi bi-github"></i> GitHub</a>{% endif %}
+      </div>
+      {% endif %}
+      {% if app.applicant.bio %}
+      <div class="profile-block">
+        <p style="font-size:13px;color:var(--text2);line-height:1.75;margin:0">{{ app.applicant.bio }}</p>
+      </div>
+      {% endif %}
+      {% if skills %}
+      <div class="profile-block">
+        <div class="profile-block-title"><i class="bi bi-lightning-fill"></i> Skills</div>
+        <div>{% for s in skills %}<span class="skill-chip" title="{{ s.proficiency }}">{{ s.name }}</span>{% endfor %}</div>
+      </div>
+      {% endif %}
+      {% if experiences %}
+      <div class="profile-block">
+        <div class="profile-block-title"><i class="bi bi-briefcase-fill"></i> Work Experience</div>
+        {% for exp in experiences %}
+        <div class="exp-item">
+          <div class="exp-title">{{ exp.title }}</div>
+          {% if exp.company %}<div class="exp-company">{{ exp.company }}</div>{% endif %}
+          <div class="exp-dates">{% if exp.start_date %}{{ exp.start_date.strftime('%b %Y') }} – {% endif %}{{ exp.end_date.strftime('%b %Y') if exp.end_date else 'Present' }}</div>
+          {% if exp.description %}<div class="exp-desc">{{ (exp.description or '')[:200] }}{% if (exp.description or '')|length > 200 %}…{% endif %}</div>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% if educations %}
+      <div class="profile-block">
+        <div class="profile-block-title"><i class="bi bi-mortarboard-fill"></i> Education</div>
+        {% for edu in educations %}
+        <div class="exp-item">
+          <div class="exp-title">{{ edu.institution }}</div>
+          <div class="exp-company">{{ edu.degree }}{% if edu.field %}, {{ edu.field }}{% endif %}</div>
+          {% if edu.start_year or edu.end_year %}<div class="exp-dates">{{ edu.start_year or '' }}{% if edu.start_year and edu.end_year %} – {% endif %}{{ edu.end_year or '' }}</div>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% if languages or certifications %}
+      <div class="profile-block lang-cert-grid">
+        {% if languages %}
+        <div>
+          <div class="profile-block-title"><i class="bi bi-translate"></i> Languages</div>
+          {% for l in languages %}<div style="font-size:12px;margin-bottom:5px"><span style="font-weight:600">{{ l.language }}</span> <span class="text-muted">· {{ l.proficiency }}</span></div>{% endfor %}
+        </div>
+        {% endif %}
+        {% if certifications %}
+        <div>
+          <div class="profile-block-title"><i class="bi bi-patch-check-fill"></i> Certifications</div>
+          {% for c in certifications %}<div style="font-size:12px;margin-bottom:5px"><span style="font-weight:600">{{ c.name }}</span>{% if c.issuing_org %}<div class="text-muted" style="font-size:11px">{{ c.issuing_org }}</div>{% endif %}</div>{% endfor %}
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- COVER LETTER -->
+    {% if app.cover_letter %}
+    <div class="card mb-3">
+      <div class="card-title"><i class="bi bi-file-earmark-text-fill" style="color:var(--green)"></i> Cover Letter</div>
+      <p style="font-size:13px;line-height:1.8;white-space:pre-wrap;color:var(--text2);margin:0">{{ app.cover_letter }}</p>
+    </div>
+    {% endif %}
+
+    <!-- EXPECTED SALARY -->
+    {% if app.expected_salary %}
+    <div class="card mb-3" style="padding:16px 20px">
+      <div class="card-title" style="margin-bottom:8px"><i class="bi bi-cash-stack" style="color:var(--green)"></i> Expected Salary</div>
+      <span style="font-size:14px;font-weight:600;color:var(--text)">{{ app.expected_salary }}</span>
+    </div>
+    {% endif %}
+
+    <!-- INTERVIEWS -->
+    {% if interviews %}
+    <div class="card mb-3">
+      <div class="card-title"><i class="bi bi-camera-video-fill" style="color:var(--green)"></i> Scheduled Interviews</div>
+      {% for iv in interviews %}
+      <div style="background:#f8fafb;border-radius:9px;padding:13px 16px;margin-bottom:8px;border:1px solid var(--border)">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
+          <div style="font-weight:600;font-size:13px"><i class="bi bi-calendar-event" style="color:var(--green)"></i> {{ iv.scheduled_at.strftime('%a, %b %d, %Y — %I:%M %p') }}</div>
+          {% if iv.result %}<span class="badge badge-{{ 'active' if iv.result == 'Pass' else 'rejected' }}">{{ iv.result }}</span>{% endif %}
+        </div>
+        {% if iv.location %}<div class="text-sm text-muted" style="margin-top:4px"><i class="bi bi-geo-alt"></i> {{ iv.location }}</div>{% endif %}
+        {% if iv.notes %}<div class="text-sm" style="color:var(--text2);margin-top:6px">{{ iv.notes }}</div>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- ACTIVITY TIMELINE -->
+    <div class="card">
+      <div class="card-title"><i class="bi bi-clock-history" style="color:var(--green)"></i> Activity Timeline</div>
+      <div class="timeline">
+        {% for h in history %}
+        <div class="tl-item">
+          <div class="tl-dot done"></div>
+          <div class="tl-title">
+            {% if h.new_status %}
+              <span style="color:var(--text2)">Status changed to</span> <strong>{{ h.new_status }}</strong>
+              {% if h.old_status %}<span class="text-muted text-sm"> (was {{ h.old_status }})</span>{% endif %}
+            {% endif %}
+            {% if h.is_internal and h.changed_by %}
+              {% if h.changed_by.role == 'admin' %}
+                <span style="display:inline-block;font-size:10px;font-weight:700;padding:1px 7px;border-radius:4px;background:#ede9fe;color:#6d28d9;margin-left:4px;vertical-align:middle"><i class="bi bi-lock-fill" style="font-size:9px;margin-right:2px"></i>Admin only</span>
+              {% elif h.changed_by.role == 'supervisor' %}
+                <span style="display:inline-block;font-size:10px;font-weight:700;padding:1px 7px;border-radius:4px;background:#fef9c3;color:#92400e;margin-left:4px;vertical-align:middle"><i class="bi bi-person-badge-fill" style="font-size:9px;margin-right:2px"></i>Supervisor only</span>
+              {% endif %}
+            {% endif %}
+            {% if h.note and h.changed_by and h.changed_by.role == 'admin' %}<div class="text-sm" style="color:var(--text2);margin-top:3px;font-style:italic">"{{ h.note }}"</div>{% endif %}
+          </div>
+          <div class="tl-date" style="display:flex;align-items:center;gap:8px">
+            <span>{{ h.created_at.strftime('%b %d, %Y %H:%M') }} · {{ h.changed_by.full_name if h.changed_by else 'System' }}</span>
+            <form method="POST" action="{{ url_for('admin.history_delete', app_id=app.id, history_id=h.id) }}"
+                  style="margin:0" onsubmit="return confirm('Delete this timeline entry?')">
+              <button type="submit" style="background:none;border:none;padding:0;cursor:pointer;color:#dc2626;opacity:.5;line-height:1" title="Delete entry">
+                <i class="bi bi-trash3" style="font-size:11px"></i>
+              </button>
+            </form>
+          </div>
+        </div>
+        {% else %}
+        <div class="text-muted text-sm">No activity recorded yet.</div>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT STICKY SIDEBAR -->
+  <div class="ad-sidebar">
+
+    <!-- UPDATE STATUS & ASSIGN -->
+    <div class="card">
+      <div class="card-title"><i class="bi bi-sliders" style="color:var(--green)"></i> Update Application</div>
+      <form method="POST" action="{{ url_for('admin.application_update', app_id=app.id) }}">
+        <div class="form-group">
+          <label>Status</label>
+          <select name="status" class="form-control">
+            {% for s in ALL_STATUSES %}
+              <option value="{{ s }}" {% if s == app.status %}selected{% endif %}>{{ s }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Assign Supervisor</label>
+          <select name="assigned_to_id" class="form-control">
+            <option value="">Unassigned</option>
+            {% for sv in supervisors %}
+              <option value="{{ sv.id }}" {% if app.assigned_to_id == sv.id %}selected{% endif %}>{{ sv.full_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Internal Note</label>
+          <textarea name="note" class="form-control" placeholder="Add a private note…" style="min-height:65px"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center"><i class="bi bi-check-lg"></i> Save Changes</button>
+      </form>
+    </div>
+
+    <!-- DELETE APPLICATION -->
+    <div class="card" style="border-color:#fca5a5">
+      <div class="card-title" style="color:#dc2626"><i class="bi bi-trash3-fill"></i> Danger Zone</div>
+      <p style="font-size:12px;color:var(--text3);margin:0 0 12px">Permanently deletes this application, its history, and all scheduled interviews. This cannot be undone.</p>
+      <form method="POST" action="{{ url_for('admin.application_delete', app_id=app.id) }}"
+            onsubmit="return confirm('Delete application #{{ app.id }} from {{ app.applicant.full_name }}? This cannot be undone.')">
+        <button type="submit" class="btn btn-sm" style="width:100%;justify-content:center;background:#fef2f2;color:#dc2626;border:1px solid #fca5a5">
+          <i class="bi bi-trash3"></i> Delete Application
+        </button>
+      </form>
+    </div>
+
+    <!-- SCHEDULE INTERVIEW -->
+    <div class="card">
+      <div class="card-title"><i class="bi bi-calendar-plus" style="color:var(--green)"></i> Schedule Interview</div>
+      <form method="POST" action="{{ url_for('admin.schedule_interview', app_id=app.id) }}">
+        <div class="form-group">
+          <label>Date &amp; Time</label>
+          <input type="datetime-local" name="scheduled_at" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label>Location / Platform</label>
+          <input type="text" name="location" class="form-control" placeholder="Office Room 2 / Zoom">
+        </div>
+        <div class="form-group">
+          <label>Notes</label>
+          <textarea name="notes" class="form-control" placeholder="Preparation notes…" style="min-height:55px"></textarea>
+        </div>
+        <button type="submit" class="btn btn-outline" style="width:100%;justify-content:center"><i class="bi bi-calendar-check"></i> Schedule</button>
+      </form>
+    </div>
+
+    <!-- MESSAGE APPLICANT THREAD -->
+    <div class="card">
+      <div class="card-title" style="justify-content:space-between">
+        <span><i class="bi bi-chat-dots-fill" style="color:var(--green)"></i> Message Applicant</span>
+        <a href="{{ url_for('messages.thread', partner_id=app.applicant.id) }}" class="text-sm" style="color:var(--text3);font-weight:500">Full thread <i class="bi bi-arrow-right"></i></a>
+      </div>
+      {% if thread_messages %}
+      <div class="chat-thread" id="chatThread">
+        {% for msg in thread_messages %}
+        <div class="chat-bubble {{ 'bubble-out' if msg.sender_id == current_user.id else 'bubble-in' }}">
+          {{ msg.body }}
+          <div class="chat-meta">{{ 'You' if msg.sender_id == current_user.id else msg.sender.full_name.split()[0] }} · {{ msg.created_at.strftime('%b %d, %H:%M') }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="chat-empty"><i class="bi bi-chat-dots" style="font-size:24px;display:block;margin-bottom:8px;opacity:.4"></i>No messages yet — start the conversation</div>
+      {% endif %}
+      <form method="POST" action="{{ url_for('messages.send') }}" style="margin-top:10px" id="chatForm">
+        <input type="hidden" name="receiver_id" value="{{ app.applicant.id }}">
+        <input type="hidden" name="next" value="{{ url_for('admin.application_detail', app_id=app.id) }}">
+        <div style="display:flex;gap:8px;align-items:flex-end">
+          <textarea name="body" id="chatBody" class="form-control" rows="2"
+                    placeholder="Message {{ app.applicant.full_name.split()[0] }}…"
+                    style="min-height:58px;resize:none;font-size:13px" required></textarea>
+          <button type="submit" class="btn btn-primary" style="flex-shrink:0;height:58px;padding:0 14px" title="Send (Ctrl+Enter)">
+            <i class="bi bi-send-fill"></i>
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- MESSAGE SUPERVISOR THREAD -->
+    {% if supervisors %}
+    <div class="card" style="border-color:#dbeafe">
+      <div class="card-title" style="justify-content:space-between">
+        <span><i class="bi bi-person-badge-fill" style="color:#2563eb"></i> Message Supervisor</span>
+        {% if app.assigned_to %}
+        <a href="{{ url_for('messages.thread', partner_id=app.assigned_to.id) }}" class="text-sm" style="color:var(--text3);font-weight:500">Full thread <i class="bi bi-arrow-right"></i></a>
+        {% endif %}
+      </div>
+      {% if app.assigned_to %}
+      <div style="font-size:11px;color:var(--text3);margin-bottom:8px">{{ app.assigned_to.full_name }} &mdash; {{ app.assigned_to.email }}</div>
+      {% endif %}
+      {% if supervisor_thread %}
+      <div class="chat-thread" id="svThread">
+        {% for msg in supervisor_thread %}
+        {% set is_admin_msg = msg.sender.role == 'admin' %}
+        <div class="chat-bubble {{ 'bubble-out' if is_admin_msg else 'bubble-in' }}">
+          {{ msg.body }}
+          <div class="chat-meta">{{ msg.sender.full_name.split()[0] }} · {{ msg.created_at.strftime('%b %d, %H:%M') }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="chat-empty"><i class="bi bi-person-badge" style="font-size:24px;display:block;margin-bottom:8px;opacity:.4"></i>
+        {{ 'No messages with ' ~ app.assigned_to.full_name.split()[0] ~ ' yet' if app.assigned_to and app.assigned_to.full_name else 'No supervisor assigned yet — select one below to start a conversation' }}
+      </div>
+      {% endif %}
+      <form method="POST" action="{{ url_for('messages.send') }}" style="margin-top:10px" id="svChatForm">
+        {% if app.assigned_to %}
+        <input type="hidden" name="receiver_id" value="{{ app.assigned_to.id }}">
+        {% else %}
+        <div class="form-group" style="margin-bottom:8px">
+          <select name="receiver_id" class="form-control" style="font-size:13px" required>
+            <option value="">— Select supervisor —</option>
+            {% for sv in supervisors %}
+            <option value="{{ sv.id }}">{{ sv.full_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        {% endif %}
+        <input type="hidden" name="next" value="{{ url_for('admin.application_detail', app_id=app.id) }}">
+        <div style="display:flex;gap:8px;align-items:flex-end">
+          <textarea name="body" id="svChatBody" class="form-control" rows="2"
+                    placeholder="Message {{ app.assigned_to.full_name.split()[0] ~ '…' if app.assigned_to and app.assigned_to.full_name else 'supervisor…' }}"
+                    style="min-height:58px;resize:none;font-size:13px" required></textarea>
+          <button type="submit" class="btn btn-primary" style="flex-shrink:0;height:58px;padding:0 14px;background:#2563eb;border-color:#2563eb" title="Send (Ctrl+Enter)">
+            <i class="bi bi-send-fill"></i>
+          </button>
+        </div>
+      </form>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+<script>
+const ct = document.getElementById('chatThread');
+if (ct) ct.scrollTop = ct.scrollHeight;
+const sv = document.getElementById('svThread');
+if (sv) sv.scrollTop = sv.scrollHeight;
+document.getElementById('chatBody')?.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); document.getElementById('chatForm').submit(); }
+});
+document.getElementById('svChatBody')?.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); document.getElementById('svChatForm').submit(); }
+});
+</script>
+{% endblock %}

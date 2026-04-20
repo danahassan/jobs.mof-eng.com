@@ -1,0 +1,81 @@
+﻿{% extends 'base.html' %}
+{% block title %}{{ assessment.title }} — MOF Jobs{% endblock %}
+{% block page_title %}Assessment{% endblock %}
+{% block page_breadcrumb %}{{ assessment.title }}{% endblock %}
+
+{% block content %}
+<div style="max-width:700px;margin:0 auto">
+  <div class="card" style="padding:24px;margin-bottom:20px">
+    <h1 style="font-size:20px;font-weight:700;margin-bottom:8px">{{ assessment.title }}</h1>
+    {% if assessment.description %}<p style="font-size:14px;color:var(--text2);margin-bottom:10px">{{ assessment.description }}</p>{% endif %}
+    <div style="display:flex;gap:16px;font-size:13px;color:var(--text3)">
+      <span><i class="bi bi-list-ul"></i> {{ assessment.questions | length }} questions</span>
+      <span><i class="bi bi-trophy"></i> Pass: {{ assessment.pass_score }}%</span>
+      {% if assessment.time_limit %}<span id="timerLabel"><i class="bi bi-clock"></i> <span id="timerDisplay">{{ assessment.time_limit }}:00</span> remaining</span>{% endif %}
+    </div>
+  </div>
+
+  <form method="post" action="{{ url_for('assessments.submit', submission_id=submission.id) }}" id="quizForm">
+    {% for q in assessment.questions %}
+    <div class="card" style="padding:20px;margin-bottom:14px" id="q{{ q.id }}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+        <div style="font-size:14px;font-weight:500">{{ loop.index }}. {{ q.question_text }}</div>
+        <span style="font-size:12px;color:var(--text3);white-space:nowrap;margin-left:12px">{{ q.points }} pt{{ 's' if q.points != 1 }}</span>
+      </div>
+
+      {% if q.question_type == 'mcq' %}
+        {% set opts = q.options | from_json %}
+        {% for opt in opts %}
+        <label style="display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid var(--border);border-radius:6px;cursor:pointer;margin-bottom:6px;font-size:13px;transition:background .15s"
+          onmouseenter="this.style.background='var(--bg)'" onmouseleave="this.style.background='transparent'">
+          <input type="radio" name="q_{{ q.id }}" value="{{ loop.index0 }}" required> {{ opt }}
+        </label>
+        {% endfor %}
+
+      {% elif q.question_type == 'true_false' %}
+        {% for opt in ['True', 'False'] %}
+        <label style="display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid var(--border);border-radius:6px;cursor:pointer;margin-bottom:6px;font-size:13px">
+          <input type="radio" name="q_{{ q.id }}" value="{{ loop.index0 }}" required> {{ opt }}
+        </label>
+        {% endfor %}
+
+      {% else %}
+        <textarea name="q_{{ q.id }}" class="form-control" rows="3" placeholder="Your answer…"></textarea>
+      {% endif %}
+    </div>
+    {% endfor %}
+
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:10px">
+      <button type="submit" class="btn btn-primary" style="min-width:160px" id="submitBtn">
+        <i class="bi bi-send-fill"></i> Submit Assessment
+      </button>
+    </div>
+  </form>
+</div>
+
+{% if assessment.time_limit %}
+<script>
+let totalSeconds = {{ assessment.time_limit }} * 60;
+const disp = document.getElementById('timerDisplay');
+const timer = setInterval(() => {
+  totalSeconds--;
+  if (totalSeconds <= 0) {
+    clearInterval(timer);
+    document.getElementById('quizForm').submit();
+    return;
+  }
+  const m = Math.floor(totalSeconds / 60);
+  const s = totalSeconds % 60;
+  disp.textContent = m + ':' + String(s).padStart(2,'0');
+  if (totalSeconds <= 60) disp.style.color = '#dc2626';
+}, 1000);
+</script>
+{% endif %}
+
+<script>
+document.getElementById('quizForm').addEventListener('submit', () => {
+  document.getElementById('submitBtn').disabled = true;
+  document.getElementById('submitBtn').innerHTML = '<i class="bi bi-hourglass-split"></i> Submitting…';
+});
+</script>
+{% endblock %}

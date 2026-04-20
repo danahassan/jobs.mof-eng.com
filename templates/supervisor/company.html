@@ -1,0 +1,698 @@
+﻿{% extends 'base.html' %}
+{% block title %}{{ company.name }} — MOF Jobs{% endblock %}
+{% block page_title %}{{ company.name }}{% endblock %}
+
+{% block content %}
+
+<!-- Hero / Header -->
+{% if company.cover_filename %}
+<div style="height:160px;border-radius:var(--radius);overflow:hidden;margin-bottom:-28px">
+  <img src="{{ url_for('static', filename='uploads/company/' + company.cover_filename) }}"
+       alt="" style="width:100%;height:100%;object-fit:cover">
+</div>
+{% endif %}
+
+<div class="card" style="padding:20px 24px;margin-bottom:20px;display:flex;align-items:center;gap:18px;flex-wrap:wrap;{% if company.cover_filename %}margin-top:0;{% endif %}">
+  {% if company.logo_filename %}
+    <img src="{{ url_for('static', filename='uploads/company/' + company.logo_filename) }}"
+         alt="{{ company.name }}"
+         style="width:72px;height:72px;border-radius:14px;object-fit:contain;background:#f8f9fa;border:2px solid var(--border);padding:5px;flex-shrink:0;{% if company.cover_filename %}margin-top:-40px;box-shadow:0 4px 16px rgba(0,0,0,.12);{% endif %}">
+  {% else %}
+    <div style="width:72px;height:72px;border-radius:14px;background:var(--green-light);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;color:var(--green);flex-shrink:0;{% if company.cover_filename %}margin-top:-40px;box-shadow:0 4px 16px rgba(0,0,0,.12);{% endif %}">
+      {{ company.name[0] }}
+    </div>
+  {% endif %}
+
+  <div style="flex:1;min-width:0">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <h2 style="margin:0;font-size:20px">{{ company.name }}</h2>
+      {% if company.is_active %}
+        <span class="badge badge-active">Active</span>
+      {% else %}
+        <span class="badge badge-inactive">Inactive</span>
+      {% endif %}
+      {% if company.is_verified %}
+        <span class="badge" style="background:#eff6ff;color:#2563eb"><i class="bi bi-patch-check-fill"></i> Verified</span>
+      {% endif %}
+    </div>
+    <div style="font-size:13px;color:var(--text3);margin-top:4px">
+      {% if company.industry %}<span>{{ company.industry }}</span>{% endif %}
+      {% if company.industry and company.location %} &middot; {% endif %}
+      {% if company.location %}<span><i class="bi bi-geo-alt"></i> {{ company.location }}</span>{% endif %}
+      {% if company.size %} &middot; <span><i class="bi bi-people"></i> {{ company.size }}</span>{% endif %}
+      {% if company.founded_year %} &middot; <span>Est. {{ company.founded_year }}</span>{% endif %}
+    </div>
+  </div>
+
+  <div class="company-hero-actions">
+    <a href="{{ url_for('supervisor.company_job_new', company_id=company.id) }}" class="btn btn-primary">
+      <i class="bi bi-plus-lg"></i> Post Job
+    </a>
+    <a href="{{ url_for('supervisor.company_edit', company_id=company.id) }}" class="btn btn-outline">
+      <i class="bi bi-pencil"></i> Edit
+    </a>
+    <a href="{{ url_for('companies.profile', slug=company.slug) }}" class="btn btn-outline" target="_blank" title="Public View">
+      <i class="bi bi-box-arrow-up-right"></i>
+    </a>
+  </div>
+</div>
+
+<!-- KPI Strip -->
+<div class="kpi-strip" style="margin-bottom:20px">
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#eff6ff;color:#2563eb"><i class="bi bi-briefcase-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ active_positions|length }}</div><div class="kpi-lbl">Open Jobs</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#ede9fe;color:#7c3aed"><i class="bi bi-file-earmark-person-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ total_apps }}</div><div class="kpi-lbl">Applications</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#fef3c7;color:#d97706"><i class="bi bi-heart-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ total_followers }}</div><div class="kpi-lbl">Followers</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#e8f5ee;color:#198754"><i class="bi bi-kanban-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ positions|length }}</div><div class="kpi-lbl">Total Positions</div></div>
+  </div>
+</div>
+
+<!-- Tab nav -->
+<div class="tab-bar" style="margin-bottom:20px">
+  <a href="#tab-overview" class="tab-link tab-active" data-tab="tab-overview">
+    <i class="bi bi-info-circle"></i> Overview
+  </a>
+  <a href="#tab-jobs" class="tab-link" data-tab="tab-jobs">
+    <i class="bi bi-briefcase"></i> Jobs
+    {% if positions %}<span class="tab-badge">{{ positions|length }}</span>{% endif %}
+  </a>
+  <a href="#tab-applications" class="tab-link" data-tab="tab-applications">
+    <i class="bi bi-people"></i> Recent Applications
+    {% if recent_apps %}<span class="tab-badge">{{ recent_apps|length }}</span>{% endif %}
+  </a>
+  <a href="#tab-gallery" class="tab-link" data-tab="tab-gallery">
+    <i class="bi bi-images"></i> Photos
+    {% if photos %}<span class="tab-badge">{{ photos|length }}/10</span>{% endif %}
+  </a>
+  <a href="#tab-followers" class="tab-link" data-tab="tab-followers">
+    <i class="bi bi-heart-fill"></i> Followers
+    {% if followers %}<span class="tab-badge">{{ followers|length }}</span>{% endif %}
+  </a>
+</div>
+
+<!-- Tab: Overview -->
+<div id="tab-overview" class="tab-pane">
+  <div class="overview-grid">
+    <div class="card">
+      <div class="card-title"><i class="bi bi-card-text"></i> About</div>
+      {% if company.description %}
+        <p style="color:var(--text2);line-height:1.7;margin:0;white-space:pre-line">{{ company.description }}</p>
+      {% else %}
+        <p style="color:var(--text3);font-style:italic">No description provided.</p>
+      {% endif %}
+    </div>
+
+    <div class="card">
+      <div class="card-title"><i class="bi bi-info-circle"></i> Details</div>
+      <table style="width:100%;font-size:13px;border-collapse:collapse">
+        {% if company.website %}
+        <tr>
+          <td style="padding:7px 0;color:var(--text3);width:38%">Website</td>
+          <td style="padding:7px 0">
+            <a href="{{ company.website }}" target="_blank" rel="noopener"
+               style="color:var(--green);word-break:break-all">
+              {{ company.website|replace('https://','') }}
+            </a>
+          </td>
+        </tr>
+        {% endif %}
+        {% if company.contact_email %}
+        <tr>
+          <td style="padding:7px 0;color:var(--text3);border-top:1px solid var(--border)">Email</td>
+          <td style="padding:7px 0;border-top:1px solid var(--border)">
+            <a href="mailto:{{ company.contact_email }}" style="color:var(--green)">{{ company.contact_email }}</a>
+          </td>
+        </tr>
+        {% endif %}
+        {% if company.contact_phone %}
+        <tr>
+          <td style="padding:7px 0;color:var(--text3);border-top:1px solid var(--border)">Phone</td>
+          <td style="padding:7px 0;border-top:1px solid var(--border)">{{ company.contact_phone }}</td>
+        </tr>
+        {% endif %}
+        {% if company.industry %}
+        <tr>
+          <td style="padding:7px 0;color:var(--text3);border-top:1px solid var(--border)">Industry</td>
+          <td style="padding:7px 0;border-top:1px solid var(--border)">{{ company.industry }}</td>
+        </tr>
+        {% endif %}
+        {% if company.size %}
+        <tr>
+          <td style="padding:7px 0;color:var(--text3);border-top:1px solid var(--border)">Size</td>
+          <td style="padding:7px 0;border-top:1px solid var(--border)">{{ company.size }}</td>
+        </tr>
+        {% endif %}
+        {% if company.founded_year %}
+        <tr>
+          <td style="padding:7px 0;color:var(--text3);border-top:1px solid var(--border)">Founded</td>
+          <td style="padding:7px 0;border-top:1px solid var(--border)">{{ company.founded_year }}</td>
+        </tr>
+        {% endif %}
+        {% if not (company.website or company.contact_email or company.contact_phone or company.industry or company.size or company.founded_year) %}
+        <tr><td colspan="2" style="color:var(--text3);font-style:italic;padding:8px 0">No additional info.</td></tr>
+        {% endif %}
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Tab: Jobs -->
+<div id="tab-jobs" class="tab-pane" style="display:none">
+  <div class="table-card">
+    <div class="section-header" style="padding:16px 20px;border-bottom:1px solid var(--border)">
+      <span style="font-weight:600">Positions</span>
+      <a href="{{ url_for('supervisor.company_job_new', company_id=company.id) }}"
+         class="btn btn-primary btn-sm">
+        <i class="bi bi-plus-lg"></i> Post New Job
+      </a>
+    </div>
+    {% if positions %}
+    <div class="table-responsive">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Type</th>
+            <th>Location</th>
+            <th>Applications</th>
+            <th>Status</th>
+            <th>Closes</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in positions %}
+          <tr>
+            <td data-label="Title">
+              <div style="font-weight:600;color:var(--text)">{{ p.title }}</div>
+            </td>
+            <td data-label="Type">{{ p.type or '—' }}</td>
+            <td data-label="Location">{{ p.location or '—' }}</td>
+            <td data-label="Applications">
+              <span style="font-weight:600;color:var(--text)">{{ p.application_count }}</span>
+            </td>
+            <td data-label="Status">
+              {% if p.is_active %}
+                <span class="badge badge-active">Active</span>
+              {% else %}
+                <span class="badge badge-inactive">Draft</span>
+              {% endif %}
+            </td>
+            <td data-label="Closes">
+              {{ p.closes_at.strftime('%b %d, %Y') if p.closes_at else '—' }}
+            </td>
+            <td data-label="Actions">
+              <div style="display:flex;gap:6px">
+                <a href="{{ url_for('supervisor.company_job_edit', company_id=company.id, pos_id=p.id) }}"
+                   class="btn btn-outline btn-xs">
+                  <i class="bi bi-pencil"></i> Edit
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state" style="padding:48px 0">
+      <i class="bi bi-briefcase" style="font-size:40px;opacity:.2;display:block;margin-bottom:12px"></i>
+      <p style="color:var(--text3)">No positions posted yet.</p>
+      <a href="{{ url_for('supervisor.company_job_new', company_id=company.id) }}"
+         class="btn btn-primary btn-sm" style="margin-top:12px">
+        <i class="bi bi-plus-lg"></i> Post First Job
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Tab: Recent Applications -->
+<div id="tab-applications" class="tab-pane" style="display:none">
+  <div class="table-card">
+    <div class="section-header" style="padding:16px 20px;border-bottom:1px solid var(--border)">
+      <span style="font-weight:600">Recent Applications</span>
+      <a href="{{ url_for('supervisor.applications') }}" class="btn btn-outline btn-sm">
+        View All <i class="bi bi-arrow-right"></i>
+      </a>
+    </div>
+    {% if recent_apps %}
+    <div class="table-responsive">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>Applicant</th>
+            <th>Position</th>
+            <th>Status</th>
+            <th>Applied</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for app in recent_apps %}
+          <tr>
+            <td data-label="Applicant">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="width:34px;height:34px;border-radius:50%;background:var(--green-light);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:var(--green);flex-shrink:0">
+                  {{ app.applicant.full_name[0] if app.applicant else '?' }}
+                </div>
+                <div>
+                  <div style="font-weight:600;font-size:13px">{{ app.applicant.full_name if app.applicant else '—' }}</div>
+                  <div style="font-size:11px;color:var(--text3)">{{ app.applicant.email if app.applicant else '' }}</div>
+                </div>
+              </div>
+            </td>
+            <td data-label="Position">{{ app.position.title if app.position else '—' }}</td>
+            <td data-label="Status">
+              <span class="badge badge-{{ app.status|lower|replace(' ','-') }}">{{ app.status }}</span>
+            </td>
+            <td data-label="Applied">{{ app.applied_at.strftime('%b %d, %Y') if app.applied_at else '—' }}</td>
+            <td>
+              <a href="{{ url_for('supervisor.application_detail', app_id=app.id) }}"
+                 class="btn btn-outline btn-xs">View</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state" style="padding:48px 0">
+      <i class="bi bi-people" style="font-size:40px;opacity:.2;display:block;margin-bottom:12px"></i>
+      <p style="color:var(--text3)">No applications yet.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Tab: Photos / Gallery -->
+<div id="tab-gallery" class="tab-pane" style="display:none">
+  <div class="card" style="margin-bottom:20px">
+    <div class="card-title"><i class="bi bi-images"></i> Company Photos
+      <span style="margin-left:auto;font-size:12px;color:var(--text3);font-weight:400">{{ photos|length }}/10 used</span>
+    </div>
+
+    {% if photos|length < 10 %}
+    <form method="POST"
+          action="{{ url_for('supervisor.company_photo_upload', company_id=company.id) }}"
+          enctype="multipart/form-data"
+          style="margin-bottom:24px">
+      <div style="border:2px dashed var(--border);border-radius:var(--radius);padding:24px;text-align:center;background:#fafafa;margin-bottom:12px">
+        <i class="bi bi-cloud-arrow-up" style="font-size:32px;color:var(--text3);display:block;margin-bottom:8px"></i>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:12px">
+          Upload up to <strong>{{ 10 - photos|length }}</strong> more photo{{ 's' if (10 - photos|length) != 1 }}
+          &nbsp;&middot;&nbsp; JPG · PNG · WebP &nbsp;&middot;&nbsp; Max 10 MB each
+        </div>
+        <input type="file" name="photos" multiple accept="image/*"
+               style="display:none" id="photo-file-input"
+               onchange="this.form.querySelector('.upload-label').textContent = this.files.length + ' file(s) selected'">
+        <label for="photo-file-input" class="btn btn-outline btn-sm" style="cursor:pointer">
+          <i class="bi bi-folder2-open"></i> Choose Photos
+        </label>
+        <span class="upload-label" style="margin-left:10px;font-size:12px;color:var(--text3)">No files chosen</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <input type="text" name="caption" class="form-control" style="max-width:300px"
+               placeholder="Optional caption for all photos">
+        <button type="submit" class="btn btn-primary btn-sm">
+          <i class="bi bi-upload"></i> Upload
+        </button>
+      </div>
+    </form>
+    {% else %}
+    <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:10px 14px;margin-bottom:20px;font-size:13px;color:#92400e">
+      <i class="bi bi-exclamation-triangle-fill"></i> Maximum 10 photos reached. Delete one to upload more.
+    </div>
+    {% endif %}
+
+    {% if photos %}
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px">
+      {% for p in photos %}
+      <div style="position:relative;border-radius:10px;overflow:hidden;background:#f8f9fa;border:1px solid var(--border)">
+        <img src="{{ url_for('static', filename='uploads/company_photos/' + p.filename) }}"
+             alt="{{ p.caption or 'Company photo' }}"
+             style="width:100%;height:140px;object-fit:cover;display:block">
+        {% if p.caption %}
+        <div style="padding:6px 10px;font-size:11px;color:var(--text2);background:#fff;border-top:1px solid var(--border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+          {{ p.caption }}
+        </div>
+        {% endif %}
+        <form method="POST"
+              action="{{ url_for('supervisor.company_photo_delete', company_id=company.id, photo_id=p.id) }}"
+              onsubmit="return confirm('Remove this photo?')"
+              style="position:absolute;top:6px;right:6px">
+          <button type="submit"
+                  style="background:rgba(0,0,0,.55);border:none;color:#fff;border-radius:6px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px"
+                  title="Delete photo">
+            <i class="bi bi-trash"></i>
+          </button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state" style="padding:40px 0">
+      <i class="bi bi-images" style="font-size:40px;opacity:.2;display:block;margin-bottom:12px"></i>
+      <p style="color:var(--text3)">No photos uploaded yet.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Tab: Followers -->
+<div id="tab-followers" class="tab-pane" style="display:none">
+
+  <!-- Filter bar -->
+  <div class="filter-bar" style="margin-bottom:12px">
+    <div class="filter-row">
+      <div class="filter-search">
+        <label class="msd-label">Search</label>
+        <div style="position:relative">
+          <i class="bi bi-search filter-search-icon"></i>
+          <input type="text" id="fol-q" class="form-control" placeholder="Name or email…" oninput="filterFollowers()">
+        </div>
+      </div>
+
+      <div class="msd" id="msd-fol-location">
+        <label class="msd-label">Location</label>
+        <button type="button" class="msd-btn" onclick="toggleMSD('msd-fol-location')">
+          Location <span class="msd-count"></span><i class="bi bi-chevron-down msd-chevron"></i>
+        </button>
+        <div class="msd-panel">
+          {% set locations = followers | map(attribute='user') | selectattr('location_city') | map(attribute='location_city') | unique | sort %}
+          {% for loc in locations %}
+          <label class="msd-option">
+            <input type="checkbox" class="fol-loc-cb" value="{{ loc }}" onchange="filterFollowers()">
+            <span>{{ loc }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="filter-actions">
+        <button type="button" class="btn btn-outline btn-sm" onclick="resetFollowerFilters()"><i class="bi bi-x-lg"></i> Reset</button>
+        <a href="{{ url_for('supervisor.followers_export', company_id=company.id, fmt='csv') }}"
+           class="btn btn-outline btn-sm" title="Export CSV">
+          <i class="bi bi-filetype-csv"></i> CSV
+        </a>
+        <a href="{{ url_for('supervisor.followers_export', company_id=company.id, fmt='xlsx') }}"
+           class="btn btn-outline btn-sm" title="Export Excel">
+          <i class="bi bi-file-earmark-excel"></i> Excel
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Active chips -->
+  <div class="filter-chips" id="fol-chips" style="display:none;margin-bottom:12px"></div>
+
+  <!-- Bulk action bar (hidden until rows selected) -->
+  <div id="fol-bulk-bar" style="display:none;background:var(--green-light);border:1px solid var(--green);border-radius:var(--radius);padding:10px 16px;margin-bottom:12px;align-items:center;gap:12px;flex-wrap:wrap">
+    <span id="fol-sel-count" style="font-weight:600;font-size:13px;color:var(--green)"></span>
+    <button type="button" class="btn btn-primary btn-sm" onclick="openEmailModal()">
+      <i class="bi bi-envelope-fill"></i> Send Email
+    </button>
+    <button type="button" class="btn btn-outline btn-sm" onclick="folSelectAll(false)">
+      <i class="bi bi-x-lg"></i> Deselect All
+    </button>
+  </div>
+
+  <div class="table-card">
+    <div class="section-header" style="padding:16px 20px;border-bottom:1px solid var(--border)">
+      <span style="font-weight:600">People following {{ company.name }}</span>
+      <span id="fol-count" style="font-size:12px;color:var(--text3)">{{ followers|length }} follower{{ 's' if followers|length != 1 }}</span>
+    </div>
+    {% if followers %}
+    <div class="table-responsive">
+      <table class="tbl" id="followers-tbl">
+        <thead>
+          <tr>
+            <th style="width:36px">
+              <input type="checkbox" id="fol-check-all" title="Select all"
+                     onchange="folSelectAll(this.checked)" style="cursor:pointer">
+            </th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Location</th>
+            <th>Headline</th>
+            <th>Followed</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for f in followers %}
+          {% set u = f.user %}
+          <tr class="fol-row"
+              data-name="{{ u.full_name|lower }}"
+              data-email="{{ u.email|lower }}"
+              data-location="{{ u.location_city or '' }}">
+            <td>
+              <input type="checkbox" class="fol-cb" value="{{ u.id }}"
+                     onchange="folUpdateBulk()" style="cursor:pointer">
+            </td>
+            <td data-label="Name">
+              <div style="display:flex;align-items:center;gap:10px">
+                {% if u.avatar_filename %}
+                  <img src="{{ url_for('static', filename='uploads/avatars/' + u.avatar_filename) }}"
+                       style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0">
+                {% else %}
+                  <div style="width:36px;height:36px;border-radius:50%;background:var(--green-light);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:var(--green);flex-shrink:0">
+                    {{ u.full_name[0] }}
+                  </div>
+                {% endif %}
+                <div>
+                  <div style="font-weight:600;font-size:13px">{{ u.full_name }}</div>
+                  {% if u.role != 'user' %}<div style="font-size:11px;color:var(--text3)">{{ u.role|capitalize }}</div>{% endif %}
+                </div>
+              </div>
+            </td>
+            <td data-label="Email" style="font-size:13px">{{ u.email }}</td>
+            <td data-label="Location" style="font-size:13px">{{ u.location_city or '—' }}</td>
+            <td data-label="Headline" style="font-size:13px;color:var(--text2)">
+              {{ u.headline or u.resume_headline or '—' }}
+            </td>
+            <td data-label="Followed" style="font-size:12px;color:var(--text3);white-space:nowrap">
+              {{ f.followed_at.strftime('%b %d, %Y') if f.followed_at else '—' }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div id="fol-empty" style="display:none;padding:40px;text-align:center;color:var(--text3)">
+      <i class="bi bi-search" style="font-size:32px;opacity:.25;display:block;margin-bottom:10px"></i>
+      No followers match your filters.
+    </div>
+    {% else %}
+    <div class="empty-state" style="padding:48px 0">
+      <i class="bi bi-heart" style="font-size:40px;opacity:.2;display:block;margin-bottom:12px"></i>
+      <p style="color:var(--text3)">No followers yet.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Email Compose Modal -->
+<div id="email-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center">
+  <div style="background:var(--card);border-radius:var(--radius);box-shadow:0 8px 40px rgba(0,0,0,.2);width:100%;max-width:560px;margin:20px" onclick="event.stopPropagation()">
+    <div style="padding:18px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+      <h3 style="margin:0;font-size:16px"><i class="bi bi-envelope-fill"></i> Send Email to Followers</h3>
+      <button type="button" onclick="closeEmailModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text3)">&times;</button>
+    </div>
+    <form method="POST" action="{{ url_for('supervisor.followers_email', company_id=company.id) }}" id="email-form">
+      <div style="padding:20px 24px;display:flex;flex-direction:column;gap:14px">
+        <div id="email-recipients-display" style="font-size:12px;color:var(--text3);background:var(--bg);border-radius:8px;padding:8px 12px"></div>
+        <input type="hidden" name="user_ids" id="email-user-ids-input">
+        <div class="form-group" style="margin:0">
+          <label style="font-size:13px;font-weight:600;margin-bottom:4px;display:block">Subject *</label>
+          <input type="text" name="subject" class="form-control" required placeholder="e.g. New job opening at {{ company.name }}">
+        </div>
+        <div class="form-group" style="margin:0">
+          <label style="font-size:13px;font-weight:600;margin-bottom:4px;display:block">Message *</label>
+          <textarea name="body" class="form-control" rows="7" required
+                    placeholder="Write your message here. HTML is supported."></textarea>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px">HTML formatting is supported (e.g. &lt;b&gt;bold&lt;/b&gt;, &lt;a href=&quot;...&quot;&gt;link&lt;/a&gt;, &lt;br&gt;)</div>
+        </div>
+      </div>
+      <div style="padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px">
+        <button type="button" class="btn btn-outline" onclick="closeEmailModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary"><i class="bi bi-send-fill"></i> Send</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+.tab-bar{display:flex;gap:4px;border-bottom:2px solid var(--border)}
+.tab-link{display:inline-flex;align-items:center;gap:6px;padding:10px 16px;font-size:14px;font-weight:500;color:var(--text2);text-decoration:none;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color .15s,border-color .15s}
+.tab-link:hover{color:var(--green)}
+.tab-link.tab-active{color:var(--green);border-bottom-color:var(--green);font-weight:600}
+.tab-badge{display:inline-flex;align-items:center;justify-content:center;background:var(--green-light);color:var(--green);font-size:10px;font-weight:700;border-radius:10px;min-width:18px;height:18px;padding:0 5px}
+
+/* Layout helpers */
+.overview-grid{display:grid;grid-template-columns:2fr 1fr;gap:20px}
+.company-hero-actions{display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap}
+
+/* ── Mobile ──────────────────────────────────────────────────────────────── */
+@media(max-width:768px){
+  /* Tab bar — horizontal scroll instead of wrap */
+  .tab-bar{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex-wrap:nowrap}
+  .tab-bar::-webkit-scrollbar{display:none}
+  .tab-link{white-space:nowrap;padding:10px 12px;font-size:13px}
+
+  /* KPI labels — allow wrapping so text isn't ellipsed */
+  .kpi-lbl{white-space:normal;line-height:1.2}
+
+  /* Overview — single column */
+  .overview-grid{grid-template-columns:1fr}
+
+  /* Hero actions — push to own full-width row */
+  .company-hero-actions{width:100%;flex-shrink:1}
+  .company-hero-actions .btn{flex:1;justify-content:center;text-align:center}
+
+  /* Email compose modal — near full screen */
+  #email-modal>div{margin:10px;max-width:none!important;width:calc(100% - 20px)}
+
+  /* Bulk action bar — stack vertically */
+  #fol-bulk-bar{flex-direction:column;align-items:flex-start}
+
+  /* Show checkbox column on mobile (base.html hides td:first-child globally) */
+  #followers-tbl td:first-child{display:flex!important}
+  #followers-tbl td:first-child::before{content:none!important;min-width:0!important}
+}
+</style>
+<script>
+document.querySelectorAll('.tab-link').forEach(function(link){
+  link.addEventListener('click', function(e){
+    e.preventDefault();
+    var target = this.dataset.tab;
+    document.querySelectorAll('.tab-link').forEach(function(l){ l.classList.remove('tab-active'); });
+    document.querySelectorAll('.tab-pane').forEach(function(p){ p.style.display='none'; });
+    this.classList.add('tab-active');
+    document.getElementById(target).style.display='block';
+  });
+});
+// Respect URL hash on load
+(function(){
+  var hash = window.location.hash.replace('#','');
+  if(hash){
+    var link = document.querySelector('.tab-link[data-tab="'+hash+'"]');
+    if(link) link.click();
+  }
+})();
+
+// ── Followers client-side filtering ────────────────────────────────────────
+function filterFollowers(){
+  var q = (document.getElementById('fol-q')||{value:''}).value.toLowerCase().trim();
+  var locs = Array.from(document.querySelectorAll('.fol-loc-cb:checked')).map(function(c){return c.value;});
+  var rows = document.querySelectorAll('.fol-row');
+  var visible = 0;
+  rows.forEach(function(row){
+    var matchQ = !q || row.dataset.name.includes(q) || row.dataset.email.includes(q);
+    var matchL = !locs.length || locs.includes(row.dataset.location);
+    var show = matchQ && matchL;
+    row.style.display = show ? '' : 'none';
+    if(show) visible++;
+  });
+  var countEl = document.getElementById('fol-count');
+  if(countEl) countEl.textContent = visible + ' follower' + (visible !== 1 ? 's' : '');
+  var emptyEl = document.getElementById('fol-empty');
+  var tbl = document.getElementById('followers-tbl');
+  if(emptyEl && tbl){
+    var hasRows = rows.length > 0;
+    emptyEl.style.display = hasRows && visible === 0 ? 'block' : 'none';
+    tbl.style.display = visible === 0 ? 'none' : '';
+  }
+  // chips
+  var chips = document.getElementById('fol-chips');
+  if(!chips) return;
+  chips.innerHTML = '';
+  if(q){
+    var c=document.createElement('span'); c.className='filter-chip';
+    c.innerHTML='<i class="bi bi-search"></i> '+q; chips.appendChild(c);
+  }
+  locs.forEach(function(l){
+    var c=document.createElement('span'); c.className='filter-chip';
+    c.innerHTML='<i class="bi bi-geo-alt"></i> '+l; chips.appendChild(c);
+  });
+  var hasFilter = q || locs.length;
+  chips.style.display = hasFilter ? 'flex' : 'none';
+  chips.style.flexWrap = 'wrap';
+  chips.style.gap = '6px';
+  if(hasFilter){
+    var clr=document.createElement('a'); clr.href='#tab-followers';
+    clr.className='filter-chip';
+    clr.style.cssText='background:#fee2e2;color:#991b1b;border-color:#fca5a5';
+    clr.innerHTML='<i class="bi bi-x-lg"></i> Clear all';
+    clr.onclick=function(e){e.preventDefault();resetFollowerFilters();};
+    chips.appendChild(clr);
+  }
+}
+function resetFollowerFilters(){
+  var q=document.getElementById('fol-q'); if(q) q.value='';
+  document.querySelectorAll('.fol-loc-cb').forEach(function(c){c.checked=false;});
+  // reset msd badge
+  var btn=document.querySelector('#msd-fol-location .msd-count');
+  if(btn) btn.textContent='';
+  filterFollowers();
+}
+
+// ── Follower bulk selection ───────────────────────────────────────────────────
+function folUpdateBulk(){
+  var checked = document.querySelectorAll('.fol-cb:checked');
+  var bar = document.getElementById('fol-bulk-bar');
+  var countEl = document.getElementById('fol-sel-count');
+  var allCb = document.getElementById('fol-check-all');
+  var total = document.querySelectorAll('.fol-cb').length;
+  bar.style.display = checked.length > 0 ? 'flex' : 'none';
+  if(countEl) countEl.textContent = checked.length + ' follower' + (checked.length !== 1 ? 's' : '') + ' selected';
+  if(allCb) allCb.indeterminate = checked.length > 0 && checked.length < total;
+  if(allCb && checked.length === total && total > 0) allCb.checked = true;
+  if(allCb && checked.length === 0) allCb.checked = false;
+}
+function folSelectAll(state){
+  document.querySelectorAll('.fol-cb').forEach(function(cb){
+    // only toggle visible rows
+    var row = cb.closest('.fol-row');
+    if(!row || row.style.display === 'none') return;
+    cb.checked = state;
+  });
+  folUpdateBulk();
+}
+
+// ── Email modal ───────────────────────────────────────────────────────────────
+function openEmailModal(){
+  var ids = Array.from(document.querySelectorAll('.fol-cb:checked')).map(function(c){return c.value;});
+  if(!ids.length){ alert('Select at least one follower.'); return; }
+  // pack ids as comma-separated into one hidden input (route uses getlist but we send comma-separated)
+  document.getElementById('email-user-ids-input').value = ids.join(',');
+  // Change the form to send individual inputs
+  var form = document.getElementById('email-form');
+  // Remove old hidden inputs
+  form.querySelectorAll('input[name="user_ids"]').forEach(function(el){el.remove();});
+  ids.forEach(function(id){
+    var inp = document.createElement('input');
+    inp.type='hidden'; inp.name='user_ids'; inp.value=id;
+    form.appendChild(inp);
+  });
+  var disp = document.getElementById('email-recipients-display');
+  disp.textContent = 'Sending to ' + ids.length + ' follower' + (ids.length !== 1 ? 's' : '');
+  document.getElementById('email-modal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+function closeEmailModal(){
+  document.getElementById('email-modal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown',function(e){ if(e.key==='Escape') closeEmailModal(); });
+</script>
+{% endblock %}

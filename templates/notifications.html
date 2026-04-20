@@ -1,0 +1,203 @@
+﻿{% extends 'base.html' %}
+{% block title %}Notifications — MOF Jobs{% endblock %}
+{% block page_title %}Notifications{% endblock %}
+
+{% block content %}
+<style>
+.notif-page-wrap{max-width:720px;margin:0 auto}
+
+/* Filter tabs */
+.notif-tabs{display:flex;gap:6px;margin-bottom:18px}
+.notif-tab{padding:6px 16px;border-radius:20px;font-size:13px;font-weight:600;border:1px solid var(--border);background:var(--card);color:var(--text2);text-decoration:none;transition:all 0.15s}
+.notif-tab:hover{border-color:var(--green);color:var(--green)}
+.notif-tab.active{background:var(--green);border-color:var(--green);color:#fff}
+
+/* Notification item */
+.notif-item{display:flex;align-items:flex-start;gap:13px;padding:13px 15px;background:var(--card);border:1px solid var(--border);border-radius:12px;transition:border-color 0.15s,box-shadow 0.15s;position:relative}
+.notif-item:hover{border-color:#d1fae5;box-shadow:0 2px 8px rgba(25,135,84,0.07)}
+.notif-item.is-unread{background:linear-gradient(135deg,#f0fdf4 0%,var(--card) 80%);border-color:#bbf7d0}
+.notif-item.is-unread .notif-dot{display:block}
+
+.notif-icon-wrap{width:38px;height:38px;border-radius:10px;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;margin-top:1px}
+.notif-body{flex:1;min-width:0}
+.notif-body a.notif-msg-link{font-size:13px;font-weight:500;color:var(--text);line-height:1.4;display:block;margin-bottom:4px;text-decoration:none}
+.notif-body a.notif-msg-link:hover{color:var(--green)}
+.notif-body .notif-msg-plain{font-size:13px;font-weight:500;color:var(--text);line-height:1.4;margin-bottom:4px}
+.notif-time{font-size:11px;color:var(--text3)}
+
+.notif-actions{display:flex;gap:5px;align-items:center;flex-shrink:0}
+.notif-dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0;margin-top:5px;display:none}
+
+/* Empty */
+.notif-empty{text-align:center;padding:60px 20px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg)}
+.notif-empty i{font-size:44px;opacity:0.2;display:block;margin-bottom:12px}
+.notif-empty h3{font-size:16px;font-weight:600;margin-bottom:6px}
+.notif-empty p{font-size:13px;color:var(--text3)}
+
+/* Removed animation */
+.notif-item.removing{opacity:0;transform:translateX(10px);transition:opacity 0.2s,transform 0.2s}
+</style>
+
+<div class="notif-page-wrap">
+
+  <!-- Header -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+    <div style="display:flex;align-items:center;gap:10px">
+      <a href="{{ url_for('notifications.index') }}"
+         class="notif-tab {% if not filter_unread %}active{% endif %}">
+        All
+        <span style="margin-left:4px;font-size:11px;opacity:0.75">{{ notifications.total }}</span>
+      </a>
+      <a href="{{ url_for('notifications.index', filter='unread') }}"
+         class="notif-tab {% if filter_unread %}active{% endif %}">
+        Unread
+        {% if unread_notifications %}<span style="margin-left:4px;background:{% if filter_unread %}rgba(255,255,255,0.3){% else %}var(--green){% endif %};color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700">{{ unread_notifications }}</span>{% endif %}
+      </a>
+    </div>
+    {% if unread_notifications %}
+    <button class="btn btn-outline btn-sm" id="markAllBtn" onclick="markAllRead()">
+      <i class="bi bi-check2-all"></i> Mark all as read
+    </button>
+    {% endif %}
+  </div>
+
+  <!-- List -->
+  <div style="display:flex;flex-direction:column;gap:6px" id="notifList">
+    {% for n in notifications.items %}
+    <div class="notif-item {% if not n.is_read %}is-unread{% endif %}" id="notif-{{ n.id }}" data-id="{{ n.id }}">
+      <div class="notif-icon-wrap">
+        <i class="bi {{ n.icon or 'bi-bell-fill' }}"></i>
+      </div>
+      <div class="notif-body">
+        {% if n.link %}
+        <a href="{{ n.link }}" class="notif-msg-link">{{ n.message }}</a>
+        {% else %}
+        <div class="notif-msg-plain">{{ n.message }}</div>
+        {% endif %}
+        <div class="notif-time">
+          <i class="bi bi-clock" style="font-size:10px;margin-right:3px"></i>{{ n.created_at.strftime('%b %d, %Y · %H:%M') }}
+        </div>
+      </div>
+      <div class="notif-dot"></div>
+      <div class="notif-actions">
+        {% if not n.is_read %}
+        <button class="btn btn-outline btn-xs" title="Mark as read"
+                onclick="markRead({{ n.id }}, this)">
+          <i class="bi bi-check2"></i>
+        </button>
+        {% endif %}
+        <button class="btn btn-outline btn-xs" title="Delete"
+                style="color:#dc2626;border-color:#fca5a5"
+                onclick="deleteNotif({{ n.id }}, this)">
+          <i class="bi bi-trash"></i>
+        </button>
+      </div>
+    </div>
+    {% else %}
+    <div class="notif-empty" id="emptyState">
+      <i class="bi bi-bell-slash-fill"></i>
+      <h3>{% if filter_unread %}No unread notifications{% else %}No notifications yet{% endif %}</h3>
+      <p>{% if filter_unread %}You're all caught up!{% else %}You'll see alerts about applications, messages, and updates here.{% endif %}</p>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Pagination -->
+  {% if notifications.pages > 1 %}
+  <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:20px;flex-wrap:wrap">
+    {% if notifications.has_prev %}
+    <a href="?page={{ notifications.prev_num }}{% if filter_unread %}&filter=unread{% endif %}" class="btn btn-outline btn-sm"><i class="bi bi-chevron-left"></i> Prev</a>
+    {% endif %}
+    <span style="font-size:13px;color:var(--text3)">Page {{ notifications.page }} of {{ notifications.pages }}</span>
+    {% if notifications.has_next %}
+    <a href="?page={{ notifications.next_num }}{% if filter_unread %}&filter=unread{% endif %}" class="btn btn-outline btn-sm">Next <i class="bi bi-chevron-right"></i></a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+</div>
+
+<script>
+var csrfHeaders = {'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/json'};
+
+function markRead(id, btn) {
+  fetch('/notifications/mark-read/' + id, {method: 'POST', headers: csrfHeaders})
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if (!d.success) return;
+      var el = document.getElementById('notif-' + id);
+      el.classList.remove('is-unread');
+      // Remove the mark-read button
+      btn.remove();
+      // Decrement badge
+      updateUnreadBadge(-1);
+    });
+}
+
+function deleteNotif(id, btn) {
+  fetch('/notifications/delete/' + id, {method: 'POST', headers: csrfHeaders})
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if (!d.success) return;
+      var el = document.getElementById('notif-' + id);
+      var wasUnread = el.classList.contains('is-unread');
+      el.classList.add('removing');
+      setTimeout(function(){
+        el.remove();
+        if (wasUnread) updateUnreadBadge(-1);
+        // Show empty state if list is now empty
+        var list = document.getElementById('notifList');
+        if (!list.querySelector('.notif-item')) {
+          var empty = document.createElement('div');
+          empty.className = 'notif-empty';
+          empty.innerHTML = '<i class="bi bi-bell-slash-fill"></i><h3>No notifications</h3><p>Nothing here.</p>';
+          list.appendChild(empty);
+        }
+      }, 200);
+    });
+}
+
+function markAllRead() {
+  fetch('/notifications/mark-all-read', {method: 'POST', headers: csrfHeaders})
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if (!d.success) return;
+      document.querySelectorAll('.notif-item.is-unread').forEach(function(el){
+        el.classList.remove('is-unread');
+        var markBtn = el.querySelector('button[title="Mark as read"]');
+        if (markBtn) markBtn.remove();
+      });
+      var btn = document.getElementById('markAllBtn');
+      if (btn) btn.remove();
+      updateUnreadBadge(0, true);
+    });
+}
+
+function updateUnreadBadge(delta, reset) {
+  // Update topbar bell badge if it exists
+  var badges = document.querySelectorAll('.notif-count-badge, [data-notif-count]');
+  badges.forEach(function(b){
+    var cur = parseInt(b.textContent) || 0;
+    var next = reset ? 0 : Math.max(0, cur + delta);
+    b.textContent = next;
+    b.style.display = next > 0 ? '' : 'none';
+  });
+  // Update the "Unread" tab badge inside this page
+  var tabBadge = document.querySelector('.notif-tab.active ~ .notif-tab span, .notif-tab span');
+  // Simpler: find the Unread badge by finding the second tab
+  var tabs = document.querySelectorAll('.notif-tab');
+  tabs.forEach(function(t){
+    if (t.textContent.trim().startsWith('Unread')) {
+      var sp = t.querySelector('span');
+      if (sp) {
+        var cur = parseInt(sp.textContent) || 0;
+        var next = reset ? 0 : Math.max(0, cur + delta);
+        sp.textContent = next;
+        sp.style.display = next > 0 ? '' : 'none';
+      }
+    }
+  });
+}
+</script>
+{% endblock %}
+

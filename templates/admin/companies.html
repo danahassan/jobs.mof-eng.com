@@ -1,0 +1,280 @@
+﻿{% extends 'base.html' %}
+{% block title %}Companies — MOF Jobs{% endblock %}
+{% block page_title %}Companies{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Admin company cards ───────────────────────────────────── */
+.ac-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px;margin-bottom:24px}
+.ac-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;display:flex;flex-direction:column;transition:box-shadow .15s,transform .15s}
+.ac-card:hover{box-shadow:0 4px 18px rgba(0,0,0,.08);transform:translateY(-2px)}
+.ac-card-cover{height:90px;background:linear-gradient(135deg,var(--navy) 0%,#1e3a52 100%);flex-shrink:0;overflow:hidden}
+.ac-card-cover img{width:100%;height:100%;object-fit:cover}
+.ac-card-logo-float{position:relative;margin-top:-24px;margin-left:14px;width:48px;height:48px}
+.ac-card-logo{width:48px;height:48px;border-radius:10px;object-fit:contain;background:#fff;border:2px solid var(--card);padding:4px}
+.ac-card-logo-ph{width:48px;height:48px;border-radius:10px;background:var(--green-light);color:var(--green);font-weight:700;font-size:18px;display:flex;align-items:center;justify-content:center;border:2px solid var(--card)}
+.ac-card-body{padding:8px 14px 14px;display:flex;flex-direction:column;gap:5px;flex:1}
+.ac-card-name-row{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:2px}
+.ac-card-name{font-size:14px;font-weight:700;color:var(--text);text-decoration:none}
+.ac-card-name:hover{color:var(--green)}
+.ac-card-industry{font-size:12px;color:var(--text3)}
+.ac-card-stats{display:flex;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--text3)}
+.ac-card-stats span{display:inline-flex;align-items:center;gap:4px}
+.ac-card-actions{display:flex;gap:6px;margin-top:auto;padding-top:10px;border-top:1px solid var(--border)}
+/* View toggle */
+.view-toggle{display:flex;background:var(--bg2,#f1f5f9);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.view-toggle a{padding:6px 11px;color:var(--text3);text-decoration:none;font-size:14px;display:flex;align-items:center;transition:background .1s}
+.view-toggle a.active{background:var(--green);color:#fff}
+.view-toggle a:not(.active):hover{background:var(--border);color:var(--text)}
+/* Mobile */
+@media(max-width:600px){
+  .ac-grid{grid-template-columns:1fr}
+}
+</style>
+{% endblock %}
+
+{% set view = request.args.get('view', 'card') %}
+
+{% block content %}
+<!-- KPI Strip -->
+<div class="kpi-strip">
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#e8f5ee;color:#198754"><i class="bi bi-building-check"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_active }}</div><div class="kpi-lbl">Active</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#eff6ff;color:#2563eb"><i class="bi bi-buildings-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_total }}</div><div class="kpi-lbl">Total</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#fef3c7;color:#d97706"><i class="bi bi-patch-check-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_verified }}</div><div class="kpi-lbl">Verified</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#ede9fe;color:#7c3aed"><i class="bi bi-briefcase-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_open_jobs }}</div><div class="kpi-lbl">Open Jobs</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#fce7f3;color:#db2777"><i class="bi bi-people-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_followers }}</div><div class="kpi-lbl">Followers</div></div>
+  </div>
+</div>
+
+<div class="section-header">
+  <h2><i class="bi bi-building" style="color:var(--green)"></i> All Companies</h2>
+  <div class="d-flex gap-2 align-center">
+    <div class="view-toggle">
+      <a href="?q={{ q_str }}&status={{ status_f }}&verified={{ verified_f }}{% for i in industries_f %}&industry={{ i }}{% endfor %}&view=card"
+         class="{% if view == 'card' %}active{% endif %}" title="Card view"><i class="bi bi-grid-3x3-gap-fill"></i></a>
+      <a href="?q={{ q_str }}&status={{ status_f }}&verified={{ verified_f }}{% for i in industries_f %}&industry={{ i }}{% endfor %}&view=table"
+         class="{% if view == 'table' %}active{% endif %}" title="Table view"><i class="bi bi-table"></i></a>
+    </div>
+    <div class="export-group">
+      <a href="{{ url_for('admin.companies_export', fmt='csv') }}" class="btn-export csv"><i class="bi bi-filetype-csv"></i> CSV</a>
+      <a href="{{ url_for('admin.companies_export', fmt='xlsx') }}" class="btn-export xlsx"><i class="bi bi-file-earmark-excel"></i> Excel</a>
+    </div>
+    <a href="{{ url_for('admin.company_new') }}" class="btn btn-primary">
+      <i class="bi bi-plus-lg"></i> New Company
+    </a>
+  </div>
+</div>
+
+<!-- Filter Bar -->
+<form method="GET" class="filter-bar">
+  <div class="filter-row">
+    <div class="filter-search">
+      <label class="msd-label">Search</label>
+      <div style="position:relative">
+        <i class="bi bi-search filter-search-icon"></i>
+        <input type="text" name="q" class="form-control" placeholder="Company name…" value="{{ q_str }}">
+      </div>
+    </div>
+    <div class="msd" id="msd-industry">
+      <label class="msd-label">Industry</label>
+      <button type="button" class="msd-btn" onclick="toggleMSD('msd-industry')">
+        Industry <span class="msd-count"></span><i class="bi bi-chevron-down msd-chevron"></i>
+      </button>
+      <div class="msd-panel">
+        {% for ind in INDUSTRY_CHOICES %}
+        <label class="msd-option">
+          <input type="checkbox" name="industry" value="{{ ind }}" {% if ind in industries_f %}checked{% endif %}>
+          <span>{{ ind }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="filter-group">
+      <label>Status</label>
+      <select name="status" class="form-control">
+        <option value="">All</option>
+        <option value="active" {% if status_f == 'active' %}selected{% endif %}>Active</option>
+        <option value="inactive" {% if status_f == 'inactive' %}selected{% endif %}>Inactive</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Verified</label>
+      <select name="verified" class="form-control">
+        <option value="">All</option>
+        <option value="yes" {% if verified_f == 'yes' %}selected{% endif %}>Verified</option>
+        <option value="no" {% if verified_f == 'no' %}selected{% endif %}>Not Verified</option>
+      </select>
+    </div>
+    <div class="filter-actions">
+      <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-funnel"></i> Filter</button>
+      <a href="{{ url_for('admin.companies') }}" class="btn btn-outline btn-sm">Reset</a>
+    </div>
+  </div>
+</form>
+{% if q_str or industries_f or status_f or verified_f %}
+<div class="filter-chips">
+  {% if q_str %}<span class="filter-chip"><i class="bi bi-search"></i> {{ q_str }}</span>{% endif %}
+  {% for ind in industries_f %}<span class="filter-chip"><i class="bi bi-building"></i> {{ ind }}</span>{% endfor %}
+  {% if status_f %}<span class="filter-chip"><i class="bi bi-circle-fill" style="font-size:8px"></i> {{ status_f|capitalize }}</span>{% endif %}
+  {% if verified_f %}<span class="filter-chip"><i class="bi bi-patch-check"></i> {{ 'Verified' if verified_f == 'yes' else 'Unverified' }}</span>{% endif %}
+  <a href="{{ url_for('admin.companies') }}" class="filter-chip" style="background:#fee2e2;color:#991b1b;border-color:#fca5a5"><i class="bi bi-x-lg"></i> Clear all</a>
+</div>
+{% endif %}
+
+{% if companies %}
+
+{# ── CARD VIEW ── #}
+{% if view == 'card' %}
+<div class="ac-grid">
+  {% for c in companies %}
+  <div class="ac-card">
+    <div class="ac-card-cover">
+      {% if c.cover_filename %}
+        <img src="{{ url_for('static', filename='uploads/company/' + c.cover_filename) }}" alt="">
+      {% endif %}
+    </div>
+    <div class="ac-card-logo-float">
+      {% if c.logo_filename %}
+        <img src="{{ url_for('static', filename='uploads/company/' + c.logo_filename) }}"
+             alt="{{ c.name }}" class="ac-card-logo">
+      {% else %}
+        <div class="ac-card-logo-ph">{{ c.name[0] | upper }}</div>
+      {% endif %}
+    </div>
+    <div class="ac-card-body">
+      <div class="ac-card-name-row">
+        <a href="{{ url_for('admin.company_detail', company_id=c.id) }}" class="ac-card-name">{{ c.name }}</a>
+        {% if c.is_verified %}<i class="bi bi-patch-check-fill" style="color:#2563eb;font-size:13px" title="Verified"></i>{% endif %}
+        {% if not c.is_active %}<span class="badge badge-inactive" style="font-size:10px">Inactive</span>{% endif %}
+      </div>
+      {% if c.industry %}<div class="ac-card-industry">{{ c.industry }}</div>{% endif %}
+      <div class="ac-card-stats">
+        <span {% if c.open_jobs_count > 0 %}style="color:var(--green);font-weight:600"{% endif %}>
+          <i class="bi bi-briefcase"></i> {{ c.open_jobs_count }} job{{ 's' if c.open_jobs_count != 1 }}
+        </span>
+        <span><i class="bi bi-heart"></i> {{ c.follower_count }}</span>
+        {% if c.location %}<span><i class="bi bi-geo-alt"></i> {{ c.location }}</span>{% endif %}
+        {% set mgrs = c.members.filter_by(role='manager').count() %}
+        {% if mgrs %}<span><i class="bi bi-person-badge"></i> {{ mgrs }} mgr{{ 's' if mgrs != 1 }}</span>{% endif %}
+      </div>
+      <div class="ac-card-actions">
+        <a href="{{ url_for('admin.company_detail', company_id=c.id) }}" class="btn btn-outline btn-sm" style="flex:1;justify-content:center">
+          <i class="bi bi-eye"></i> View
+        </a>
+        <a href="{{ url_for('admin.company_edit', company_id=c.id) }}" class="btn btn-outline btn-sm">
+          <i class="bi bi-pencil"></i>
+        </a>
+        <form method="POST" action="{{ url_for('admin.company_delete', company_id=c.id) }}"
+              onsubmit="return confirm('Delete {{ c.name }}? This cannot be undone.')">
+          <button class="btn btn-danger btn-sm"><i class="bi bi-trash"></i></button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{# ── TABLE VIEW ── #}
+{% else %}
+<div class="table-card">
+  <div class="table-responsive">
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Company</th>
+          <th>Industry</th>
+          <th>Managers</th>
+          <th>Open Jobs</th>
+          <th>Followers</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in companies %}
+        <tr>
+          <td data-label="#">{{ loop.index }}</td>
+          <td data-label="Company">
+            <div class="d-flex align-center gap-3">
+              {% if c.logo_filename %}
+                <img src="{{ url_for('static', filename='uploads/company/' + c.logo_filename) }}"
+                     alt="{{ c.name }}"
+                     style="width:38px;height:38px;border-radius:8px;object-fit:contain;background:#f8f9fa;border:1px solid var(--border);padding:3px;flex-shrink:0">
+              {% else %}
+                <div style="width:38px;height:38px;border-radius:8px;background:var(--green-light);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;font-size:15px;color:var(--green)">
+                  {{ c.name[0] }}
+                </div>
+              {% endif %}
+              <div>
+                <div class="td-name">{{ c.name }}</div>
+                <div class="text-muted text-sm">{{ c.location or '—' }}</div>
+              </div>
+            </div>
+          </td>
+          <td data-label="Industry">{{ c.industry or '—' }}</td>
+          <td data-label="Managers">
+            {% set mgrs = c.members.filter_by(role='manager').count() %}
+            <span class="badge {% if mgrs %}badge-active{% else %}badge-inactive{% endif %}">
+              {{ mgrs }} manager{{ 's' if mgrs != 1 }}
+            </span>
+          </td>
+          <td data-label="Open Jobs">{{ c.open_jobs_count }}</td>
+          <td data-label="Followers">{{ c.follower_count }}</td>
+          <td data-label="Status">
+            {% if c.is_active %}
+              <span class="badge badge-active">Active</span>
+            {% else %}
+              <span class="badge badge-inactive">Inactive</span>
+            {% endif %}
+            {% if c.is_verified %}
+              <span class="badge badge-admin" style="margin-left:4px"><i class="bi bi-patch-check-fill"></i> Verified</span>
+            {% endif %}
+          </td>
+          <td data-label="Actions">
+            <div class="d-flex gap-2">
+              <a href="{{ url_for('admin.company_detail', company_id=c.id) }}" class="btn btn-outline btn-sm">
+                <i class="bi bi-eye"></i> View
+              </a>
+              <a href="{{ url_for('admin.company_edit', company_id=c.id) }}" class="btn btn-outline btn-sm">
+                <i class="bi bi-pencil"></i>
+              </a>
+              <form method="POST" action="{{ url_for('admin.company_delete', company_id=c.id) }}"
+                    onsubmit="return confirm('Delete {{ c.name }}? This cannot be undone.')">
+                <button class="btn btn-danger btn-sm"><i class="bi bi-trash"></i></button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}{# end table view #}
+
+{% else %}
+<div class="empty-state">
+  <i class="bi bi-building"></i>
+  <h3>No companies yet</h3>
+  <p>Create the first company to link positions and assign managers.</p>
+  <a href="{{ url_for('admin.company_new') }}" class="btn btn-primary mt-3">
+    <i class="bi bi-plus-lg"></i> Create Company
+  </a>
+</div>
+{% endif %}
+{% endblock %}

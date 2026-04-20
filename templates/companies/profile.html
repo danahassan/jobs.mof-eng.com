@@ -1,0 +1,259 @@
+﻿{% extends 'base.html' %}
+{% block title %}{{ company.name }} — MOF Jobs{% endblock %}
+{% block page_title %}Company Profile{% endblock %}
+{% block page_breadcrumb %}{{ company.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Hero ──────────────────────────────────────────────────── */
+.cp-hero{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:20px}
+.cp-cover{height:160px;position:relative;overflow:hidden}
+.cp-cover img{width:100%;height:100%;object-fit:cover;display:block}
+.cp-cover-fallback{width:100%;height:100%;background:linear-gradient(135deg,var(--primary),#7c3aed)}
+.cp-profile{padding:0 24px 24px;position:relative}
+.cp-logo-wrap{width:80px;height:80px;border-radius:14px;background:#fff;border:3px solid #fff;
+  overflow:hidden;position:absolute;top:-40px;box-shadow:var(--shadow);
+  display:flex;align-items:center;justify-content:center;padding:6px}
+.cp-logo-wrap img{width:100%;height:100%;object-fit:contain}
+.cp-logo-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--bg)}
+.cp-header{padding-top:50px;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:14px}
+.cp-name{font-size:22px;font-weight:700;margin:0 0 5px}
+.cp-meta{font-size:13px;color:var(--text3);display:flex;gap:14px;flex-wrap:wrap}
+.cp-meta span, .cp-meta a{display:inline-flex;align-items:center;gap:4px}
+.cp-stats-follow{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.cp-stat-pill{text-align:center;padding:10px 18px;background:var(--bg);border-radius:10px;border:1px solid var(--border)}
+.cp-stat-num{font-size:20px;font-weight:700}
+.cp-stat-lbl{font-size:11px;color:var(--text3)}
+
+/* ── Layout ────────────────────────────────────────────────── */
+.cp-layout{display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start}
+.cp-sidebar{display:flex;flex-direction:column;gap:16px}
+.cp-info-row{display:flex;justify-content:space-between;align-items:center;
+  padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;gap:8px}
+.cp-info-row:last-child{border-bottom:none;padding-bottom:0}
+.cp-info-lbl{color:var(--text3);white-space:nowrap}
+.cp-info-val{font-weight:600;text-align:right}
+
+/* ── Jobs list ─────────────────────────────────────────────── */
+.cp-job{padding:16px 18px}
+.cp-job-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.cp-job-title{font-size:15px;font-weight:600;color:var(--text);text-decoration:none}
+.cp-job-title:hover{color:var(--primary)}
+.cp-job-meta{font-size:12px;color:var(--text3);margin-top:3px;display:flex;gap:10px;flex-wrap:wrap}
+
+/* ── Photos ────────────────────────────────────────────────── */
+.cp-photos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.cp-photo{border-radius:10px;overflow:hidden;background:#f8f9fa;border:1px solid var(--border);cursor:pointer}
+.cp-photo img{width:100%;height:110px;object-fit:cover;display:block}
+.cp-photo-cap{padding:5px 8px;font-size:11px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ── Responsive ────────────────────────────────────────────── */
+@media(max-width:860px){
+  .cp-layout{grid-template-columns:1fr}
+  .cp-sidebar{order:-1}  /* sidebar (Company Info) before jobs on tablet+ */
+}
+@media(max-width:600px){
+  .cp-cover{height:110px}
+  .cp-profile{padding:0 16px 18px}
+  .cp-logo-wrap{width:64px;height:64px;top:-32px}
+  .cp-header{padding-top:40px;gap:10px}
+  .cp-name{font-size:18px}
+  .cp-meta{gap:6px 10px;font-size:12px}
+  .cp-stats-follow{width:100%;justify-content:flex-start}
+  .cp-stat-pill{padding:8px 14px;flex:1;min-width:80px}
+  .cp-stat-num{font-size:17px}
+  .cp-photos-grid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
+  .cp-photo img{height:85px}
+  .cp-job-row{flex-direction:column}
+  .cp-job-row .btn{width:100%;justify-content:center}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- HERO -->
+<div class="cp-hero">
+  <div class="cp-cover">
+    {% if company.cover_filename %}
+      <img src="{{ url_for('static', filename='uploads/company/' + company.cover_filename) }}" alt="">
+    {% else %}
+      <div class="cp-cover-fallback"></div>
+    {% endif %}
+  </div>
+  <div class="cp-profile">
+    <div class="cp-logo-wrap">
+      {% if company.logo_filename %}
+        <img src="{{ url_for('static', filename='uploads/company/' + company.logo_filename) }}" alt="{{ company.name }}">
+      {% else %}
+        <div class="cp-logo-ph"><i class="bi bi-building" style="font-size:28px;color:var(--text3)"></i></div>
+      {% endif %}
+    </div>
+    <div class="cp-header">
+      <div>
+        <h1 class="cp-name">{{ company.name }}</h1>
+        <div class="cp-meta">
+          {% if company.industry %}<span><i class="bi bi-tag"></i> {{ company.industry }}</span>{% endif %}
+          {% if company.company_size %}<span><i class="bi bi-people"></i> {{ company.company_size }}</span>{% endif %}
+          {% if company.location %}<span><i class="bi bi-geo-alt"></i> {{ company.location }}</span>{% endif %}
+          {% if company.website %}<a href="{{ company.website }}" target="_blank" rel="noopener" style="color:var(--primary)"><i class="bi bi-globe"></i> Website</a>{% endif %}
+        </div>
+      </div>
+      <div class="cp-stats-follow">
+        <div class="cp-stat-pill">
+          <div class="cp-stat-num">{{ open_jobs | length }}</div>
+          <div class="cp-stat-lbl">Open Jobs</div>
+        </div>
+        <div class="cp-stat-pill">
+          <div class="cp-stat-num" id="followerCount">{{ company.follower_count }}</div>
+          <div class="cp-stat-lbl">Followers</div>
+        </div>
+        {% if current_user.is_authenticated %}
+        <button id="followBtn" data-company-id="{{ company.id }}"
+                class="btn {% if following %}btn-primary{% else %}btn-outline{% endif %}">
+          <i class="bi bi-heart{% if following %}-fill{% endif %}"></i>
+          {{ 'Following' if following else 'Follow' }}
+        </button>
+        {% else %}
+        <a href="{{ url_for('auth.login') }}?next={{ request.path }}" class="btn btn-outline">
+          <i class="bi bi-heart"></i> Follow
+        </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN LAYOUT -->
+<div class="cp-layout">
+
+  <!-- LEFT: About + Photos + Jobs -->
+  <div style="display:flex;flex-direction:column;gap:16px">
+
+    {% if company.description %}
+    <div class="card">
+      <h2 style="font-size:16px;font-weight:600;margin-bottom:12px">About {{ company.name }}</h2>
+      <p style="font-size:14px;color:var(--text2);line-height:1.8;margin:0;white-space:pre-wrap">{{ company.description }}</p>
+    </div>
+    {% endif %}
+
+    {% if photos %}
+    <div class="card">
+      <h2 style="font-size:16px;font-weight:600;margin-bottom:14px"><i class="bi bi-images"></i> Photos</h2>
+      <div class="cp-photos-grid">
+        {% for p in photos %}
+        <div class="cp-photo"
+             onclick="openLightbox('{{ url_for('static', filename='uploads/company_photos/' + p.filename) }}','{{ p.caption|e if p.caption else '' }}')">
+          <img src="{{ url_for('static', filename='uploads/company_photos/' + p.filename) }}"
+               alt="{{ p.caption or company.name }}">
+          {% if p.caption %}<div class="cp-photo-cap">{{ p.caption }}</div>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Lightbox -->
+    <div id="lightbox" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;align-items:center;justify-content:center;flex-direction:column;padding:20px" onclick="closeLightbox()">
+      <img id="lb-img" src="" alt="" style="max-width:90vw;max-height:80vh;border-radius:10px;box-shadow:0 8px 40px rgba(0,0,0,.6)">
+      <div id="lb-caption" style="color:#fff;margin-top:12px;font-size:14px;opacity:.85;text-align:center"></div>
+    </div>
+    {% endif %}
+
+    <div>
+      <h2 style="font-size:16px;font-weight:600;margin-bottom:12px">Open Positions ({{ open_jobs | length }})</h2>
+      {% if open_jobs %}
+      <div style="display:flex;flex-direction:column;gap:10px">
+        {% for job in open_jobs %}
+        <div class="card cp-job">
+          <div class="cp-job-row">
+            <div>
+              <a href="{{ url_for('jobs.detail', job_id=job.id) }}" class="cp-job-title">{{ job.title }}</a>
+              <div class="cp-job-meta">
+                <span>{{ job.type }}</span>
+                {% if job.location %}<span><i class="bi bi-geo-alt"></i> {{ job.location }}</span>{% endif %}
+                {% if job.is_remote %}<span style="color:#7c3aed">Remote</span>{% endif %}
+                {% if job.experience_level %}<span>{{ job.experience_level }}</span>{% endif %}
+              </div>
+            </div>
+            <a href="{{ url_for('jobs.detail', job_id=job.id) }}" class="btn btn-outline btn-sm" style="white-space:nowrap">Apply Now</a>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="card" style="padding:40px;text-align:center;color:var(--text3)">
+        <i class="bi bi-briefcase" style="font-size:32px;margin-bottom:10px;display:block"></i>
+        <div>No open positions at this time</div>
+      </div>
+      {% endif %}
+    </div>
+
+  </div>
+
+  <!-- RIGHT: Company Info sidebar -->
+  <div class="cp-sidebar">
+    <div class="card">
+      <h3 style="font-size:14px;font-weight:600;margin-bottom:14px">Company Info</h3>
+      {% if company.founded_year %}
+      <div class="cp-info-row">
+        <span class="cp-info-lbl">Founded</span>
+        <span class="cp-info-val">{{ company.founded_year }}</span>
+      </div>
+      {% endif %}
+      {% if company.company_size %}
+      <div class="cp-info-row">
+        <span class="cp-info-lbl">Size</span>
+        <span class="cp-info-val">{{ company.company_size }}</span>
+      </div>
+      {% endif %}
+      {% if company.industry %}
+      <div class="cp-info-row">
+        <span class="cp-info-lbl">Industry</span>
+        <span class="cp-info-val">{{ company.industry }}</span>
+      </div>
+      {% endif %}
+      {% if company.location %}
+      <div class="cp-info-row">
+        <span class="cp-info-lbl">Location</span>
+        <span class="cp-info-val">{{ company.location }}</span>
+      </div>
+      {% endif %}
+      {% if company.website %}
+      <div class="cp-info-row" style="border-bottom:none">
+        <a href="{{ company.website }}" target="_blank" rel="noopener" style="color:var(--primary)">
+          <i class="bi bi-globe"></i> Visit Website
+        </a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+
+<script>
+function openLightbox(src,cap){
+  document.getElementById('lb-img').src=src;
+  document.getElementById('lb-caption').textContent=cap;
+  var lb=document.getElementById('lightbox');
+  lb.style.display='flex';
+}
+function closeLightbox(){ document.getElementById('lightbox').style.display='none'; }
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeLightbox();});
+
+const followBtn = document.getElementById('followBtn');
+if (followBtn) {
+  followBtn.addEventListener('click', async () => {
+    const id = followBtn.dataset.companyId;
+    const resp = await fetch(`/companies/${id}/follow`, {method:'POST', credentials:'include', headers:{'X-Requested-With':'XMLHttpRequest'}});
+    if (resp.status === 401) { location.href = '/login'; return; }
+    const data = await resp.json();
+    followBtn.innerHTML = data.following
+      ? '<i class="bi bi-heart-fill"></i> Following'
+      : '<i class="bi bi-heart"></i> Follow';
+    followBtn.className = data.following ? 'btn btn-primary' : 'btn btn-outline';
+    const fc = document.getElementById('followerCount');
+    if (fc) fc.textContent = data.followers;
+  });
+}
+</script>
+{% endblock %}

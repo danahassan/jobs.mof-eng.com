@@ -1,0 +1,441 @@
+{% extends 'base.html' %}
+{% block title %}{{ user.full_name }} — Admin — MOF Jobs{% endblock %}
+{% block page_title %}{{ user.full_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Hero ── */
+.ud-hero{background:linear-gradient(135deg,var(--navy) 0%,#1a2d3f 60%,#1e3a52 100%);
+  border-radius:var(--radius-lg);padding:24px 28px;margin-bottom:20px;position:relative;overflow:hidden}
+.ud-hero::before{content:'';position:absolute;top:-40px;right:-40px;width:200px;height:200px;
+  border-radius:50%;background:rgba(25,135,84,.07);pointer-events:none}
+.ud-hero-row{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.ud-hero-left{display:flex;align-items:flex-start;gap:16px}
+.ud-hero-name{color:#fff;font-size:22px;font-weight:800;line-height:1.2;margin-bottom:4px}
+.ud-hero-sub{color:rgba(255,255,255,.65);font-size:13px;margin-bottom:10px}
+.ud-hero-tags{display:flex;gap:8px;flex-wrap:wrap}
+.ud-hero-tag{display:inline-flex;align-items:center;gap:5px;color:rgba(255,255,255,.7);font-size:12px;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:20px;padding:3px 10px}
+.ud-hero-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start;flex-shrink:0}
+
+/* ── Main grid ── */
+.ud-grid{display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start}
+.ud-sidebar{position:sticky;top:76px;display:flex;flex-direction:column;gap:16px}
+
+/* ── Profile sections ── */
+.ud-section{margin-bottom:22px}
+.ud-section:last-child{margin-bottom:0}
+.ud-section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;
+  color:var(--text3);margin-bottom:12px;display:flex;align-items:center;gap:6px;
+  padding-bottom:8px;border-bottom:1px solid var(--border)}
+.ud-info-row{display:flex;justify-content:space-between;align-items:center;
+  padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;gap:8px}
+.ud-info-row:last-child{border-bottom:none;padding-bottom:0}
+.ud-info-lbl{color:var(--text3);font-size:12px;white-space:nowrap}
+.ud-info-val{font-weight:600;color:var(--text);text-align:right;word-break:break-word}
+
+/* ── Skills ── */
+.ud-skill-chip{display:inline-flex;align-items:center;gap:5px;background:var(--green-light);
+  color:var(--green);font-size:12px;font-weight:600;padding:3px 10px;border-radius:6px;margin:2px}
+.ud-skill-level{font-size:10px;background:rgba(25,135,84,.15);border-radius:4px;
+  padding:1px 5px;color:var(--green);font-weight:500}
+
+/* ── Experience / Education items ── */
+.ud-item{padding:12px 0;border-bottom:1px solid var(--border)}
+.ud-item:last-child{border-bottom:none;padding-bottom:0}
+.ud-item-title{font-size:13px;font-weight:700;color:var(--text)}
+.ud-item-sub{font-size:12px;color:var(--green);font-weight:500;margin-top:1px}
+.ud-item-dates{font-size:11px;color:var(--text3);margin-top:2px}
+.ud-item-desc{font-size:12px;color:var(--text2);margin-top:6px;line-height:1.6}
+
+/* ── Recent apps ── */
+.ud-app-row{display:flex;align-items:center;gap:10px;padding:9px 0;
+  border-bottom:1px solid var(--border);text-decoration:none;border-radius:4px;transition:background .1s}
+.ud-app-row:last-child{border-bottom:none;padding-bottom:0}
+.ud-app-row:hover{background:#f8fafb}
+.ud-app-pos{font-size:13px;font-weight:600;color:var(--text)}
+.ud-app-meta{font-size:11px;color:var(--text3)}
+
+/* ── Profile strength bar ── */
+.ud-strength-bar{height:6px;background:#e5e7eb;border-radius:3px;margin-top:6px;overflow:hidden}
+.ud-strength-fill{height:100%;border-radius:3px;
+  background:linear-gradient(90deg,var(--green),#22c55e);transition:width .4s}
+
+/* ── Responsive ── */
+@media(max-width:860px){.ud-grid{grid-template-columns:1fr 260px}}
+@media(max-width:680px){
+  .ud-grid{grid-template-columns:1fr}
+  .ud-sidebar{position:static}
+  .ud-hero{padding:16px 18px}
+  .ud-hero-name{font-size:18px}
+  .ud-hero-left{gap:12px}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- HERO -->
+<div class="ud-hero">
+  <div class="ud-hero-row">
+    <div class="ud-hero-left">
+      {% if user.avatar_filename %}
+      <img src="{{ url_for('static', filename='uploads/avatars/' + user.avatar_filename) }}"
+           alt="{{ user.initials }}"
+           style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,.2);flex-shrink:0">
+      {% else %}
+      <div class="avatar" style="width:64px;height:64px;font-size:22px;font-weight:800;flex-shrink:0;
+           border:3px solid rgba(255,255,255,.2)">{{ user.initials }}</div>
+      {% endif %}
+      <div>
+        <div class="ud-hero-name">{{ user.full_name }}</div>
+        {% if user.headline %}
+        <div class="ud-hero-sub">{{ user.headline }}</div>
+        {% else %}
+        <div class="ud-hero-sub">{{ user.email }}</div>
+        {% endif %}
+        <div class="ud-hero-tags">
+          <span class="badge badge-{{ user.role }}">{{ user.role|capitalize }}</span>
+          {% if user.is_active %}
+            <span class="badge badge-active">Active</span>
+          {% else %}
+            <span class="badge badge-inactive">Inactive</span>
+          {% endif %}
+          {% if user.location_city %}<span class="ud-hero-tag"><i class="bi bi-geo-alt"></i> {{ user.location_city }}</span>{% endif %}
+          {% if user.totp_enabled %}<span class="ud-hero-tag"><i class="bi bi-shield-check"></i> 2FA On</span>{% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="ud-hero-actions">
+      <a href="{{ url_for('admin.users') }}"
+         class="btn btn-sm" style="background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);color:#fff">
+        <i class="bi bi-arrow-left"></i> Back
+      </a>
+      <a href="{{ url_for('admin.user_edit', user_id=user.id) }}" class="btn btn-primary btn-sm">
+        <i class="bi bi-pencil"></i> Edit User
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- STAT STRIP -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:20px">
+  <div class="stat-card">
+    <div class="stat-card-accent" style="background:linear-gradient(90deg,#198754,#22c55e)"></div>
+    <div class="stat-card-inner">
+      <div><div class="stat-num">{{ user.applications.count() }}</div><div class="stat-lbl">Applications</div></div>
+      <div class="stat-icon" style="background:#e8f5ee;color:#198754"><i class="bi bi-file-earmark-person-fill"></i></div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-accent" style="background:linear-gradient(90deg,#3b82f6,#60a5fa)"></div>
+    <div class="stat-card-inner">
+      <div><div class="stat-num">{{ user.skills.count() }}</div><div class="stat-lbl">Skills</div></div>
+      <div class="stat-icon" style="background:#eff6ff;color:#3b82f6"><i class="bi bi-tags-fill"></i></div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-accent" style="background:linear-gradient(90deg,#8b5cf6,#a78bfa)"></div>
+    <div class="stat-card-inner">
+      <div><div class="stat-num">{{ user.experiences.count() }}</div><div class="stat-lbl">Experience</div></div>
+      <div class="stat-icon" style="background:#f5f3ff;color:#8b5cf6"><i class="bi bi-briefcase-fill"></i></div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-accent" style="background:linear-gradient(90deg,#f59e0b,#fbbf24)"></div>
+    <div class="stat-card-inner">
+      <div><div class="stat-num">{{ user.profile_strength }}%</div><div class="stat-lbl">Profile Strength</div></div>
+      <div class="stat-icon" style="background:#fffbeb;color:#f59e0b"><i class="bi bi-bar-chart-fill"></i></div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN GRID -->
+<div class="ud-grid">
+
+  <!-- LEFT: profile content -->
+  <div>
+
+    <!-- BIO + LINKS -->
+    {% if user.bio or user.resume_headline or user.linkedin_url or user.github_url or user.portfolio_url %}
+    <div class="card" style="margin-bottom:16px">
+      {% if user.bio or user.resume_headline %}
+      <div class="ud-section">
+        <div class="ud-section-title"><i class="bi bi-person-lines-fill"></i> About</div>
+        {% if user.resume_headline %}
+        <p style="font-size:13px;font-weight:600;color:var(--text);margin:0 0 8px">{{ user.resume_headline }}</p>
+        {% endif %}
+        {% if user.bio %}
+        <p style="font-size:13px;color:var(--text2);line-height:1.7;margin:0">{{ user.bio }}</p>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      {% if user.linkedin_url or user.github_url or user.portfolio_url %}
+      <div class="ud-section">
+        <div class="ud-section-title"><i class="bi bi-link-45deg"></i> Links</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          {% if user.linkedin_url %}
+          <a href="{{ user.linkedin_url }}" target="_blank" class="btn btn-outline btn-sm">
+            <i class="bi bi-linkedin" style="color:#0a66c2"></i> LinkedIn
+          </a>
+          {% endif %}
+          {% if user.github_url %}
+          <a href="{{ user.github_url }}" target="_blank" class="btn btn-outline btn-sm">
+            <i class="bi bi-github"></i> GitHub
+          </a>
+          {% endif %}
+          {% if user.portfolio_url %}
+          <a href="{{ user.portfolio_url }}" target="_blank" class="btn btn-outline btn-sm">
+            <i class="bi bi-box-arrow-up-right"></i> Portfolio
+          </a>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- SKILLS -->
+    {% if user.skills.count() > 0 %}
+    <div class="card" style="margin-bottom:16px">
+      <div class="ud-section-title"><i class="bi bi-tags"></i> Skills</div>
+      <div>
+        {% for s in user.skills.all() %}
+        <span class="ud-skill-chip">
+          {{ s.name }}
+          {% if s.proficiency %}<span class="ud-skill-level">{{ s.proficiency }}</span>{% endif %}
+        </span>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- EXPERIENCE -->
+    {% if user.experiences.count() > 0 %}
+    <div class="card" style="margin-bottom:16px">
+      <div class="ud-section-title"><i class="bi bi-briefcase"></i> Work Experience</div>
+      {% for exp in user.experiences.order_by(none).all() %}
+      <div class="ud-item">
+        <div class="ud-item-title">{{ exp.title }}</div>
+        {% if exp.company %}<div class="ud-item-sub">{{ exp.company }}</div>{% endif %}
+        <div class="ud-item-dates">
+          {{ exp.start_date.strftime('%b %Y') if exp.start_date else '' }}
+          {% if exp.start_date or exp.end_date %} — {% endif %}
+          {{ exp.end_date.strftime('%b %Y') if exp.end_date else 'Present' }}
+        </div>
+        {% if exp.description %}<div class="ud-item-desc">{{ exp.description }}</div>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- EDUCATION -->
+    {% if user.educations.count() > 0 %}
+    <div class="card" style="margin-bottom:16px">
+      <div class="ud-section-title"><i class="bi bi-mortarboard"></i> Education</div>
+      {% for edu in user.educations.all() %}
+      <div class="ud-item">
+        <div class="ud-item-title">{{ edu.institution }}</div>
+        {% if edu.degree or edu.field %}
+        <div class="ud-item-sub">
+          {{ edu.degree }}{% if edu.degree and edu.field %} · {% endif %}{{ edu.field or '' }}
+        </div>
+        {% endif %}
+        <div class="ud-item-dates">
+          {{ edu.start_year or '' }}{% if edu.start_year and edu.end_year %} — {% endif %}{{ edu.end_year or '' }}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- LANGUAGES + CERTIFICATIONS -->
+    {% if user.languages.count() > 0 or user.certifications.count() > 0 %}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+
+      {% if user.languages.count() > 0 %}
+      <div class="card">
+        <div class="ud-section-title"><i class="bi bi-translate"></i> Languages</div>
+        {% for lang in user.languages.all() %}
+        <div class="ud-info-row">
+          <span style="font-size:13px;font-weight:600;color:var(--text)">{{ lang.language }}</span>
+          <span style="font-size:11px;color:var(--text3)">{{ lang.proficiency }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% if user.certifications.count() > 0 %}
+      <div class="card">
+        <div class="ud-section-title"><i class="bi bi-patch-check"></i> Certifications</div>
+        {% for cert in user.certifications.all() %}
+        <div class="ud-item">
+          <div class="ud-item-title" style="font-size:12px">
+            {% if cert.credential_url %}<a href="{{ cert.credential_url }}" target="_blank" style="color:var(--green)">{{ cert.name }}</a>
+            {% else %}{{ cert.name }}{% endif %}
+          </div>
+          {% if cert.issuing_org %}<div class="ud-item-sub" style="font-size:11px">{{ cert.issuing_org }}</div>{% endif %}
+          {% if cert.issue_date %}<div class="ud-item-dates">{{ cert.issue_date.strftime('%b %Y') }}</div>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+    </div>
+    {% endif %}
+
+    <!-- EMPTY STATE -->
+    {% if not user.bio and not user.resume_headline and not user.linkedin_url and not user.github_url and not user.portfolio_url
+         and user.skills.count() == 0 and user.experiences.count() == 0 and user.educations.count() == 0
+         and user.languages.count() == 0 and user.certifications.count() == 0 %}
+    <div class="card">
+      <div class="empty-state" style="padding:40px 0">
+        <i class="bi bi-person-badge" style="font-size:36px;margin-bottom:10px"></i>
+        <p>This user hasn't filled in their profile yet.</p>
+        <a href="{{ url_for('admin.user_edit', user_id=user.id) }}" class="btn btn-primary btn-sm" style="margin-top:8px">
+          <i class="bi bi-pencil"></i> Edit Profile
+        </a>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+
+  <!-- RIGHT: sidebar -->
+  <div class="ud-sidebar">
+
+    <!-- Account Info -->
+    <div class="card">
+      <div class="card-title"><i class="bi bi-person-fill" style="color:var(--green)"></i> Account Info</div>
+      <div>
+        <div class="ud-info-row">
+          <span class="ud-info-lbl">Role</span>
+          <span class="badge badge-{{ user.role }}">{{ user.role|capitalize }}</span>
+        </div>
+        <div class="ud-info-row">
+          <span class="ud-info-lbl">Status</span>
+          {% if user.is_active %}<span class="badge badge-active">Active</span>
+          {% else %}<span class="badge badge-inactive">Inactive</span>{% endif %}
+        </div>
+        <div class="ud-info-row">
+          <span class="ud-info-lbl">Email</span>
+          <a href="mailto:{{ user.email }}" class="ud-info-val" style="color:var(--green)">{{ user.email }}</a>
+        </div>
+        {% if user.phone %}
+        <div class="ud-info-row">
+          <span class="ud-info-lbl">Phone</span>
+          <span class="ud-info-val">{{ user.phone }}</span>
+        </div>
+        {% endif %}
+        {% if user.gender %}
+        <div class="ud-info-row">
+          <span class="ud-info-lbl">Gender</span>
+          <span class="ud-info-val">{{ user.gender }}</span>
+        </div>
+        {% endif %}
+        {% if user.nationality %}
+        <div class="ud-info-row">
+          <span class="ud-info-lbl">Nationality</span>
+          <span class="ud-info-val">{{ user.nationality }}</span>
+        </div>
+        {% endif %}
+        {% if user.date_of_birth %}
+        <div class="ud-info-row">
+          <span class="ud-info-lbl">Date of Birth</span>
+          <span class="ud-info-val">{{ user.date_of_birth.strftime('%b %d, %Y') }}</span>
+        </div>
+        {% endif %}
+        <div class="ud-info-row">
+          <span class="ud-info-lbl">Joined</span>
+          <span class="ud-info-val">{{ user.created_at.strftime('%b %d, %Y') if user.created_at else '—' }}</span>
+        </div>
+        <div class="ud-info-row">
+          <span class="ud-info-lbl">Last Login</span>
+          <span class="ud-info-val">{{ user.last_login.strftime('%b %d, %Y') if user.last_login else 'Never' }}</span>
+        </div>
+        <div class="ud-info-row">
+          <span class="ud-info-lbl">2FA</span>
+          {% if user.totp_enabled %}
+            <span class="badge" style="background:#dcfce7;color:#16a34a">Enabled</span>
+          {% else %}
+            <span class="badge" style="background:#f1f5f9;color:#64748b">Off</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Profile Strength -->
+      <div style="margin-top:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <span style="font-size:11px;color:var(--text3)">Profile strength</span>
+          <span style="font-size:12px;font-weight:700;color:var(--green)">{{ user.profile_strength }}%</span>
+        </div>
+        <div class="ud-strength-bar">
+          <div class="ud-strength-fill" style="width:{{ user.profile_strength }}%"></div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <a href="{{ url_for('admin.user_edit', user_id=user.id) }}" class="btn btn-primary btn-sm" style="flex:1;justify-content:center">
+          <i class="bi bi-pencil"></i> Edit
+        </a>
+        {% if user.id != current_user.id %}
+        <form method="POST" action="{{ url_for('admin.user_toggle', user_id=user.id) }}" style="flex:1">
+          <button type="submit" class="btn btn-outline btn-sm" style="width:100%;justify-content:center">
+            <i class="bi bi-toggle-{{ 'off' if user.is_active else 'on' }}"></i>
+            {{ 'Deactivate' if user.is_active else 'Activate' }}
+          </button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Recent Applications -->
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div class="card-title" style="margin-bottom:0">
+          <i class="bi bi-file-earmark-person-fill" style="color:var(--green)"></i> Applications
+        </div>
+        {% if user.applications.count() > 5 %}
+        <a href="{{ url_for('admin.applications', q=user.full_name) }}" class="btn btn-outline btn-xs">View all</a>
+        {% endif %}
+      </div>
+      {% if recent_apps %}
+        {% for app in recent_apps %}
+        <a href="{{ url_for('admin.application_detail', app_id=app.id) }}" class="ud-app-row">
+          <div style="flex:1;min-width:0">
+            <div class="ud-app-pos">{{ app.position.title }}</div>
+            <div class="ud-app-meta">{{ app.applied_at.strftime('%b %d, %Y') }}</div>
+          </div>
+          <span class="badge badge-{{ 'active' if app.status in ('new', 'shortlisted') else 'inactive' }}"
+                style="font-size:10px;align-self:center;text-transform:capitalize">{{ app.status }}</span>
+        </a>
+        {% endfor %}
+      {% else %}
+        <div style="text-align:center;padding:20px 0;color:var(--text3);font-size:13px">
+          <i class="bi bi-inbox" style="font-size:24px;display:block;margin-bottom:6px"></i>
+          No applications yet.
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Danger Zone -->
+    {% if user.id != current_user.id %}
+    <div class="card" style="border-color:#fca5a5">
+      <div class="card-title" style="color:#dc2626"><i class="bi bi-trash3-fill"></i> Danger Zone</div>
+      <p style="font-size:12px;color:var(--text3);margin:0 0 12px">
+        Permanently deletes this user and all their applications, messages, and data.
+      </p>
+      <form method="POST" action="{{ url_for('admin.user_delete', user_id=user.id) }}"
+            onsubmit="return confirm('Delete {{ user.full_name|e }} permanently? This cannot be undone.')">
+        <button type="submit" class="btn btn-sm"
+                style="width:100%;justify-content:center;background:#fef2f2;color:#dc2626;border:1px solid #fca5a5">
+          <i class="bi bi-trash3"></i> Delete User
+        </button>
+      </form>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}
