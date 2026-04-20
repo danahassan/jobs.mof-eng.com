@@ -53,6 +53,17 @@ def create_app(config_name=None):
     def load_user(user_id):
         return db.session.get(User, int(user_id))
 
+    from zoneinfo import ZoneInfo
+    from datetime import timezone as _utc
+    _baghdad = ZoneInfo('Asia/Baghdad')
+
+    @app.template_filter('localdt')
+    def localdt_filter(dt):
+        """Convert a naive UTC datetime to Asia/Baghdad (GMT+3)."""
+        if dt is None:
+            return dt
+        return dt.replace(tzinfo=_utc.utc).astimezone(_baghdad)
+
     @app.before_request
     def update_last_seen():
         if current_user.is_authenticated:

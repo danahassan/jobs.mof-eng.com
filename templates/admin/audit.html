@@ -246,8 +246,8 @@
         <tr>
           <td style="color:var(--text3);font-size:12px">#{{ entry.id }}</td>
           <td>
-            <div style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap">{{ entry.created_at.strftime('%d %b %Y') }}</div>
-            <div style="font-size:11px;color:var(--text3);font-family:monospace">{{ entry.created_at.strftime('%H:%M:%S') }}</div>
+            <div style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap">{{ (entry.created_at | localdt).strftime('%d %b %Y') }}</div>
+            <div style="font-size:11px;color:var(--text3);font-family:monospace">{{ (entry.created_at | localdt).strftime('%H:%M:%S') }} <span style="opacity:.5">+3</span></div>
           </td>
           <td>
             {% if entry.user %}
@@ -328,7 +328,7 @@
       {% else %}
       <span><i class="bi bi-robot"></i> System</span>
       {% endif %}
-      <span><i class="bi bi-clock"></i> {{ entry.created_at.strftime('%d %b %Y, %H:%M') }}</span>
+      <span><i class="bi bi-clock"></i> {{ (entry.created_at | localdt).strftime('%d %b %Y, %H:%M') }} <span style="opacity:.5">+3</span></span>
       {% if entry.ip_address %}<span><i class="bi bi-hdd-network"></i> {{ entry.ip_address }}</span>{% endif %}
     </div>
   </div>
