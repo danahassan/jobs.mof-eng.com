@@ -6,6 +6,11 @@
 <style>
 /* ── Users page ── */
 .usr-tbl th:last-child,.usr-tbl td:last-child{text-align:right}
+@media(max-width:768px){
+  .user-actions{flex-wrap:wrap!important;justify-content:flex-end!important;gap:5px!important}
+  .user-actions .btn-text{display:none}
+  .user-actions .btn,.user-actions button.btn{padding:6px 8px!important;min-width:32px;justify-content:center}
+}
 </style>
 <!-- KPI Strip -->
 <div class="kpi-strip">
@@ -120,19 +125,18 @@
             {% else %}<span class="badge badge-inactive">Inactive</span>{% endif %}
           </td>
           <td data-label="Last Login" class="text-muted">{{ (u.last_login | localdt).strftime('%b %d, %Y %H:%M') if u.last_login else 'Never' }}</td>
-          <td>
-            <div class="d-flex gap-2" style="justify-content:flex-end">
-              <a href="{{ url_for('admin.user_detail', user_id=u.id) }}" class="btn btn-outline btn-sm">
-                <i class="bi bi-eye"></i> View
+          <td data-label="Actions">
+            <div class="d-flex gap-2 user-actions" style="justify-content:flex-end">
+              <a href="{{ url_for('admin.user_detail', user_id=u.id) }}" class="btn btn-outline btn-sm" title="View">
+                <i class="bi bi-eye"></i><span class="btn-text"> View</span>
               </a>
-              <a href="{{ url_for('admin.user_edit', user_id=u.id) }}" class="btn btn-outline btn-sm">
-                <i class="bi bi-pencil"></i> Edit
+              <a href="{{ url_for('admin.user_edit', user_id=u.id) }}" class="btn btn-outline btn-sm" title="Edit">
+                <i class="bi bi-pencil"></i><span class="btn-text"> Edit</span>
               </a>
               {% if u.id != current_user.id %}
               <form method="POST" action="{{ url_for('admin.user_toggle', user_id=u.id) }}">
-                <button type="submit" class="btn btn-outline btn-sm">
-                  <i class="bi bi-toggle-{{ 'off' if u.is_active else 'on' }}"></i>
-                  {{ 'Deactivate' if u.is_active else 'Activate' }}
+                <button type="submit" class="btn btn-outline btn-sm" title="{{ 'Deactivate' if u.is_active else 'Activate' }}">
+                  <i class="bi bi-toggle-{{ 'off' if u.is_active else 'on' }}"></i><span class="btn-text"> {{ 'Deactivate' if u.is_active else 'Activate' }}</span>
                 </button>
               </form>
               <form method="POST" action="{{ url_for('admin.user_delete', user_id=u.id) }}"
