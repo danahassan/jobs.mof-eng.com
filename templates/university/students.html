@@ -3,16 +3,18 @@
 {% block page_title %}Students{% endblock %}
 
 {% block content %}
-<style>
-@media(max-width:768px){
-  .st-table-wrap{display:none}
-  .st-cards{display:flex;flex-direction:column;gap:12px}
-  .st-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow)}
-  .st-card-name{font-size:15px;font-weight:700;color:var(--text)}
-  .st-card-meta{display:flex;flex-wrap:wrap;gap:8px;font-size:12px;color:var(--text3);margin-top:8px}
-}
-@media(min-width:769px){.st-cards{display:none}}
-</style>
+<!-- Header row -->
+<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px">
+  <div>
+    <div style="font-size:18px;font-weight:700;color:var(--text)">
+      {% if univ %}{{ univ.name }} — {% endif %}Students
+    </div>
+    <div style="font-size:12px;color:var(--text3);margin-top:2px">{{ students.total }} registered student{{ 's' if students.total != 1 }}</div>
+  </div>
+  <a href="{{ url_for('university.student_add') }}" class="btn btn-primary btn-sm">
+    <i class="bi bi-person-plus-fill"></i> Add Student
+  </a>
+</div>
 
 <!-- Search bar -->
 <form method="GET" style="margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap">
@@ -25,30 +27,51 @@
   {% if search %}<a href="{{ url_for('university.students') }}" class="btn btn-outline btn-sm">Reset</a>{% endif %}
 </form>
 
-<div class="section-header" style="margin-bottom:12px">
-  <span class="text-muted text-sm">{{ students.total }} student{{ 's' if students.total != 1 }}</span>
-</div>
-
 <!-- Desktop table -->
-<div class="table-card st-table-wrap">
+<div class="table-card" style="display:none" id="st-table">
   <div class="table-responsive">
     <table class="tbl">
       <thead>
-        <tr><th>#</th><th>Name</th><th>Email</th><th>Major</th><th>University</th><th>GPA</th><th>Grad. Year</th></tr>
+        <tr>
+          <th>#</th><th>Name</th><th>Email</th><th>Major</th><th>GPA</th><th>Grad. Year</th><th>Actions</th>
+        </tr>
       </thead>
       <tbody>
         {% for s in students.items %}
         <tr>
           <td data-label="#">{{ s.id }}</td>
-          <td data-label="Name" style="font-weight:600">{{ s.full_name }}</td>
-          <td data-label="Email" class="text-muted">{{ s.email }}</td>
-          <td data-label="Major" class="text-muted">{{ s.university_major or '—' }}</td>
-          <td data-label="University" class="text-muted">{{ s.university_name or (s.university.name if s.university else '—') }}</td>
-          <td data-label="GPA" class="text-muted">{{ s.student_gpa or '—' }}</td>
-          <td data-label="Grad. Year" class="text-muted">{{ s.graduation_year or '—' }}</td>
+          <td data-label="Name">
+            <div style="font-weight:600;color:var(--text)">{{ s.full_name }}</div>
+            {% if s.student_id_number %}<div style="font-size:11px;color:var(--text3)">ID: {{ s.student_id_number }}</div>{% endif %}
+          </td>
+          <td data-label="Email" style="color:var(--text2)">{{ s.email }}</td>
+          <td data-label="Major" style="color:var(--text2)">{{ s.university_major or '—' }}</td>
+          <td data-label="GPA">
+            {% if s.student_gpa %}
+            <span style="background:#f0fdf4;color:#198754;padding:2px 8px;border-radius:10px;font-size:12px;font-weight:600">{{ s.student_gpa }}</span>
+            {% else %}—{% endif %}
+          </td>
+          <td data-label="Grad. Year" style="color:var(--text2)">{{ s.graduation_year or '—' }}</td>
+          <td data-label="Actions">
+            <div style="display:flex;gap:6px">
+              <a href="{{ url_for('university.student_edit', student_id=s.id) }}" class="btn btn-sm btn-outline" title="Edit">
+                <i class="bi bi-pencil"></i>
+              </a>
+              <form method="POST" action="{{ url_for('university.student_delete', student_id=s.id) }}"
+                    onsubmit="return confirm('Remove {{ s.full_name }} from your university?')">
+                <button type="submit" class="btn btn-sm" style="color:#dc2626;border:1px solid #fecaca;background:transparent" title="Remove">
+                  <i class="bi bi-x-lg"></i>
+                </button>
+              </form>
+            </div>
+          </td>
         </tr>
         {% else %}
-        <tr><td colspan="7"><div class="empty-state"><i class="bi bi-people"></i> No students found.</div></td></tr>
+        <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text3)">
+          <i class="bi bi-people" style="font-size:32px;display:block;margin-bottom:8px"></i>
+          No students found.
+          <a href="{{ url_for('university.student_add') }}" style="display:block;margin-top:8px">Add a student →</a>
+        </td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -56,34 +79,78 @@
 </div>
 
 <!-- Mobile cards -->
-<div class="st-cards">
+<div id="st-cards" style="display:flex;flex-direction:column;gap:12px">
   {% for s in students.items %}
-  <div class="st-card">
-    <div class="st-card-name">{{ s.full_name }}</div>
-    <div class="st-card-meta">
-      <span><i class="bi bi-envelope"></i> {{ s.email }}</span>
-      {% if s.university_major %}<span><i class="bi bi-book"></i> {{ s.university_major }}</span>{% endif %}
-      {% if s.student_gpa %}<span><i class="bi bi-award"></i> GPA {{ s.student_gpa }}</span>{% endif %}
-      {% if s.graduation_year %}<span><i class="bi bi-calendar3"></i> {{ s.graduation_year }}</span>{% endif %}
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow)">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px">
+      <div>
+        <div style="font-size:15px;font-weight:700;color:var(--text)">{{ s.full_name }}</div>
+        <div style="font-size:12px;color:var(--text3)">{{ s.email }}</div>
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0">
+        <a href="{{ url_for('university.student_edit', student_id=s.id) }}" class="btn btn-sm btn-outline"><i class="bi bi-pencil"></i></a>
+        <form method="POST" action="{{ url_for('university.student_delete', student_id=s.id) }}"
+              onsubmit="return confirm('Remove {{ s.full_name }}?')">
+          <button type="submit" class="btn btn-sm" style="color:#dc2626;border:1px solid #fecaca;background:transparent"><i class="bi bi-x-lg"></i></button>
+        </form>
+      </div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;font-size:12px;color:var(--text3)">
+      {% if s.university_major %}<span style="background:var(--green-light);color:var(--green);padding:2px 8px;border-radius:10px"><i class="bi bi-book"></i> {{ s.university_major }}</span>{% endif %}
+      {% if s.student_gpa %}<span style="background:#f0fdf4;color:#198754;padding:2px 8px;border-radius:10px"><i class="bi bi-award"></i> GPA {{ s.student_gpa }}</span>{% endif %}
+      {% if s.graduation_year %}<span><i class="bi bi-calendar3"></i> Class of {{ s.graduation_year }}</span>{% endif %}
+      {% if s.student_id_number %}<span><i class="bi bi-card-text"></i> {{ s.student_id_number }}</span>{% endif %}
     </div>
   </div>
   {% else %}
-  <div class="empty-state"><i class="bi bi-people"></i> No students found.</div>
+  <div style="text-align:center;padding:32px;color:var(--text3);background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg)">
+    <i class="bi bi-people" style="font-size:32px;display:block;margin-bottom:8px"></i>
+    No students found.
+    <a href="{{ url_for('university.student_add') }}" style="display:block;margin-top:8px">Add a student →</a>
+  </div>
   {% endfor %}
 </div>
 
 {% if students.pages > 1 %}
-<div class="pagination">
-  <a href="{{ url_for('university.students', page=students.prev_num, q=search) }}"
-     class="page-link {% if not students.has_prev %}disabled{% endif %}"><i class="bi bi-chevron-left"></i></a>
-  {% for p in students.iter_pages() %}
+<div style="margin-top:16px;display:flex;gap:4px;flex-wrap:wrap">
+  {% if students.has_prev %}
+  <a href="{{ url_for('university.students', page=students.prev_num, q=search) }}" class="page-link"><i class="bi bi-chevron-left"></i></a>
+  {% endif %}
+  {% for p in students.iter_pages(left_edge=1,right_edge=1,left_current=2,right_current=2) %}
     {% if p %}
-      <a href="{{ url_for('university.students', page=p, q=search) }}"
-         class="page-link {% if p == students.page %}active{% endif %}">{{ p }}</a>
-    {% else %}<span class="page-link">…</span>{% endif %}
+    <a href="{{ url_for('university.students', page=p, q=search) }}"
+       class="page-link {% if p == students.page %}active{% endif %}">{{ p }}</a>
+    {% else %}<span class="page-link" style="color:var(--text3)">…</span>{% endif %}
   {% endfor %}
-  <a href="{{ url_for('university.students', page=students.next_num, q=search) }}"
-     class="page-link {% if not students.has_next %}disabled{% endif %}"><i class="bi bi-chevron-right"></i></a>
+  {% if students.has_next %}
+  <a href="{{ url_for('university.students', page=students.next_num, q=search) }}" class="page-link"><i class="bi bi-chevron-right"></i></a>
+  {% endif %}
 </div>
 {% endif %}
+
+<style>
+.page-link{padding:6px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;color:var(--text2);text-decoration:none;background:var(--card);transition:all .15s;display:inline-flex;align-items:center}
+.page-link:hover,.page-link.active{background:var(--green);color:#fff;border-color:var(--green);text-decoration:none}
+.tbl th,.tbl td{padding:10px 14px;font-size:13px}
+.tbl th{background:#f8f9fa;border-bottom:2px solid var(--border);font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);font-weight:700}
+.tbl tbody tr:hover td{background:#f8fafb}
+.tbl td{border-bottom:1px solid var(--border)}
+</style>
+<script>
+(function(){
+  var deskEl = document.getElementById('st-table');
+  var mobEl  = document.getElementById('st-cards');
+  function layout(){
+    if(window.innerWidth >= 769){
+      deskEl.style.display = '';
+      mobEl.style.display  = 'none';
+    } else {
+      deskEl.style.display = 'none';
+      mobEl.style.display  = 'flex';
+    }
+  }
+  layout();
+  window.addEventListener('resize', layout);
+})();
+</script>
 {% endblock %}

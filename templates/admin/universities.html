@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+{% block title %}Universities — Admin — MOF Jobs{% endblock %}
+{% block page_title %}Universities{% endblock %}
+
+{% block content %}
+<!-- KPI strip -->
+<div class="kpi-strip">
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#e8f5ee;color:#198754"><i class="bi bi-mortarboard-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_total }}</div><div class="kpi-lbl">Total Universities</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#e8f5ee;color:#198754"><i class="bi bi-check-circle-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_active }}</div><div class="kpi-lbl">Active</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#eff6ff;color:#2563eb"><i class="bi bi-person-video3"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_coords }}</div><div class="kpi-lbl">Coordinators</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#f5f3ff;color:#7c3aed"><i class="bi bi-person-badge-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_students }}</div><div class="kpi-lbl">Students</div></div>
+  </div>
+</div>
+
+<!-- Filters + actions -->
+<div class="table-card">
+  <div class="table-head" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:16px 20px">
+    <div class="table-head-title" style="font-size:14px;font-weight:700;color:var(--text)">
+      <i class="bi bi-mortarboard-fill" style="color:var(--green);margin-right:6px"></i>
+      Universities
+      <span style="background:#e8f5ee;color:#198754;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:600;margin-left:6px">{{ univs.total }}</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <form method="GET" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <div style="position:relative">
+          <i class="bi bi-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:13px"></i>
+          <input type="text" name="q" value="{{ q_str }}" placeholder="Search universities…"
+                 class="form-control" style="padding-left:32px;width:200px;font-size:13px">
+        </div>
+        <select name="status" class="form-control" style="width:140px;font-size:13px">
+          <option value="">All Status</option>
+          <option value="active" {% if status_f == 'active' %}selected{% endif %}>Active</option>
+          <option value="inactive" {% if status_f == 'inactive' %}selected{% endif %}>Inactive</option>
+        </select>
+        <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-funnel"></i> Filter</button>
+        {% if q_str or status_f %}
+        <a href="{{ url_for('admin.universities') }}" class="btn btn-outline btn-sm">Clear</a>
+        {% endif %}
+      </form>
+      <a href="{{ url_for('admin.university_new') }}" class="btn btn-primary btn-sm">
+        <i class="bi bi-plus-lg"></i> New University
+      </a>
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>University</th>
+          <th>Location</th>
+          <th>Students</th>
+          <th>Coordinators</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in univs.items %}
+        <tr>
+          <td data-label="#">{{ u.id }}</td>
+          <td data-label="University">
+            <div style="display:flex;align-items:center;gap:10px">
+              {% if u.logo_filename %}
+                <img src="{{ url_for('static', filename='uploads/company/' + u.logo_filename) }}"
+                     alt="{{ u.name }}" style="width:36px;height:36px;border-radius:8px;object-fit:contain;border:1px solid var(--border);background:#fff">
+              {% else %}
+                <div style="width:36px;height:36px;border-radius:8px;background:var(--green-light);color:var(--green);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0">
+                  {{ u.name[0].upper() }}
+                </div>
+              {% endif %}
+              <div>
+                <a href="{{ url_for('admin.university_detail', univ_id=u.id) }}" style="font-weight:600;font-size:13px;color:var(--text)">{{ u.name }}</a>
+                {% if u.website %}<div style="font-size:11px;color:var(--text3)">{{ u.website }}</div>{% endif %}
+              </div>
+            </div>
+          </td>
+          <td data-label="Location">{{ u.location or '—' }}</td>
+          <td data-label="Students">
+            <span style="background:#f5f3ff;color:#7c3aed;padding:2px 8px;border-radius:10px;font-size:12px;font-weight:600">
+              {{ u.students.count() }}
+            </span>
+          </td>
+          <td data-label="Coordinators">
+            <span style="background:#eff6ff;color:#2563eb;padding:2px 8px;border-radius:10px;font-size:12px;font-weight:600">
+              {{ u.members.count() }}
+            </span>
+          </td>
+          <td data-label="Status">
+            {% if u.is_active %}
+              <span class="badge badge-hired" style="background:#d1fae5;color:#065f46">Active</span>
+            {% else %}
+              <span class="badge badge-rejected" style="background:#fee2e2;color:#991b1b">Inactive</span>
+            {% endif %}
+          </td>
+          <td data-label="Actions">
+            <a href="{{ url_for('admin.university_detail', univ_id=u.id) }}" class="btn btn-sm btn-outline"><i class="bi bi-eye"></i></a>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text3)">
+          <i class="bi bi-mortarboard" style="font-size:32px;display:block;margin-bottom:8px"></i>
+          No universities found.
+          <a href="{{ url_for('admin.university_new') }}" style="display:block;margin-top:8px">Add the first university →</a>
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  {% if univs.pages > 1 %}
+  <div style="padding:12px 20px;border-top:1px solid var(--border)">
+    <div class="pagination">
+      {% if univs.has_prev %}
+        <a href="{{ url_for('admin.universities', page=univs.prev_num, q=q_str, status=status_f) }}" class="page-link">«</a>
+      {% endif %}
+      {% for p in univs.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+        {% if p %}
+          <a href="{{ url_for('admin.universities', page=p, q=q_str, status=status_f) }}"
+             class="page-link {% if p == univs.page %}active{% endif %}">{{ p }}</a>
+        {% else %}
+          <span class="page-link" style="color:var(--text3)">…</span>
+        {% endif %}
+      {% endfor %}
+      {% if univs.has_next %}
+        <a href="{{ url_for('admin.universities', page=univs.next_num, q=q_str, status=status_f) }}" class="page-link">»</a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<style>
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600}
+.tbl th,.tbl td{padding:10px 14px;font-size:13px;color:var(--text)}
+.tbl th{background:#f8f9fa;border-bottom:2px solid var(--border);font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);font-weight:700}
+.tbl tbody tr:hover td{background:#f8fafb}
+.tbl td{border-bottom:1px solid var(--border)}
+.pagination{display:flex;gap:4px;flex-wrap:wrap}
+.page-link{padding:6px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;color:var(--text2);text-decoration:none;background:var(--card);transition:all .15s}
+.page-link:hover,.page-link.active{background:var(--green);color:#fff;border-color:var(--green);text-decoration:none}
+</style>
+{% endblock %}

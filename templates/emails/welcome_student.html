@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>University Coordinator Account Approved — MOF Jobs</title>
+<title>Welcome to MOF Jobs — Student Account</title>
 <style>
   body{margin:0;padding:0;background:#f0f4f8;font-family:'Segoe UI',Arial,sans-serif}
   .wrapper{max-width:580px;margin:32px auto;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #dde3ea;box-shadow:0 4px 16px rgba(0,0,0,.07)}
-  .header{background:linear-gradient(135deg,#1a2332 0%,#198754 100%);padding:32px 36px 28px}
+  .header{background:linear-gradient(135deg,#1a2332 0%,#7c3aed 100%);padding:32px 36px 28px}
   .header-logo{color:#fff;font-size:20px;font-weight:700;letter-spacing:-0.3px}
   .header-tagline{color:rgba(255,255,255,.65);font-size:13px;margin-top:4px}
-  .hero-banner{background:#f0fdf4;border-left:4px solid #198754;padding:18px 24px}
+  .hero-banner{background:#f5f3ff;border-left:4px solid #7c3aed;padding:18px 24px}
   .hero-icon{font-size:36px;margin-bottom:8px}
   .hero-title{font-size:22px;font-weight:700;color:#1a2332;margin:0}
   .body{padding:28px 36px}
@@ -23,14 +23,14 @@
   .cred-label{color:rgba(255,255,255,.6);font-size:13px}
   .cred-value{color:#fff;font-weight:600;font-size:14px;font-family:monospace;text-align:right;word-break:break-word}
   .warning-box{background:#fef9c3;border:1px solid #fde68a;border-radius:8px;padding:14px 18px;margin:16px 0;font-size:13px;color:#92400e;display:flex;gap:10px}
+  .cta-btn{display:inline-block;background:#7c3aed;color:#fff;text-decoration:none;padding:13px 28px;border-radius:7px;font-weight:600;font-size:14px;margin:8px 0}
   .perm-list{list-style:none;padding:0;margin:12px 0}
   .perm-list li{font-size:13px;color:#4a5568;padding:5px 0;display:flex;align-items:center;gap:8px}
-  .perm-list li::before{content:'✓';color:#198754;font-weight:700}
-  .cta-btn{display:inline-block;background:#198754;color:#fff;text-decoration:none;padding:13px 28px;border-radius:7px;font-weight:600;font-size:14px;margin:8px 0}
+  .perm-list li::before{content:'✓';color:#7c3aed;font-weight:700}
   .divider{height:1px;background:#edf2f7;margin:24px 0}
   .footer{background:#f8fafc;padding:16px 36px;border-top:1px solid #e2e8f0}
   .footer-text{font-size:11px;color:#a0aec0;line-height:1.6;text-align:center}
-  .footer-text a{color:#198754}
+  .footer-text a{color:#7c3aed}
 </style>
 </head>
 <body>
@@ -41,13 +41,14 @@
   </div>
   <div class="hero-banner">
     <div class="hero-icon">🎓</div>
-    <div class="hero-title">Your Coordinator Account is Active</div>
+    <div class="hero-title">Your Student Account is Ready</div>
   </div>
   <div class="body">
-    <p class="greeting">Dear <strong>{{ req.full_name.split()[0] }}</strong>,</p>
+    <p class="greeting">Dear <strong>{{ student.full_name.split()[0] }}</strong>,</p>
     <p class="text">
-      Congratulations! Your university coordinator account for <strong>{{ req.university_name }}</strong>
-      has been approved. You can now log in and start managing your students' internship applications.
+      Your student account on the MOF Engineering Jobs Portal has been created by
+      your university coordinator at <strong>{{ univ.name }}</strong>.
+      You can now browse and apply for internship opportunities.
     </p>
     <div class="credential-box">
       <div class="cred-title">Your Login Credentials</div>
@@ -57,26 +58,30 @@
       </div>
       <div class="cred-row">
         <span class="cred-label">Email / Username</span>
-        <span class="cred-value">{{ req.email }}</span>
+        <span class="cred-value">{{ student.email }}</span>
+      </div>
+      <div class="cred-row">
+        <span class="cred-label">Temporary Password</span>
+        <span class="cred-value">{{ temp_password }}</span>
       </div>
       <div class="cred-row">
         <span class="cred-label">University</span>
-        <span class="cred-value">{{ req.university_name }}</span>
+        <span class="cred-value">{{ univ.name }}</span>
       </div>
     </div>
     <div class="warning-box">
       <span style="font-size:18px">⚠️</span>
-      <span>Use the password you set during registration. If forgotten, contact <strong>admin@mof-eng.com</strong>.</span>
+      <span>Please <strong>change your password immediately</strong> after your first login.</span>
     </div>
-    <p class="text" style="font-weight:600;color:#1a2332;margin-bottom:8px">As a university coordinator, you can:</p>
+    <p class="text" style="font-weight:600;color:#1a2332;margin-bottom:8px">With your account, you can:</p>
     <ul class="perm-list">
-      <li>Register and manage your university's student accounts</li>
-      <li>View all internship applications submitted by your students</li>
-      <li>Track application statuses and interview progress</li>
-      <li>Communicate with the MOF Jobs team via messages</li>
+      <li>Browse and apply for internship positions</li>
+      <li>Track your application status in real time</li>
+      <li>View interview schedules and feedback</li>
+      <li>Build your profile and upload your CV</li>
     </ul>
     <div style="text-align:center;margin:24px 0">
-      <a href="{{ login_url }}" class="cta-btn">Log In to Your Portal &rarr;</a>
+      <a href="https://jobs.mof-eng.com/login" class="cta-btn">Log In &rarr;</a>
     </div>
     <div class="divider"></div>
     <div style="font-size:13px;color:#4a5568">
@@ -90,8 +95,7 @@
       <img src="https://mof-eng.com/wp-content/uploads/2025/05/cropped-MOF-LOGO-transparent--100x46.png"
            alt="MOF Engineering" width="72" style="display:block;margin:0 auto 12px;filter:brightness(0);opacity:.55"
            onerror="this.style.display='none'">
-      This email was sent to <strong>{{ req.email }}</strong>. If you did not apply, contact
-      <a href="mailto:admin@mof-eng.com">admin@mof-eng.com</a>.<br><br>
+      This email was sent to <strong>{{ student.email }}</strong>.<br>
       MOF Engineering Company · Slemani, Iraq · <a href="https://mof-eng.com">mof-eng.com</a>
     </div>
   </div>

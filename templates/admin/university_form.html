@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block title %}New University — Admin — MOF Jobs{% endblock %}
+{% block page_title %}New University{% endblock %}
+
+{% block content %}
+<div style="max-width:600px;margin:0 auto">
+  <div class="card" style="padding:28px 32px">
+    <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:20px;display:flex;align-items:center;gap:10px">
+      <div style="width:40px;height:40px;border-radius:10px;background:var(--green-light);color:var(--green);display:flex;align-items:center;justify-content:center;font-size:18px"><i class="bi bi-mortarboard-fill"></i></div>
+      Create University
+    </div>
+    <form method="POST" enctype="multipart/form-data">
+      <div style="display:grid;gap:16px">
+        <div>
+          <label class="form-label">University Name <span style="color:#dc2626">*</span></label>
+          <input name="name" class="form-control" required placeholder="e.g. University of Sulaymaniyah">
+        </div>
+        <div>
+          <label class="form-label">Location</label>
+          <input name="location" class="form-control" placeholder="City, Country">
+        </div>
+        <div>
+          <label class="form-label">Website</label>
+          <input name="website" class="form-control" placeholder="https://…" type="url">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div>
+            <label class="form-label">Contact Email</label>
+            <input name="contact_email" class="form-control" type="email">
+          </div>
+          <div>
+            <label class="form-label">Contact Phone</label>
+            <input name="contact_phone" class="form-control">
+          </div>
+        </div>
+        <div>
+          <label class="form-label">Description</label>
+          <textarea name="description" class="form-control" rows="4" style="resize:vertical"></textarea>
+        </div>
+        <div>
+          <label class="form-label">Logo</label>
+          <input type="file" name="logo" class="form-control" accept=".png,.jpg,.jpeg,.webp">
+        </div>
+        <div>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+            <input type="checkbox" name="is_active" value="1" checked> Active
+          </label>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:24px;padding-top:18px;border-top:1px solid var(--border)">
+        <button type="submit" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Create University</button>
+        <a href="{{ url_for('admin.universities') }}" class="btn btn-outline">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+.form-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);display:block;margin-bottom:6px}
+</style>
+{% endblock %}

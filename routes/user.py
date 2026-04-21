@@ -6,7 +6,7 @@ from flask_login import login_required, current_user
 from sqlalchemy import or_, and_, func
 from models import (db, Position, Application, ApplicationHistory, Interview,
                     SavedJob, CompanyFollow, Message, User, CompanyMember, ROLE_ADMIN,
-                    SOURCES, STATUS_NEW, STATUS_REVIEW, STATUS_INTERVIEW,
+                    SOURCES, SALARY_RANGES, STATUS_NEW, STATUS_REVIEW, STATUS_INTERVIEW,
                     STATUS_OFFER, STATUS_HIRED, ALL_STATUSES)
 from helpers import save_cv, allowed_file, send_email, push_notification, log_audit
 from datetime import datetime
@@ -133,7 +133,8 @@ def apply(pos_id):
         if cv_file and cv_file.filename:
             if not allowed_file(cv_file.filename):
                 flash('CV must be PDF, DOC, or DOCX.', 'danger')
-                return render_template('user/apply.html', pos=pos, SOURCES=SOURCES)
+                return render_template('user/apply.html', pos=pos, SOURCES=SOURCES,
+                                       SALARY_RANGES=SALARY_RANGES)
             cv_stored, cv_original = save_cv(cv_file)
 
         application = Application(
@@ -188,7 +189,6 @@ def apply(pos_id):
         else:
             supervisors = []
         staff_recipients = supervisors
-        staff_recipients.extend(supervisors)
         for staff in staff_recipients:
             staff_review_url = review_url
             if staff.role == ROLE_SUPERVISOR:
@@ -209,7 +209,7 @@ def apply(pos_id):
         flash(f'Your application for "{pos.title}" has been submitted!', 'success')
         return redirect(url_for('user.my_applications'))
 
-    return render_template('user/apply.html', pos=pos, SOURCES=SOURCES)
+    return render_template('user/apply.html', pos=pos, SOURCES=SOURCES, SALARY_RANGES=SALARY_RANGES)
 
 
 @user_bp.route('/save/<int:pos_id>', methods=['POST'])

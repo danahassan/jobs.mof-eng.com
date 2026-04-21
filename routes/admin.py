@@ -633,14 +633,18 @@ def users():
     kpi_admins     = User.query.filter_by(role=ROLE_ADMIN).count()
     kpi_supervisors= User.query.filter_by(role=ROLE_SUPERVISOR).count()
     kpi_users      = User.query.filter_by(role=ROLE_USER).count()
+    kpi_students   = User.query.filter_by(role=ROLE_STUDENT).count()
+    kpi_coordinators = User.query.filter_by(role=ROLE_UNIVERSITY_COORD).count()
     kpi_active     = User.query.filter_by(is_active=True).count()
     kpi_inactive   = User.query.filter_by(is_active=False).count()
 
     return render_template('admin/users.html', users=users_paged,
                            q_str=q_str, roles_f=roles_f, status_f=status_f,
-                           ROLES=[ROLE_ADMIN, ROLE_SUPERVISOR, ROLE_USER],
+                           ROLES=[ROLE_ADMIN, ROLE_SUPERVISOR, ROLE_USER,
+                                  ROLE_STUDENT, ROLE_UNIVERSITY_COORD],
                            kpi_total=kpi_total, kpi_admins=kpi_admins,
                            kpi_supervisors=kpi_supervisors, kpi_users=kpi_users,
+                           kpi_students=kpi_students, kpi_coordinators=kpi_coordinators,
                            kpi_active=kpi_active, kpi_inactive=kpi_inactive)
 
 
@@ -706,7 +710,8 @@ def user_new():
         flash(f'User {user.full_name} created.', 'success')
         return redirect(url_for('admin.users'))
     return render_template('admin/user_form.html', user=None,
-                           ROLES=[ROLE_ADMIN, ROLE_SUPERVISOR, ROLE_USER])
+                           ROLES=[ROLE_ADMIN, ROLE_SUPERVISOR, ROLE_USER,
+                                  ROLE_STUDENT, ROLE_UNIVERSITY_COORD])
 
 
 @admin_bp.route('/users/<int:user_id>/edit', methods=['GET', 'POST'])
@@ -824,7 +829,8 @@ def user_edit(user_id):
         flash('User updated.', 'success')
         return redirect(url_for('admin.users'))
     return render_template('admin/user_form.html', user=user,
-                           ROLES=[ROLE_ADMIN, ROLE_SUPERVISOR, ROLE_USER],
+                           ROLES=[ROLE_ADMIN, ROLE_SUPERVISOR, ROLE_USER,
+                                  ROLE_STUDENT, ROLE_UNIVERSITY_COORD],
                            LANG_LEVELS=LANG_LEVELS)
 
 
@@ -1729,3 +1735,171 @@ def university_request_edit(req_id):
     db.session.commit()
     flash('Request updated.', 'success')
     return redirect(url_for('admin.university_request_detail', req_id=req_id))
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# UNIVERSITIES
+# ─────────────────────────────────────────────────────────────────────────────
+
+@admin_bp.route('/universities')
+@admin_required
+def universities():
+    q_str    = request.args.get('q', '').strip()
+    status_f = request.args.get('status', '')
+    page     = request.args.get('page', 1, type=int)
+
+    q = University.query
+    if q_str:
+        q = q.filter(University.name.ilike(f'%{q_str}%'))
+    if status_f == 'active':
+        q = q.filter_by(is_active=True)
+    elif status_f == 'inactive':
+        q = q.filter_by(is_active=False)
+
+    univs = q.order_by(University.name).paginate(page=page, per_page=20, error_out=False)
+
+    kpi_total    = University.query.count()
+    kpi_active   = University.query.filter_by(is_active=True).count()
+    kpi_students = User.query.filter_by(role=ROLE_STUDENT).count()
+    kpi_coords   = User.query.filter_by(role=ROLE_UNIVERSITY_COORD).count()
+
+    return render_template('admin/universities.html',
+        univs=univs, q_str=q_str, status_f=status_f,
+        kpi_total=kpi_total, kpi_active=kpi_active,
+        kpi_students=kpi_students, kpi_coords=kpi_coords)
+
+
+@admin_bp.route('/universities/<int:univ_id>')
+@admin_required
+def university_detail(univ_id):
+    univ   = db.get_or_404(University, univ_id)
+    coords = (UniversityMember.query
+              .filter_by(university_id=univ_id)
+              .all())
+    students  = User.query.filter_by(university_id=univ_id, role=ROLE_STUDENT).all()
+    available_coords = User.query.filter_by(role=ROLE_UNIVERSITY_COORD, is_active=True).all()
+    assigned_ids = {m.user_id for m in coords}
+    available_coords = [c for c in available_coords if c.id not in assigned_ids]
+
+    # Internship applications for this university's students
+    student_ids = [s.id for s in students]
+    from sqlalchemy import func as _func
+    internship_count = 0
+    if student_ids:
+        internship_count = (Application.query
+            .join(Application.position)
+            .filter(Application.applicant_id.in_(student_ids),
+                    Position.type == 'Internship')
+            .count())
+
+    return render_template('admin/university_detail.html',
+        univ=univ, coords=coords, students=students,
+        available_coords=available_coords,
+        internship_count=internship_count)
+
+
+@admin_bp.route('/universities/<int:univ_id>/edit', methods=['POST'])
+@admin_required
+def university_edit(univ_id):
+    univ = db.get_or_404(University, univ_id)
+    univ.name          = request.form.get('name', univ.name).strip()
+    univ.description   = request.form.get('description', '').strip() or None
+    univ.location      = request.form.get('location', '').strip() or None
+    univ.website       = request.form.get('website', '').strip() or None
+    univ.contact_email = request.form.get('contact_email', '').strip() or None
+    univ.contact_phone = request.form.get('contact_phone', '').strip() or None
+    univ.is_active     = bool(request.form.get('is_active'))
+
+    logo = request.files.get('logo')
+    if logo and logo.filename:
+        try:
+            univ.logo_filename = save_company_image(logo)
+        except ValueError as e:
+            flash(str(e), 'warning')
+
+    _audit('university.edit', univ.name)
+    db.session.commit()
+    flash('University updated.', 'success')
+    return redirect(url_for('admin.university_detail', univ_id=univ_id))
+
+
+@admin_bp.route('/universities/<int:univ_id>/delete', methods=['POST'])
+@admin_required
+def university_delete(univ_id):
+    univ = db.get_or_404(University, univ_id)
+    name = univ.name
+    # Unlink students
+    User.query.filter_by(university_id=univ_id).update({'university_id': None})
+    db.session.delete(univ)
+    _audit('university.delete', name)
+    db.session.commit()
+    flash(f'University "{name}" deleted.', 'success')
+    return redirect(url_for('admin.universities'))
+
+
+@admin_bp.route('/universities/new', methods=['GET', 'POST'])
+@admin_required
+def university_new():
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        if not name:
+            flash('University name is required.', 'danger')
+            return redirect(url_for('admin.university_new'))
+        univ = University(
+            name          = name,
+            description   = request.form.get('description', '').strip() or None,
+            location      = request.form.get('location', '').strip() or None,
+            website       = request.form.get('website', '').strip() or None,
+            contact_email = request.form.get('contact_email', '').strip() or None,
+            contact_phone = request.form.get('contact_phone', '').strip() or None,
+            is_active     = bool(request.form.get('is_active', True)),
+            created_by    = current_user.id,
+        )
+        univ.save_slug()
+        logo = request.files.get('logo')
+        if logo and logo.filename:
+            try:
+                univ.logo_filename = save_company_image(logo)
+            except ValueError as e:
+                flash(str(e), 'warning')
+        db.session.add(univ)
+        _audit('university.create', univ.name)
+        db.session.commit()
+        flash(f'University "{univ.name}" created.', 'success')
+        return redirect(url_for('admin.university_detail', univ_id=univ.id))
+    return render_template('admin/university_form.html', univ=None)
+
+
+@admin_bp.route('/universities/<int:univ_id>/coordinators/add', methods=['POST'])
+@admin_required
+def university_coordinator_add(univ_id):
+    univ    = db.get_or_404(University, univ_id)
+    user_id = request.form.get('user_id', type=int)
+    if not user_id:
+        flash('Select a coordinator.', 'danger')
+        return redirect(url_for('admin.university_detail', univ_id=univ_id))
+    coord = db.get_or_404(User, user_id)
+    existing = UniversityMember.query.filter_by(
+        university_id=univ_id, user_id=user_id).first()
+    if not existing:
+        db.session.add(UniversityMember(
+            university_id=univ_id, user_id=user_id, role='coordinator'))
+    coord.university_id = univ_id
+    _audit('university.coordinator_add', f'{coord.full_name} → {univ.name}')
+    db.session.commit()
+    flash(f'{coord.full_name} added as coordinator.', 'success')
+    return redirect(url_for('admin.university_detail', univ_id=univ_id))
+
+
+@admin_bp.route('/universities/<int:univ_id>/coordinators/<int:user_id>/remove',
+                methods=['POST'])
+@admin_required
+def university_coordinator_remove(univ_id, user_id):
+    univ   = db.get_or_404(University, univ_id)
+    member = UniversityMember.query.filter_by(
+        university_id=univ_id, user_id=user_id).first_or_404()
+    db.session.delete(member)
+    _audit('university.coordinator_remove', f'user#{user_id} ← {univ.name}')
+    db.session.commit()
+    flash('Coordinator removed.', 'success')
+    return redirect(url_for('admin.university_detail', univ_id=univ_id))

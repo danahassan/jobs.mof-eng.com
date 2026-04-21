@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Edit' if student else 'Add' }} Student — MOF Jobs{% endblock %}
+{% block page_title %}{{ 'Edit' if student else 'Add' }} Student{% endblock %}
+
+{% block content %}
+<div style="max-width:580px;margin:0 auto">
+  <div class="card" style="padding:28px 32px">
+    <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:20px;display:flex;align-items:center;gap:10px">
+      <div style="width:40px;height:40px;border-radius:10px;background:var(--green-light);color:var(--green);display:flex;align-items:center;justify-content:center;font-size:18px">
+        <i class="bi bi-person-{% if student %}fill{% else %}plus-fill{% endif %}"></i>
+      </div>
+      {{ 'Edit Student' if student else 'Add Student' }}
+    </div>
+
+    <form method="POST">
+      <div style="display:grid;gap:16px">
+        <div>
+          <label class="sf-label">Full Name <span style="color:#dc2626">*</span></label>
+          <input name="full_name" class="form-control" required
+                 value="{{ student.full_name if student else '' }}"
+                 placeholder="e.g. Ahmed Mohammed">
+        </div>
+
+        {% if not student %}
+        <div>
+          <label class="sf-label">Email Address <span style="color:#dc2626">*</span></label>
+          <input name="email" class="form-control" type="email" required
+                 placeholder="student@university.edu">
+          <div style="font-size:11px;color:var(--text3);margin-top:4px">
+            If this email already has a student account it will be linked to your university.
+          </div>
+        </div>
+        {% endif %}
+
+        <div>
+          <label class="sf-label">Phone</label>
+          <input name="phone" class="form-control"
+                 value="{{ student.phone if student else '' }}" placeholder="+964…">
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div>
+            <label class="sf-label">Major / Field of Study</label>
+            <input name="university_major" class="form-control"
+                   value="{{ student.university_major if student else '' }}"
+                   placeholder="Computer Science">
+          </div>
+          <div>
+            <label class="sf-label">GPA</label>
+            <input name="student_gpa" class="form-control"
+                   value="{{ student.student_gpa if student else '' }}"
+                   placeholder="e.g. 3.8 / 4.0">
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div>
+            <label class="sf-label">Graduation Year</label>
+            <input name="graduation_year" class="form-control" type="number"
+                   value="{{ student.graduation_year if student else '' }}"
+                   min="2020" max="2035" placeholder="2026">
+          </div>
+          <div>
+            <label class="sf-label">Student ID Number</label>
+            <input name="student_id_number" class="form-control"
+                   value="{{ student.student_id_number if student else '' }}"
+                   placeholder="e.g. STU-2023-001">
+          </div>
+        </div>
+
+        {% if student %}
+        <div>
+          <label class="sf-label">New Password <span style="color:var(--text3);font-weight:400;text-transform:none">(leave blank to keep current)</span></label>
+          <input name="new_password" class="form-control" type="password" autocomplete="new-password">
+        </div>
+        {% endif %}
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:24px;padding-top:18px;border-top:1px solid var(--border)">
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-check-lg"></i> {{ 'Save Changes' if student else 'Add Student' }}
+        </button>
+        <a href="{{ url_for('university.students') }}" class="btn btn-outline">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+.sf-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);display:block;margin-bottom:6px}
+@media(max-width:480px){
+  div[style*="grid-template-columns:1fr 1fr"]{grid-template-columns:1fr!important}
+}
+</style>
+{% endblock %}

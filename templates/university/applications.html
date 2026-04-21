@@ -16,6 +16,14 @@
 @media(min-width:769px){.ua-cards{display:none}}
 </style>
 
+<!-- Header -->
+<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px">
+  <div style="font-size:18px;font-weight:700;color:var(--text)">Internship Applications</div>
+  <a href="{{ url_for('university.application_new') }}" class="btn btn-primary btn-sm">
+    <i class="bi bi-plus-lg"></i> Submit Application
+  </a>
+</div>
+
 <!-- KPI Strip -->
 <div class="kpi-strip">
   <div class="kpi-card">
