@@ -141,6 +141,7 @@ def send_email(to, subject, html_body, attachment_path=None, attachment_name=Non
         s.starttls(context=context)
         s.login(cfg['MAIL_USERNAME'], cfg['MAIL_PASSWORD'])
         s.sendmail(cfg['MAIL_USERNAME'], to, msg.as_string())
+    log_audit('email.send', f'{subject} → {to}')
 
 
 def log_history(application, changed_by, new_status=None, note=None, is_internal=False):
