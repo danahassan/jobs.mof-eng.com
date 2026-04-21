@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html><body style="font-family:sans-serif;color:#0f1923;max-width:600px;margin:0 auto;padding:20px">
+<h2 style="color:#198754">New University Coordinator Request</h2>
+<p>Hi {{ admin_name }},</p>
+<p>A new university coordinator application has been submitted and needs your review.</p>
+<table style="width:100%;border-collapse:collapse;margin:16px 0;font-size:14px">
+  <tr><td style="padding:8px 0;color:#6b7280;width:130px">Name</td><td style="padding:8px 0;font-weight:600">{{ req.full_name }}</td></tr>
+  <tr><td style="padding:8px 0;color:#6b7280">Email</td><td style="padding:8px 0">{{ req.email }}</td></tr>
+  <tr><td style="padding:8px 0;color:#6b7280">University</td><td style="padding:8px 0;font-weight:600">{{ req.university_name }}</td></tr>
+  <tr><td style="padding:8px 0;color:#6b7280">Location</td><td style="padding:8px 0">{{ req.university_location or '—' }}</td></tr>
+</table>
+<a href="{{ review_url }}" style="display:inline-block;background:#198754;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700">Review Request</a>
+<p style="margin-top:20px;font-size:12px;color:#9ca3af">MOF Jobs · University Coordinator Portal</p>
+</body></html>

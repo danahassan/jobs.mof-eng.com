@@ -504,6 +504,10 @@ html.dark select.form-control option{background:#1e293b}
           <i class="bi bi-person-badge-fill"></i> Sup. Requests
           {% if pending_sup_requests %}<span class="nav-badge">{{ pending_sup_requests }}</span>{% endif %}
         </a>
+        <a href="{{ url_for('admin.university_requests') }}" class="nav-item {% if 'university_request' in request.endpoint %}active{% endif %}" onclick="closeSidebar()">
+          <i class="bi bi-mortarboard-fill"></i> Univ. Requests
+          {% if pending_univ_requests %}<span class="nav-badge">{{ pending_univ_requests }}</span>{% endif %}
+        </a>
         <a href="{{ url_for('messages.inbox') }}" class="nav-item {% if request.blueprint == 'messages' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-chat-dots-fill"></i> Messages{% if unread_count %}<span class="nav-badge">{{ unread_count }}</span>{% endif %}</a>
         <a href="{{ url_for('admin.audit_trail') }}" class="nav-item {% if request.endpoint == 'admin.audit_trail' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-clock-history"></i> Audit Trail</a>
         <a href="{{ url_for('admin.settings') }}" class="nav-item {% if request.endpoint == 'admin.settings' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-gear-fill"></i> Settings</a>
@@ -531,12 +535,20 @@ html.dark select.form-control option{background:#1e293b}
         <a href="{{ url_for('companies.listing') }}" class="nav-item {% if request.blueprint == 'companies' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-building"></i> Companies</a>
         <a href="{{ url_for('messages.inbox') }}" class="nav-item {% if request.blueprint == 'messages' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-chat-dots-fill"></i> Messages{% if unread_count %}<span class="nav-badge">{{ unread_count }}</span>{% endif %}</a>
 
+      {% elif current_user.role == ROLE_UNIVERSITY_COORD %}
+        <div class="nav-section">University Portal</div>
+        <a href="{{ url_for('university.dashboard') }}" class="nav-item {% if request.endpoint == 'university.dashboard' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
+        <a href="{{ url_for('university.students') }}" class="nav-item {% if request.endpoint == 'university.students' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-people-fill"></i> Students</a>
+        <a href="{{ url_for('university.applications') }}" class="nav-item {% if request.blueprint == 'university' and 'application' in request.endpoint %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-collection-fill"></i> Internship Apps</a>
+        <div class="nav-section">Other</div>
+        <a href="{{ url_for('messages.inbox') }}" class="nav-item {% if request.blueprint == 'messages' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-chat-dots-fill"></i> Messages{% if unread_count %}<span class="nav-badge">{{ unread_count }}</span>{% endif %}</a>
+
       {% else %}
-        <div class="nav-section">Careers</div>
+        <div class="nav-section">{% if current_user.role == ROLE_STUDENT %}Internship{% else %}Careers{% endif %}</div>
         <a href="{{ url_for('user.dashboard') }}" class="nav-item {% if request.endpoint == 'user.dashboard' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
-        <a href="{{ url_for('jobs.listing') }}" class="nav-item {% if request.blueprint == 'jobs' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-search"></i> Browse Jobs</a>
+        <a href="{{ url_for('jobs.listing') }}" class="nav-item {% if request.blueprint == 'jobs' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-search"></i> {% if current_user.role == ROLE_STUDENT %}Browse Internships{% else %}Browse Jobs{% endif %}</a>
         <a href="{{ url_for('user.my_applications') }}" class="nav-item {% if request.endpoint == 'user.my_applications' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-collection-fill"></i> My Applications</a>
-        <a href="{{ url_for('user.saved_jobs') }}" class="nav-item {% if request.endpoint == 'user.saved_jobs' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-bookmark-fill"></i> Saved Jobs</a>
+        <a href="{{ url_for('user.saved_jobs') }}" class="nav-item {% if request.endpoint == 'user.saved_jobs' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-bookmark-fill"></i> Saved</a>
         <a href="{{ url_for('analytics.candidate') }}" class="nav-item {% if request.endpoint == 'analytics.candidate' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-bar-chart-fill"></i> My Analytics</a>
         <div class="nav-section">Discover</div>
         <a href="{{ url_for('companies.listing') }}" class="nav-item {% if request.blueprint == 'companies' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-building"></i> Companies</a>

@@ -1,0 +1,10 @@
+<!DOCTYPE html>
+<html><body style="font-family:sans-serif;color:#0f1923;max-width:600px;margin:0 auto;padding:20px">
+<h2 style="color:#198754">Your Application Has Been Approved!</h2>
+<p>Hi {{ req.full_name.split()[0] }},</p>
+<p>We're pleased to inform you that your university coordinator account for <strong>{{ req.university_name }}</strong> has been approved.</p>
+<p>You can now log in and start managing student internship applications.</p>
+<a href="{{ login_url }}" style="display:inline-block;background:#198754;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700;margin:16px 0">Sign In</a>
+<p style="font-size:13px;color:#6b7280">Use your registered email address: <strong>{{ req.email }}</strong></p>
+<p style="margin-top:20px;font-size:12px;color:#9ca3af">MOF Jobs · University Internship Portal</p>
+</body></html>

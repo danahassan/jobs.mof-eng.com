@@ -13,7 +13,8 @@ from flask import current_app, abort
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 
-from models import ApplicationHistory, ROLE_ADMIN, ROLE_SUPERVISOR
+from models import (ApplicationHistory, ROLE_ADMIN, ROLE_SUPERVISOR,
+                    ROLE_UNIVERSITY_COORD)
 
 
 def allowed_file(filename):
@@ -178,6 +179,16 @@ def supervisor_or_admin_required(f):
     @login_required
     def decorated(*args, **kwargs):
         if current_user.role not in (ROLE_ADMIN, ROLE_SUPERVISOR):
+            abort(403)
+        return f(*args, **kwargs)
+    return decorated
+
+
+def university_coordinator_required(f):
+    @wraps(f)
+    @login_required
+    def decorated(*args, **kwargs):
+        if current_user.role not in (ROLE_ADMIN, ROLE_UNIVERSITY_COORD):
             abort(403)
         return f(*args, **kwargs)
     return decorated

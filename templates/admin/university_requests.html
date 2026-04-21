@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+{% block title %}University Requests — MOF Jobs{% endblock %}
+{% block page_title %}University Requests{% endblock %}
+
+{% block content %}
+<style>
+@media(max-width:768px){
+  .ur-table-wrap{display:none}
+  .ur-cards{display:flex;flex-direction:column;gap:12px}
+  .ur-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow)}
+  .ur-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px}
+  .ur-card-name{font-size:15px;font-weight:700;color:var(--text)}
+  .ur-card-univ{font-size:12px;color:var(--text2);margin-top:2px}
+  .ur-card-meta{display:flex;flex-wrap:wrap;gap:8px;font-size:12px;color:var(--text3);margin-top:8px}
+}
+@media(min-width:769px){.ur-cards{display:none}}
+</style>
+
+<div class="kpi-strip">
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#eff6ff;color:#2563eb"><i class="bi bi-inbox-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_total }}</div><div class="kpi-lbl">Total</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#fef3c7;color:#d97706"><i class="bi bi-hourglass-split"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_pending }}</div><div class="kpi-lbl">Pending</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#e8f5ee;color:#198754"><i class="bi bi-check-circle-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_approved }}</div><div class="kpi-lbl">Approved</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#fee2e2;color:#dc2626"><i class="bi bi-x-circle-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_rejected }}</div><div class="kpi-lbl">Rejected</div></div>
+  </div>
+</div>
+
+<div class="section-header">
+  <span class="text-muted text-sm">{{ requests.total }} request{{ 's' if requests.total != 1 }}</span>
+</div>
+
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+  {% for slug, label in [('','All'),('pending','Pending'),('approved','Approved'),('rejected','Rejected')] %}
+  <a href="{{ url_for('admin.university_requests', status=slug) }}"
+     class="btn btn-sm {{ 'btn-primary' if status_f == slug else 'btn-outline' }}">{{ label }}</a>
+  {% endfor %}
+</div>
+
+<!-- Desktop table -->
+<div class="table-card ur-table-wrap">
+  <div class="table-responsive">
+    <table class="tbl">
+      <thead>
+        <tr><th>#</th><th>Date</th><th>Name</th><th>Email</th><th>University</th><th>Status</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for r in requests.items %}
+        <tr>
+          <td class="text-muted">#{{ r.id }}</td>
+          <td class="text-muted" style="white-space:nowrap">{{ (r.created_at | localdt).strftime('%d %b %Y') }}</td>
+          <td style="font-weight:600">{{ r.full_name }}</td>
+          <td class="text-muted">{{ r.email }}</td>
+          <td>{{ r.university_name }}</td>
+          <td>
+            {% if r.status == 'pending' %}
+              <span class="badge" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d">Pending</span>
+            {% elif r.status == 'approved' %}
+              <span class="badge badge-active">Approved</span>
+            {% else %}
+              <span class="badge badge-inactive">Rejected</span>
+            {% endif %}
+          </td>
+          <td>
+            <a href="{{ url_for('admin.university_request_detail', req_id=r.id) }}" class="btn btn-outline btn-sm">
+              <i class="bi bi-eye"></i> Review
+            </a>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7"><div class="empty-state"><i class="bi bi-inbox"></i> No requests found.</div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Mobile cards -->
+<div class="ur-cards">
+  {% for r in requests.items %}
+  <div class="ur-card">
+    <div class="ur-card-top">
+      <div>
+        <div class="ur-card-name">{{ r.full_name }}</div>
+        <div class="ur-card-univ"><i class="bi bi-mortarboard"></i> {{ r.university_name }}</div>
+      </div>
+      {% if r.status == 'pending' %}
+        <span class="badge" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d;flex-shrink:0">Pending</span>
+      {% elif r.status == 'approved' %}
+        <span class="badge badge-active" style="flex-shrink:0">Approved</span>
+      {% else %}
+        <span class="badge badge-inactive" style="flex-shrink:0">Rejected</span>
+      {% endif %}
+    </div>
+    <div class="ur-card-meta">
+      <span><i class="bi bi-envelope"></i> {{ r.email }}</span>
+      <span><i class="bi bi-calendar3"></i> {{ (r.created_at | localdt).strftime('%d %b %Y') }}</span>
+    </div>
+    <div style="margin-top:12px">
+      <a href="{{ url_for('admin.university_request_detail', req_id=r.id) }}" class="btn btn-outline btn-sm" style="width:100%;justify-content:center">
+        <i class="bi bi-eye"></i> Review Request
+      </a>
+    </div>
+  </div>
+  {% else %}
+  <div class="empty-state"><i class="bi bi-inbox"></i> No requests found.</div>
+  {% endfor %}
+</div>
+
+{% if requests.pages > 1 %}
+<div class="pagination">
+  <a href="{{ url_for('admin.university_requests', page=requests.prev_num, status=status_f) }}"
+     class="page-link {% if not requests.has_prev %}disabled{% endif %}"><i class="bi bi-chevron-left"></i></a>
+  {% for p in requests.iter_pages() %}
+    {% if p %}
+      <a href="{{ url_for('admin.university_requests', page=p, status=status_f) }}"
+         class="page-link {% if p == requests.page %}active{% endif %}">{{ p }}</a>
+    {% else %}<span class="page-link">…</span>{% endif %}
+  {% endfor %}
+  <a href="{{ url_for('admin.university_requests', page=requests.next_num, status=status_f) }}"
+     class="page-link {% if not requests.has_next %}disabled{% endif %}"><i class="bi bi-chevron-right"></i></a>
+</div>
+{% endif %}
+{% endblock %}

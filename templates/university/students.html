@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% block title %}Students — {{ univ.name if univ else 'All' }} — MOF Jobs{% endblock %}
+{% block page_title %}Students{% endblock %}
+
+{% block content %}
+<style>
+@media(max-width:768px){
+  .st-table-wrap{display:none}
+  .st-cards{display:flex;flex-direction:column;gap:12px}
+  .st-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow)}
+  .st-card-name{font-size:15px;font-weight:700;color:var(--text)}
+  .st-card-meta{display:flex;flex-wrap:wrap;gap:8px;font-size:12px;color:var(--text3);margin-top:8px}
+}
+@media(min-width:769px){.st-cards{display:none}}
+</style>
+
+<!-- Search bar -->
+<form method="GET" style="margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap">
+  <div style="position:relative;flex:1;min-width:220px">
+    <i class="bi bi-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:13px"></i>
+    <input type="text" name="q" class="form-control" placeholder="Search by name, email or major…"
+           value="{{ search }}" style="padding-left:32px">
+  </div>
+  <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-funnel"></i> Search</button>
+  {% if search %}<a href="{{ url_for('university.students') }}" class="btn btn-outline btn-sm">Reset</a>{% endif %}
+</form>
+
+<div class="section-header" style="margin-bottom:12px">
+  <span class="text-muted text-sm">{{ students.total }} student{{ 's' if students.total != 1 }}</span>
+</div>
+
+<!-- Desktop table -->
+<div class="table-card st-table-wrap">
+  <div class="table-responsive">
+    <table class="tbl">
+      <thead>
+        <tr><th>#</th><th>Name</th><th>Email</th><th>Major</th><th>University</th><th>GPA</th><th>Grad. Year</th></tr>
+      </thead>
+      <tbody>
+        {% for s in students.items %}
+        <tr>
+          <td data-label="#">{{ s.id }}</td>
+          <td data-label="Name" style="font-weight:600">{{ s.full_name }}</td>
+          <td data-label="Email" class="text-muted">{{ s.email }}</td>
+          <td data-label="Major" class="text-muted">{{ s.university_major or '—' }}</td>
+          <td data-label="University" class="text-muted">{{ s.university_name or (s.university.name if s.university else '—') }}</td>
+          <td data-label="GPA" class="text-muted">{{ s.student_gpa or '—' }}</td>
+          <td data-label="Grad. Year" class="text-muted">{{ s.graduation_year or '—' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7"><div class="empty-state"><i class="bi bi-people"></i> No students found.</div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Mobile cards -->
+<div class="st-cards">
+  {% for s in students.items %}
+  <div class="st-card">
+    <div class="st-card-name">{{ s.full_name }}</div>
+    <div class="st-card-meta">
+      <span><i class="bi bi-envelope"></i> {{ s.email }}</span>
+      {% if s.university_major %}<span><i class="bi bi-book"></i> {{ s.university_major }}</span>{% endif %}
+      {% if s.student_gpa %}<span><i class="bi bi-award"></i> GPA {{ s.student_gpa }}</span>{% endif %}
+      {% if s.graduation_year %}<span><i class="bi bi-calendar3"></i> {{ s.graduation_year }}</span>{% endif %}
+    </div>
+  </div>
+  {% else %}
+  <div class="empty-state"><i class="bi bi-people"></i> No students found.</div>
+  {% endfor %}
+</div>
+
+{% if students.pages > 1 %}
+<div class="pagination">
+  <a href="{{ url_for('university.students', page=students.prev_num, q=search) }}"
+     class="page-link {% if not students.has_prev %}disabled{% endif %}"><i class="bi bi-chevron-left"></i></a>
+  {% for p in students.iter_pages() %}
+    {% if p %}
+      <a href="{{ url_for('university.students', page=p, q=search) }}"
+         class="page-link {% if p == students.page %}active{% endif %}">{{ p }}</a>
+    {% else %}<span class="page-link">…</span>{% endif %}
+  {% endfor %}
+  <a href="{{ url_for('university.students', page=students.next_num, q=search) }}"
+     class="page-link {% if not students.has_next %}disabled{% endif %}"><i class="bi bi-chevron-right"></i></a>
+</div>
+{% endif %}
+{% endblock %}

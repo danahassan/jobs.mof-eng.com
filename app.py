@@ -8,8 +8,9 @@ from flask_login import (LoginManager, login_user, logout_user,
 
 from config import config
 from models import (db, User, Message, Notification, Position, Application, ApplicationHistory,
-                    Interview, CompanyMember, SupervisorRequest,
+                    Interview, CompanyMember, SupervisorRequest, UniversityRequest,
                     ROLE_ADMIN, ROLE_SUPERVISOR, ROLE_USER, ROLE_EMPLOYER,
+                    ROLE_STUDENT, ROLE_UNIVERSITY_COORD,
                     ALL_STATUSES, SOURCES, SALARY_RANGES, STATUS_NEW)
 
 # ─── APP FACTORY ──────────────────────────────────────────────────────────────
@@ -89,6 +90,8 @@ def create_app(config_name=None):
     from routes.analytics         import analytics_bp
     from routes.api               import api_bp
     from routes.supervisor_apply  import supervisor_apply_bp
+    from routes.university_apply  import university_apply_bp
+    from routes.university        import university_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(admin_bp,             url_prefix='/admin')
@@ -104,6 +107,8 @@ def create_app(config_name=None):
     app.register_blueprint(analytics_bp,         url_prefix='/analytics')
     app.register_blueprint(api_bp,               url_prefix='/api/v1')
     app.register_blueprint(supervisor_apply_bp)
+    app.register_blueprint(university_apply_bp)
+    app.register_blueprint(university_bp,        url_prefix='/university')
 
     # Root redirect
     @app.route('/')
@@ -147,6 +152,8 @@ def create_app(config_name=None):
             return redirect(url_for('supervisor.dashboard'))
         elif current_user.role == ROLE_EMPLOYER:
             return redirect(url_for('employer.dashboard'))
+        elif current_user.role == ROLE_UNIVERSITY_COORD:
+            return redirect(url_for('university.dashboard'))
         return redirect(url_for('user.dashboard'))
 
     # Context processor — available in all templates
@@ -156,6 +163,7 @@ def create_app(config_name=None):
         unread_notifications = 0
         managed_companies = []
         pending_sup_requests = 0
+        pending_univ_requests = 0
         if current_user.is_authenticated:
             unread_messages = (Message.query
                                .filter_by(receiver_id=current_user.id, is_read=False)
@@ -171,6 +179,9 @@ def create_app(config_name=None):
                 pending_sup_requests = (SupervisorRequest.query
                                         .filter_by(status='pending')
                                         .count())
+                pending_univ_requests = (UniversityRequest.query
+                                         .filter_by(status='pending')
+                                         .count())
         from zoneinfo import ZoneInfo as _ZI
         return dict(
             now=datetime.now(_ZI('Asia/Baghdad')),
@@ -178,11 +189,14 @@ def create_app(config_name=None):
             ROLE_SUPERVISOR=ROLE_SUPERVISOR,
             ROLE_USER=ROLE_USER,
             ROLE_EMPLOYER=ROLE_EMPLOYER,
+            ROLE_STUDENT=ROLE_STUDENT,
+            ROLE_UNIVERSITY_COORD=ROLE_UNIVERSITY_COORD,
             unread_count=unread_messages,
             unread_notifications=unread_notifications,
             managed_companies=managed_companies,
             SALARY_RANGES=SALARY_RANGES,
             pending_sup_requests=pending_sup_requests,
+            pending_univ_requests=pending_univ_requests,
         )
 
     # Create DB tables and seed admin on first run
@@ -222,6 +236,20 @@ def _migrate_db(app):
             _safe_add_column(conn, 'companies', 'contact_email', 'VARCHAR(200)')
             _safe_add_column(conn, 'companies', 'contact_phone', 'VARCHAR(100)')
             _safe_add_column(conn, 'users', 'last_seen', 'DATETIME')
+            # Student fields
+            _safe_add_column(conn, 'users', 'university_id', 'INTEGER')
+            _safe_add_column(conn, 'users', 'university_name', 'VARCHAR(200)')
+            _safe_add_column(conn, 'users', 'university_major', 'VARCHAR(200)')
+            _safe_add_column(conn, 'users', 'student_gpa', 'VARCHAR(20)')
+            _safe_add_column(conn, 'users', 'graduation_year', 'INTEGER')
+            _safe_add_column(conn, 'users', 'student_id_number', 'VARCHAR(50)')
+            # Internship fields on applications
+            _safe_add_column(conn, 'applications', 'internship_duration', 'VARCHAR(50)')
+            _safe_add_column(conn, 'applications', 'internship_start_date', 'DATE')
+            _safe_add_column(conn, 'applications', 'academic_credit_required', 'BOOLEAN')
+            _safe_add_column(conn, 'applications', 'supervisor_evaluation', 'TEXT')
+            _safe_add_column(conn, 'applications', 'evaluation_score', 'INTEGER')
+            _safe_add_column(conn, 'applications', 'completion_confirmed', 'BOOLEAN')
 
 
 def _safe_add_column(conn, table, column, col_type):

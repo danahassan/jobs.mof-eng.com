@@ -117,6 +117,18 @@ def apply(pos_id):
         expected_salary = request.form.get('expected_salary', '').strip()
         cv_file         = request.files.get('cv_file')
 
+        # Internship-specific
+        internship_duration      = request.form.get('internship_duration', '').strip() or None
+        internship_start_date_s  = request.form.get('internship_start_date', '').strip()
+        academic_credit_required = bool(request.form.get('academic_credit_required'))
+        internship_start_date = None
+        if internship_start_date_s:
+            try:
+                from datetime import date as _date
+                internship_start_date = _date.fromisoformat(internship_start_date_s)
+            except ValueError:
+                pass
+
         cv_stored = cv_original = None
         if cv_file and cv_file.filename:
             if not allowed_file(cv_file.filename):
@@ -125,14 +137,17 @@ def apply(pos_id):
             cv_stored, cv_original = save_cv(cv_file)
 
         application = Application(
-            applicant_id    = current_user.id,
-            position_id     = pos_id,
-            cover_letter    = cover_letter,
-            source          = source,
-            expected_salary = expected_salary or None,
-            cv_filename     = cv_stored,
-            cv_original     = cv_original,
-            status          = STATUS_NEW,
+            applicant_id             = current_user.id,
+            position_id              = pos_id,
+            cover_letter             = cover_letter,
+            source                   = source,
+            expected_salary          = expected_salary or None,
+            cv_filename              = cv_stored,
+            cv_original              = cv_original,
+            status                   = STATUS_NEW,
+            internship_duration      = internship_duration,
+            internship_start_date    = internship_start_date,
+            academic_credit_required = academic_credit_required,
         )
         db.session.add(application)
         log_audit('user.apply', f'{current_user.full_name} → {pos.title}',

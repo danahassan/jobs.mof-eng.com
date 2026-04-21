@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+{% block title %}Internship Applications — MOF Jobs{% endblock %}
+{% block page_title %}Internship Applications{% endblock %}
+
+{% block content %}
+<style>
+@media(max-width:768px){
+  .ua-table-wrap{display:none}
+  .ua-cards{display:flex;flex-direction:column;gap:12px}
+  .ua-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow)}
+  .ua-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px}
+  .ua-card-name{font-size:15px;font-weight:700;color:var(--text)}
+  .ua-card-pos{font-size:12px;color:var(--text2);margin-top:2px}
+  .ua-card-meta{display:flex;flex-wrap:wrap;gap:8px;font-size:12px;color:var(--text3);margin-top:8px}
+}
+@media(min-width:769px){.ua-cards{display:none}}
+</style>
+
+<!-- KPI Strip -->
+<div class="kpi-strip">
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#ede9fe;color:#7c3aed"><i class="bi bi-inbox-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_total }}</div><div class="kpi-lbl">Total</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#fff7ed;color:#ea580c"><i class="bi bi-hourglass-split"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_active }}</div><div class="kpi-lbl">Active</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#e8f5ee;color:#198754"><i class="bi bi-patch-check-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_hired }}</div><div class="kpi-lbl">Placed</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#fee2e2;color:#dc2626"><i class="bi bi-x-circle-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_rejected }}</div><div class="kpi-lbl">Rejected</div></div>
+  </div>
+</div>
+
+<!-- Filter -->
+<form method="GET" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+  <div style="position:relative;flex:1;min-width:200px">
+    <i class="bi bi-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:13px"></i>
+    <input type="text" name="q" class="form-control" placeholder="Search student name or email…"
+           value="{{ search }}" style="padding-left:32px">
+  </div>
+  <select name="status" class="form-control" style="width:auto">
+    <option value="">All Statuses</option>
+    {% for s in ALL_STATUSES %}
+    <option value="{{ s }}" {% if s == status_f %}selected{% endif %}>{{ s }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-funnel"></i> Filter</button>
+  {% if search or status_f %}
+  <a href="{{ url_for('university.applications') }}" class="btn btn-outline btn-sm">Reset</a>
+  {% endif %}
+</form>
+
+<div class="section-header" style="margin-bottom:12px">
+  <span class="text-muted text-sm">{{ apps.total }} application{{ 's' if apps.total != 1 }}</span>
+</div>
+
+<!-- Desktop table -->
+<div class="table-card ua-table-wrap">
+  <div class="table-responsive">
+    <table class="tbl">
+      <thead>
+        <tr><th>#</th><th>Student</th><th>Position</th><th>Company</th><th>Duration</th><th>Applied</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        {% for app in apps.items %}
+        <tr>
+          <td data-label="#">{{ app.id }}</td>
+          <td data-label="Student">
+            <div style="font-weight:600">{{ app.applicant.full_name }}</div>
+            <div style="font-size:11px;color:var(--text3)">{{ app.applicant.university_major or '' }}</div>
+          </td>
+          <td data-label="Position" style="font-size:13px">{{ app.position.title }}</td>
+          <td data-label="Company" style="font-size:12px;color:var(--text3)">
+            {{ app.position.company.name if app.position.company else '—' }}
+          </td>
+          <td data-label="Duration" style="font-size:12px;color:var(--text3)">{{ app.internship_duration or '—' }}</td>
+          <td data-label="Applied" style="font-size:12px;color:var(--text3);white-space:nowrap">
+            {{ (app.applied_at | localdt).strftime('%b %d, %Y') }}
+          </td>
+          <td data-label="Status"><span class="badge badge-{{ app.status.lower().replace(' ','') }}">{{ app.status }}</span></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7"><div class="empty-state"><i class="bi bi-inbox"></i> No applications found.</div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Mobile cards -->
+<div class="ua-cards">
+  {% for app in apps.items %}
+  <div class="ua-card">
+    <div class="ua-card-top">
+      <div>
+        <div class="ua-card-name">{{ app.applicant.full_name }}</div>
+        <div class="ua-card-pos"><i class="bi bi-briefcase"></i> {{ app.position.title }}
+          {% if app.position.company %} · {{ app.position.company.name }}{% endif %}
+        </div>
+      </div>
+      <span class="badge badge-{{ app.status.lower().replace(' ','') }}" style="flex-shrink:0">{{ app.status }}</span>
+    </div>
+    <div class="ua-card-meta">
+      {% if app.internship_duration %}<span><i class="bi bi-clock"></i> {{ app.internship_duration }}</span>{% endif %}
+      <span><i class="bi bi-calendar3"></i> {{ (app.applied_at | localdt).strftime('%b %d, %Y') }}</span>
+      {% if app.academic_credit_required %}<span><i class="bi bi-award"></i> Credit required</span>{% endif %}
+    </div>
+  </div>
+  {% else %}
+  <div class="empty-state"><i class="bi bi-inbox"></i> No applications found.</div>
+  {% endfor %}
+</div>
+
+{% if apps.pages > 1 %}
+<div class="pagination">
+  <a href="{{ url_for('university.applications', page=apps.prev_num, q=search, status=status_f) }}"
+     class="page-link {% if not apps.has_prev %}disabled{% endif %}"><i class="bi bi-chevron-left"></i></a>
+  {% for p in apps.iter_pages() %}
+    {% if p %}
+      <a href="{{ url_for('university.applications', page=p, q=search, status=status_f) }}"
+         class="page-link {% if p == apps.page %}active{% endif %}">{{ p }}</a>
+    {% else %}<span class="page-link">…</span>{% endif %}
+  {% endfor %}
+  <a href="{{ url_for('university.applications', page=apps.next_num, q=search, status=status_f) }}"
+     class="page-link {% if not apps.has_next %}disabled{% endif %}"><i class="bi bi-chevron-right"></i></a>
+</div>
+{% endif %}
+{% endblock %}
