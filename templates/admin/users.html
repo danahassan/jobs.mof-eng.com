@@ -119,7 +119,7 @@
             {% if u.is_active %}<span class="badge badge-active">Active</span>
             {% else %}<span class="badge badge-inactive">Inactive</span>{% endif %}
           </td>
-          <td data-label="Last Login" class="text-muted">{{ (u.last_login | localdt).strftime('%b %d, %Y') if u.last_login else 'Never' }}</td>
+          <td data-label="Last Login" class="text-muted">{{ (u.last_login | localdt).strftime('%b %d, %Y %H:%M') if u.last_login else 'Never' }}</td>
           <td>
             <div class="d-flex gap-2" style="justify-content:flex-end">
               <a href="{{ url_for('admin.user_detail', user_id=u.id) }}" class="btn btn-outline btn-sm">
