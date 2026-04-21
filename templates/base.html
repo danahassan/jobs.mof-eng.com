@@ -597,7 +597,7 @@ html.dark select.form-control option{background:#1e293b}
           {% endif %}
         </a>
         <div class="topbar-divider"></div>
-        <div class="avatar-wrap" style="cursor:default">
+        <a href="{{ url_for('auth.profile') }}" class="avatar-wrap" style="text-decoration:none">
           {% if current_user.avatar_filename %}
           <img src="{{ url_for('static', filename='uploads/avatars/' + current_user.avatar_filename) }}" class="avatar" style="object-fit:cover" alt="{{ current_user.initials }}">
           {% else %}
@@ -607,7 +607,7 @@ html.dark select.form-control option{background:#1e293b}
             <div class="avatar-name">{{ current_user.full_name }}</div>
             <div class="avatar-role">{{ current_user.role|capitalize }}</div>
           </div>
-        </div>
+        </a>
       </div>
     </div>
 
