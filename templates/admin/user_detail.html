@@ -65,10 +65,13 @@
 @media(max-width:860px){.ud-grid{grid-template-columns:1fr 260px}}
 @media(max-width:680px){
   .ud-grid{grid-template-columns:1fr}
-  .ud-sidebar{position:static}
+  .ud-sidebar{position:static;order:-1}
   .ud-hero{padding:16px 18px}
   .ud-hero-name{font-size:18px}
   .ud-hero-left{gap:12px}
+  .ud-hero-actions{width:100%;justify-content:flex-start}
+  .ud-info-row{flex-wrap:wrap;gap:4px}
+  .ud-info-val{text-align:left}
 }
 </style>
 {% endblock %}
@@ -352,7 +355,7 @@
         </div>
         <div class="ud-info-row">
           <span class="ud-info-lbl">Last Login</span>
-          <span class="ud-info-val">{{ (user.last_login | localdt).strftime('%b %d, %Y') if user.last_login else 'Never' }}</span>
+          <span class="ud-info-val">{{ (user.last_login | localdt).strftime('%b %d, %Y %H:%M') if user.last_login else 'Never' }}</span>
         </div>
         <div class="ud-info-row">
           <span class="ud-info-lbl">2FA</span>
