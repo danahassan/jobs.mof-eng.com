@@ -3,7 +3,22 @@
 {% block page_title %}Supervisor Request #{{ req.id }}{% endblock %}
 
 {% block content %}
-<div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+<style>
+.sr-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.sr-actions-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px}
+.sr-info-row{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--border)}
+.sr-info-row:last-child{border-bottom:none;padding-bottom:0}
+.sr-info-label{font-size:12px;color:var(--text3);font-weight:600;flex-shrink:0}
+.sr-info-val{font-size:13px;color:var(--text);font-weight:600;text-align:right;word-break:break-all}
+@media(max-width:768px){
+  .sr-grid{grid-template-columns:1fr}
+  .sr-actions-grid{grid-template-columns:1fr}
+  .sr-info-row{flex-direction:column;gap:3px}
+  .sr-info-val{text-align:left}
+}
+</style>
+
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap">
   <a href="{{ url_for('admin.supervisor_requests') }}" class="btn btn-outline btn-sm"><i class="bi bi-arrow-left"></i> Back</a>
   {% if req.status == 'pending' %}
     <span class="badge" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d;font-size:13px;padding:6px 12px">Pending Review</span>
@@ -15,11 +30,13 @@
   <span class="text-muted" style="font-size:12px">Submitted {{ (req.created_at | localdt).strftime('%d %b %Y, %H:%M') }} +3</span>
 </div>
 
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+<div class="sr-grid">
 
   <!-- Personal info -->
   <div class="table-card" style="padding:20px">
-    <div style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--text2);margin-bottom:16px"><i class="bi bi-person-fill" style="color:var(--green)"></i> Personal Details</div>
+    <div style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--text2);margin-bottom:16px">
+      <i class="bi bi-person-fill" style="color:var(--green)"></i> Personal Details
+    </div>
     {% for label, val in [
         ('Full Name', req.full_name),
         ('Email', req.email),
@@ -30,11 +47,11 @@
         ('Gender', req.gender),
         ('LinkedIn', req.linkedin_url),
     ] %}
-    <div style="display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--border)">
-      <span style="font-size:12px;color:var(--text3);font-weight:600;flex-shrink:0">{{ label }}</span>
-      <span style="font-size:13px;color:var(--text);font-weight:600;text-align:right;word-break:break-all">
+    <div class="sr-info-row">
+      <span class="sr-info-label">{{ label }}</span>
+      <span class="sr-info-val">
         {% if val %}
-          {% if label == 'LinkedIn' %}<a href="{{ val }}" target="_blank">{{ val }}</a>{% else %}{{ val }}{% endif %}
+          {% if label == 'LinkedIn' %}<a href="{{ val }}" target="_blank" rel="noopener">{{ val }}</a>{% else %}{{ val }}{% endif %}
         {% else %}<span style="color:var(--text3)">—</span>{% endif %}
       </span>
     </div>
@@ -49,7 +66,9 @@
 
   <!-- Company info -->
   <div class="table-card" style="padding:20px">
-    <div style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--text2);margin-bottom:16px"><i class="bi bi-building-fill" style="color:var(--green)"></i> Company Details</div>
+    <div style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--text2);margin-bottom:16px">
+      <i class="bi bi-building-fill" style="color:var(--green)"></i> Company Details
+    </div>
     {% if req.company_logo_filename %}
     <div style="margin-bottom:14px">
       <img src="{{ url_for('static', filename='uploads/company_logos/' + req.company_logo_filename) }}"
@@ -66,11 +85,11 @@
         ('Contact Email', req.company_contact_email),
         ('Contact Phone', req.company_contact_phone),
     ] %}
-    <div style="display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--border)">
-      <span style="font-size:12px;color:var(--text3);font-weight:600;flex-shrink:0">{{ label }}</span>
-      <span style="font-size:13px;color:var(--text);font-weight:600;text-align:right;word-break:break-all">
+    <div class="sr-info-row">
+      <span class="sr-info-label">{{ label }}</span>
+      <span class="sr-info-val">
         {% if val %}
-          {% if label == 'Website' %}<a href="{{ val }}" target="_blank">{{ val }}</a>{% else %}{{ val }}{% endif %}
+          {% if label == 'Website' %}<a href="{{ val }}" target="_blank" rel="noopener">{{ val }}</a>{% else %}{{ val }}{% endif %}
         {% else %}<span style="color:var(--text3)">—</span>{% endif %}
       </span>
     </div>
@@ -86,27 +105,33 @@
 
 <!-- Actions -->
 {% if req.status == 'pending' %}
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px">
+<div class="sr-actions-grid">
 
   <!-- Approve -->
   <div class="table-card" style="padding:20px">
-    <div style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#198754;margin-bottom:12px"><i class="bi bi-check-circle-fill"></i> Approve Request</div>
-    <p style="font-size:13px;color:var(--text2);margin-bottom:16px">This will create a supervisor account and company in the system. The applicant will receive a welcome email.</p>
+    <div style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#198754;margin-bottom:12px">
+      <i class="bi bi-check-circle-fill"></i> Approve Request
+    </div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6">This will create a supervisor account and company in the system. The applicant will receive a welcome email.</p>
     <form method="POST" action="{{ url_for('admin.supervisor_request_approve', req_id=req.id) }}"
           onsubmit="return confirm('Approve this request and create the supervisor + company?')">
-      <button type="submit" class="btn btn-primary" style="width:100%"><i class="bi bi-check-lg"></i> Approve & Create Account</button>
+      <button type="submit" class="btn btn-primary" style="width:100%">
+        <i class="bi bi-check-lg"></i> Approve &amp; Create Account
+      </button>
     </form>
   </div>
 
   <!-- Reject -->
   <div class="table-card" style="padding:20px">
-    <div style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#dc2626;margin-bottom:12px"><i class="bi bi-x-circle-fill"></i> Reject Request</div>
+    <div style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#dc2626;margin-bottom:12px">
+      <i class="bi bi-x-circle-fill"></i> Reject Request
+    </div>
     <form method="POST" action="{{ url_for('admin.supervisor_request_reject', req_id=req.id) }}">
       <div style="margin-bottom:12px">
-        <label style="font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px">Reason (shown to applicant)</label>
-        <textarea name="reason" class="form-control" rows="3" placeholder="Explain why the application was rejected…"></textarea>
+        <label style="font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:6px">Reason <small style="font-weight:400;color:var(--text3)">(shown to applicant)</small></label>
+        <textarea name="reason" class="form-control" rows="4" placeholder="Explain why the application was rejected…"></textarea>
       </div>
-      <button type="submit" class="btn btn-sm" style="background:#dc2626;color:#fff;border:1px solid #dc2626;width:100%;border-radius:8px;padding:10px">
+      <button type="submit" class="btn btn-sm" style="background:#dc2626;color:#fff;border:1px solid #dc2626;width:100%;border-radius:8px;padding:10px;font-weight:600">
         <i class="bi bi-x-lg"></i> Reject Application
       </button>
     </form>
@@ -117,7 +142,7 @@
 <div class="table-card" style="padding:20px;margin-top:18px;border-left:4px solid #dc2626">
   <div style="font-size:13px;font-weight:700;color:#dc2626;margin-bottom:6px"><i class="bi bi-x-circle-fill"></i> Rejected</div>
   {% if req.rejection_reason %}
-  <div style="font-size:13px;color:var(--text2)"><strong>Reason given:</strong> {{ req.rejection_reason }}</div>
+  <div style="font-size:13px;color:var(--text2);line-height:1.6"><strong>Reason given:</strong> {{ req.rejection_reason }}</div>
   {% endif %}
   {% if req.reviewed_at %}
   <div style="font-size:12px;color:var(--text3);margin-top:4px">on {{ (req.reviewed_at | localdt).strftime('%d %b %Y, %H:%M') }} +3</div>

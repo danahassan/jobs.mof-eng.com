@@ -3,6 +3,22 @@
 {% block page_title %}Supervisor Requests{% endblock %}
 
 {% block content %}
+<style>
+@media(max-width:768px){
+  .sr-table-wrap{display:none}
+  .sr-cards{display:flex;flex-direction:column;gap:12px}
+  .sr-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow)}
+  .sr-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px}
+  .sr-card-name{font-size:15px;font-weight:700;color:var(--text)}
+  .sr-card-company{font-size:12px;color:var(--text2);margin-top:2px}
+  .sr-card-meta{display:flex;flex-wrap:wrap;gap:8px;font-size:12px;color:var(--text3);margin-top:8px}
+  .sr-card-meta span{display:flex;align-items:center;gap:4px}
+}
+@media(min-width:769px){
+  .sr-cards{display:none}
+}
+</style>
+
 <div class="kpi-strip">
   <div class="kpi-card">
     <div class="kpi-icon" style="background:#eff6ff;color:#2563eb"><i class="bi bi-inbox-fill"></i></div>
@@ -33,7 +49,8 @@
   {% endfor %}
 </div>
 
-<div class="table-card">
+<!-- Desktop table -->
+<div class="table-card sr-table-wrap">
   <div class="table-responsive">
     <table class="tbl">
       <thead>
@@ -68,6 +85,38 @@
       </tbody>
     </table>
   </div>
+</div>
+
+<!-- Mobile cards -->
+<div class="sr-cards">
+  {% for r in requests.items %}
+  <div class="sr-card">
+    <div class="sr-card-top">
+      <div>
+        <div class="sr-card-name">{{ r.full_name }}</div>
+        <div class="sr-card-company"><i class="bi bi-building"></i> {{ r.company_name }}</div>
+      </div>
+      {% if r.status == 'pending' %}
+        <span class="badge" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d;flex-shrink:0">Pending</span>
+      {% elif r.status == 'approved' %}
+        <span class="badge badge-active" style="flex-shrink:0">Approved</span>
+      {% else %}
+        <span class="badge badge-inactive" style="flex-shrink:0">Rejected</span>
+      {% endif %}
+    </div>
+    <div class="sr-card-meta">
+      <span><i class="bi bi-envelope"></i> {{ r.email }}</span>
+      <span><i class="bi bi-calendar3"></i> {{ (r.created_at | localdt).strftime('%d %b %Y') }}</span>
+    </div>
+    <div style="margin-top:12px">
+      <a href="{{ url_for('admin.supervisor_request_detail', req_id=r.id) }}" class="btn btn-outline btn-sm" style="width:100%;justify-content:center">
+        <i class="bi bi-eye"></i> Review Request
+      </a>
+    </div>
+  </div>
+  {% else %}
+  <div class="empty-state"><i class="bi bi-inbox"></i> No requests found.</div>
+  {% endfor %}
 </div>
 
 {% if requests.pages > 1 %}
