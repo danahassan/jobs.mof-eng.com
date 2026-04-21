@@ -162,11 +162,9 @@ def apply(pos_id):
         except Exception as e:
             current_app.logger.warning(f'Applicant confirmation email failed: {e}')
 
-        # 2. Notification email to all admins + supervisors managing this company
+        # 2. Notification email to supervisors managing this company only
         site_url = current_app.config['SITE_URL']
         review_url = site_url + url_for('admin.application_detail', app_id=application.id)
-        staff_recipients = list(admins)
-        # Only supervisors who manage the company this position belongs to
         if pos.company_id:
             manager_ids = [m.user_id for m in CompanyMember.query.filter_by(
                 company_id=pos.company_id, role='manager').all()]
@@ -174,6 +172,7 @@ def apply(pos_id):
                 User.id.in_(manager_ids), User.is_active == True).all() if manager_ids else []
         else:
             supervisors = []
+        staff_recipients = supervisors
         staff_recipients.extend(supervisors)
         for staff in staff_recipients:
             staff_review_url = review_url
