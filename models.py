@@ -673,6 +673,45 @@ class PushSubscription(db.Model):
         'push_subscriptions_rel', lazy='dynamic', cascade='all,delete-orphan'))
 
 
+class SupervisorRequest(db.Model):
+    __tablename__ = 'supervisor_requests'
+    id                    = db.Column(db.Integer, primary_key=True)
+    status                = db.Column(db.String(20), default='pending', nullable=False)  # pending/approved/rejected
+    token                 = db.Column(db.String(64), unique=True, index=True, nullable=False)
+    # Personal
+    full_name             = db.Column(db.String(120), nullable=False)
+    email                 = db.Column(db.String(120), nullable=False)
+    phone                 = db.Column(db.String(30), nullable=False)
+    password_hash         = db.Column(db.String(256), nullable=False)
+    headline              = db.Column(db.String(200))
+    bio                   = db.Column(db.Text)
+    nationality           = db.Column(db.String(50))
+    location_city         = db.Column(db.String(100))
+    gender                = db.Column(db.String(20))
+    linkedin_url          = db.Column(db.String(200))
+    # Company
+    company_name          = db.Column(db.String(200), nullable=False)
+    company_industry      = db.Column(db.String(100))
+    company_size          = db.Column(db.String(30))
+    company_website       = db.Column(db.String(300))
+    company_description   = db.Column(db.Text)
+    company_location      = db.Column(db.String(200))
+    company_founded_year  = db.Column(db.Integer)
+    company_contact_email = db.Column(db.String(200))
+    company_contact_phone = db.Column(db.String(100))
+    company_logo_filename = db.Column(db.String(200))
+    # Review
+    rejection_reason      = db.Column(db.Text)
+    reviewed_by_id        = db.Column(db.Integer, db.ForeignKey('users.id'))
+    reviewed_at           = db.Column(db.DateTime)
+    created_at            = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at            = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    reviewed_by = db.relationship('User', foreign_keys=[reviewed_by_id])
+
+    def set_password(self, pw):
+        self.password_hash = generate_password_hash(pw)
+
+
 from sqlalchemy.orm import configure_mappers  # noqa: E402
 configure_mappers()
 

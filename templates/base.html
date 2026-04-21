@@ -500,6 +500,10 @@ html.dark select.form-control option{background:#1e293b}
         <div class="nav-section">Management</div>
         <a href="{{ url_for('admin.companies') }}" class="nav-item {% if request.blueprint == 'admin' and 'compan' in request.endpoint %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-building"></i> Companies</a>
         <a href="{{ url_for('admin.users') }}" class="nav-item {% if 'user' in request.endpoint and request.blueprint == 'admin' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-people-fill"></i> Users & Roles</a>
+        <a href="{{ url_for('admin.supervisor_requests') }}" class="nav-item {% if request.endpoint == 'admin.supervisor_requests' or request.endpoint == 'admin.supervisor_request_detail' %}active{% endif %}" onclick="closeSidebar()">
+          <i class="bi bi-person-badge-fill"></i> Sup. Requests
+          {% if pending_sup_requests %}<span class="nav-badge">{{ pending_sup_requests }}</span>{% endif %}
+        </a>
         <a href="{{ url_for('messages.inbox') }}" class="nav-item {% if request.blueprint == 'messages' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-chat-dots-fill"></i> Messages{% if unread_count %}<span class="nav-badge">{{ unread_count }}</span>{% endif %}</a>
         <a href="{{ url_for('admin.audit_trail') }}" class="nav-item {% if request.endpoint == 'admin.audit_trail' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-clock-history"></i> Audit Trail</a>
         <a href="{{ url_for('admin.settings') }}" class="nav-item {% if request.endpoint == 'admin.settings' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-gear-fill"></i> Settings</a>

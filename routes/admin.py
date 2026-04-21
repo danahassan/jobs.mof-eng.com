@@ -10,7 +10,7 @@ from models import (db, User, Position, Application, ApplicationHistory,
                     Interview, AuditLog, Company, CompanyMember, CompanyFollow,
                     UserSkill, UserExperience, UserEducation,
                     UserLanguage, UserCertification,
-                    Message,
+                    Message, SupervisorRequest,
                     ROLE_ADMIN, ROLE_SUPERVISOR, ROLE_USER, LANG_LEVELS,
                     ALL_STATUSES, SOURCES, STATUS_NEW)
 from sqlalchemy import or_, and_
@@ -1310,6 +1310,156 @@ def _send_company_job_alerts(position):
         )
     if followers:
         db.session.commit()
+
+
+# ─── SUPERVISOR REQUESTS ──────────────────────────────────────────────────────
+
+@admin_bp.route('/supervisor_requests')
+@admin_required
+def supervisor_requests():
+    status_f = request.args.get('status', '')
+    page     = request.args.get('page', 1, type=int)
+
+    q = SupervisorRequest.query
+    if status_f:
+        q = q.filter_by(status=status_f)
+
+    requests_paged = q.order_by(SupervisorRequest.created_at.desc()).paginate(
+        page=page, per_page=20, error_out=False)
+
+    kpi_total    = SupervisorRequest.query.count()
+    kpi_pending  = SupervisorRequest.query.filter_by(status='pending').count()
+    kpi_approved = SupervisorRequest.query.filter_by(status='approved').count()
+    kpi_rejected = SupervisorRequest.query.filter_by(status='rejected').count()
+
+    return render_template('admin/supervisor_requests.html',
+                           requests=requests_paged,
+                           status_f=status_f,
+                           kpi_total=kpi_total,
+                           kpi_pending=kpi_pending,
+                           kpi_approved=kpi_approved,
+                           kpi_rejected=kpi_rejected)
+
+
+@admin_bp.route('/supervisor_requests/<int:req_id>')
+@admin_required
+def supervisor_request_detail(req_id):
+    req = db.get_or_404(SupervisorRequest, req_id)
+    return render_template('admin/supervisor_request_detail.html', req=req)
+
+
+@admin_bp.route('/supervisor_requests/<int:req_id>/approve', methods=['POST'])
+@admin_required
+def supervisor_request_approve(req_id):
+    req = db.get_or_404(SupervisorRequest, req_id)
+    if req.status != 'pending':
+        flash('This request is not pending.', 'warning')
+        return redirect(url_for('admin.supervisor_request_detail', req_id=req_id))
+
+    # Check if email already taken
+    if User.query.filter_by(email=req.email).first():
+        flash(f'A user with email {req.email} already exists.', 'danger')
+        return redirect(url_for('admin.supervisor_request_detail', req_id=req_id))
+
+    # Create User
+    from slugify import slugify as _slugify
+    new_user = User(
+        full_name     = req.full_name,
+        email         = req.email,
+        phone         = req.phone,
+        role          = ROLE_SUPERVISOR,
+        is_active     = True,
+        headline      = req.headline,
+        bio           = req.bio,
+        nationality   = req.nationality,
+        location_city = req.location_city,
+        gender        = req.gender,
+        linkedin_url  = req.linkedin_url,
+        password_hash = req.password_hash,  # already hashed
+    )
+    db.session.add(new_user)
+    db.session.flush()  # get new_user.id
+
+    # Create Company
+    company = Company(
+        name          = req.company_name,
+        description   = req.company_description,
+        industry      = req.company_industry,
+        size          = req.company_size,
+        website       = req.company_website,
+        location      = req.company_location,
+        founded_year  = req.company_founded_year,
+        contact_email = req.company_contact_email,
+        contact_phone = req.company_contact_phone,
+        logo_filename = req.company_logo_filename,
+        is_verified   = True,
+        is_active     = True,
+        created_by    = new_user.id,
+    )
+    company.save_slug()
+    db.session.add(company)
+    db.session.flush()
+
+    # Create CompanyMember
+    member = CompanyMember(
+        company_id = company.id,
+        user_id    = new_user.id,
+        role       = 'manager',
+    )
+    db.session.add(member)
+
+    # Mark request approved
+    req.status          = 'approved'
+    req.reviewed_by_id  = current_user.id
+    req.reviewed_at     = datetime.utcnow()
+
+    _audit('supervisor_request.approve',
+           f'{req.full_name} <{req.email}> → user#{new_user.id} company#{company.id}')
+    db.session.commit()
+
+    # Send welcome email
+    try:
+        site_url  = current_app.config.get('SITE_URL', '')
+        login_url = site_url + url_for('auth.login')
+        html = render_template('emails/sup_request_approved.html',
+                               req=req, user=new_user, login_url=login_url)
+        send_email(new_user.email, 'Your MOF Jobs Supervisor Account is Ready', html)
+    except Exception as exc:
+        current_app.logger.warning(f'Approval email failed: {exc}')
+
+    flash(f'Approved! User "{new_user.full_name}" and company "{company.name}" created.', 'success')
+    return redirect(url_for('admin.supervisor_requests'))
+
+
+@admin_bp.route('/supervisor_requests/<int:req_id>/reject', methods=['POST'])
+@admin_required
+def supervisor_request_reject(req_id):
+    req = db.get_or_404(SupervisorRequest, req_id)
+    if req.status != 'pending':
+        flash('This request is not pending.', 'warning')
+        return redirect(url_for('admin.supervisor_request_detail', req_id=req_id))
+
+    reason = request.form.get('reason', '').strip()
+    req.status           = 'rejected'
+    req.rejection_reason = reason or None
+    req.reviewed_by_id   = current_user.id
+    req.reviewed_at      = datetime.utcnow()
+
+    _audit('supervisor_request.reject', f'{req.full_name} <{req.email}>')
+    db.session.commit()
+
+    # Send rejection email with edit link
+    try:
+        site_url = current_app.config.get('SITE_URL', '')
+        edit_url = site_url + url_for('supervisor_apply.apply_edit', token=req.token)
+        html = render_template('emails/sup_request_rejected.html',
+                               req=req, edit_url=edit_url)
+        send_email(req.email, 'Update on Your MOF Jobs Supervisor Application', html)
+    except Exception as exc:
+        current_app.logger.warning(f'Rejection email failed: {exc}')
+
+    flash(f'Application from "{req.full_name}" rejected.', 'success')
+    return redirect(url_for('admin.supervisor_requests'))
 
 
 # ─── EXPORT HELPER ────────────────────────────────────────────────────────────

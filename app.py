@@ -8,7 +8,8 @@ from flask_login import (LoginManager, login_user, logout_user,
 
 from config import config
 from models import (db, User, Message, Notification, Position, Application, ApplicationHistory,
-                    Interview, CompanyMember, ROLE_ADMIN, ROLE_SUPERVISOR, ROLE_USER, ROLE_EMPLOYER,
+                    Interview, CompanyMember, SupervisorRequest,
+                    ROLE_ADMIN, ROLE_SUPERVISOR, ROLE_USER, ROLE_EMPLOYER,
                     ALL_STATUSES, SOURCES, SALARY_RANGES, STATUS_NEW)
 
 # ─── APP FACTORY ──────────────────────────────────────────────────────────────
@@ -74,33 +75,35 @@ def create_app(config_name=None):
                 db.session.commit()
 
     # Register blueprints
-    from routes.auth          import auth_bp
-    from routes.admin         import admin_bp
-    from routes.supervisor    import supervisor_bp
-    from routes.user          import user_bp
-    from routes.messages      import messages_bp
-    from routes.notifications import notifications_bp
-    from routes.employer      import employer_bp
-    from routes.company       import company_bp
-    from routes.jobs          import jobs_bp
-    from routes.profile       import profile_bp
-    from routes.assessments   import assessments_bp
-    from routes.analytics     import analytics_bp
-    from routes.api           import api_bp
+    from routes.auth              import auth_bp
+    from routes.admin             import admin_bp
+    from routes.supervisor        import supervisor_bp
+    from routes.user              import user_bp
+    from routes.messages          import messages_bp
+    from routes.notifications     import notifications_bp
+    from routes.employer          import employer_bp
+    from routes.company           import company_bp
+    from routes.jobs              import jobs_bp
+    from routes.profile           import profile_bp
+    from routes.assessments       import assessments_bp
+    from routes.analytics         import analytics_bp
+    from routes.api               import api_bp
+    from routes.supervisor_apply  import supervisor_apply_bp
 
     app.register_blueprint(auth_bp)
-    app.register_blueprint(admin_bp,          url_prefix='/admin')
-    app.register_blueprint(supervisor_bp,     url_prefix='/supervisor')
-    app.register_blueprint(user_bp,           url_prefix='/portal')
-    app.register_blueprint(messages_bp,       url_prefix='/messages')
-    app.register_blueprint(notifications_bp,  url_prefix='/notifications')
-    app.register_blueprint(employer_bp,       url_prefix='/employer')
-    app.register_blueprint(company_bp,        url_prefix='/companies')
-    app.register_blueprint(jobs_bp,           url_prefix='/jobs')
-    app.register_blueprint(profile_bp,        url_prefix='/profile')
-    app.register_blueprint(assessments_bp,    url_prefix='/assessments')
-    app.register_blueprint(analytics_bp,      url_prefix='/analytics')
-    app.register_blueprint(api_bp,            url_prefix='/api/v1')
+    app.register_blueprint(admin_bp,             url_prefix='/admin')
+    app.register_blueprint(supervisor_bp,        url_prefix='/supervisor')
+    app.register_blueprint(user_bp,              url_prefix='/portal')
+    app.register_blueprint(messages_bp,          url_prefix='/messages')
+    app.register_blueprint(notifications_bp,     url_prefix='/notifications')
+    app.register_blueprint(employer_bp,          url_prefix='/employer')
+    app.register_blueprint(company_bp,           url_prefix='/companies')
+    app.register_blueprint(jobs_bp,              url_prefix='/jobs')
+    app.register_blueprint(profile_bp,           url_prefix='/profile')
+    app.register_blueprint(assessments_bp,       url_prefix='/assessments')
+    app.register_blueprint(analytics_bp,         url_prefix='/analytics')
+    app.register_blueprint(api_bp,               url_prefix='/api/v1')
+    app.register_blueprint(supervisor_apply_bp)
 
     # Root redirect
     @app.route('/')
@@ -152,6 +155,7 @@ def create_app(config_name=None):
         unread_messages = 0
         unread_notifications = 0
         managed_companies = []
+        pending_sup_requests = 0
         if current_user.is_authenticated:
             unread_messages = (Message.query
                                .filter_by(receiver_id=current_user.id, is_read=False)
@@ -163,6 +167,10 @@ def create_app(config_name=None):
                 managed_companies = (CompanyMember.query
                                      .filter_by(user_id=current_user.id, role='manager')
                                      .all())
+            if current_user.role == ROLE_ADMIN:
+                pending_sup_requests = (SupervisorRequest.query
+                                        .filter_by(status='pending')
+                                        .count())
         from zoneinfo import ZoneInfo as _ZI
         return dict(
             now=datetime.now(_ZI('Asia/Baghdad')),
@@ -174,6 +182,7 @@ def create_app(config_name=None):
             unread_notifications=unread_notifications,
             managed_companies=managed_companies,
             SALARY_RANGES=SALARY_RANGES,
+            pending_sup_requests=pending_sup_requests,
         )
 
     # Create DB tables and seed admin on first run

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f2f5;margin:0;padding:20px}
+  .wrap{max-width:580px;margin:0 auto;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.08)}
+  .hdr{background:#0f1923;padding:28px 32px;text-align:center}
+  .hdr-brand{color:#fff;font-size:20px;font-weight:800}
+  .hdr-brand span{color:#4ade80}
+  .body{padding:32px}
+  .status-badge{display:inline-flex;align-items:center;gap:6px;background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:20px;padding:6px 14px;font-size:13px;font-weight:700;margin-bottom:18px}
+  h2{font-size:18px;font-weight:800;color:#0f1923;margin:0 0 8px}
+  p{font-size:14px;color:#4a5a6a;line-height:1.7;margin:0 0 16px}
+  .reason-box{background:#fef3c7;border:1px solid #fcd34d;border-radius:10px;padding:16px;margin-bottom:20px}
+  .reason-label{font-size:12px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+  .reason-text{font-size:14px;color:#78350f;line-height:1.6}
+  .btn{display:block;background:#198754;color:#fff;text-decoration:none;padding:14px;border-radius:10px;font-size:15px;font-weight:700;text-align:center;margin-top:8px}
+  .ftr{padding:18px 32px;background:#f8fafc;border-top:1px solid #e4e8ed;font-size:11px;color:#adb5bd;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hdr">
+    <div class="hdr-brand">MOF <span>Jobs</span></div>
+  </div>
+  <div class="body">
+    <div class="status-badge">⚠ Application Not Approved</div>
+    <h2>Hi {{ req.full_name }},</h2>
+    <p>Thank you for applying to become a supervisor on MOF Jobs. After reviewing your application, we were unable to approve it at this time.</p>
+
+    {% if req.rejection_reason %}
+    <div class="reason-box">
+      <div class="reason-label">Feedback from our team</div>
+      <div class="reason-text">{{ req.rejection_reason }}</div>
+    </div>
+    {% endif %}
+
+    <p>You can update your application and resubmit it for another review. Click the button below to edit your details.</p>
+    <a href="{{ edit_url }}" class="btn">Edit &amp; Resubmit Application →</a>
+    <p style="font-size:12px;color:#adb5bd;margin-top:14px;text-align:center">Or copy this link: {{ edit_url }}</p>
+  </div>
+  <div class="ftr">MOF Jobs · If you didn't submit this application, please ignore this email.</div>
+</div>
+</body>
+</html>

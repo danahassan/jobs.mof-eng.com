@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Supervisor Application — MOF Jobs</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<style>
+  body{background:#f0f2f5;font-family:'Segoe UI',system-ui,sans-serif;color:#0f1923}
+  .sa-wrap{max-width:960px;margin:0 auto;padding:32px 16px 60px}
+  .sa-header{text-align:center;margin-bottom:32px}
+  .sa-brand{font-size:22px;font-weight:800;color:#198754;letter-spacing:-.5px}
+  .sa-brand span{color:#0f1923}
+  .sa-title{font-size:28px;font-weight:800;color:#0f1923;margin-top:10px;line-height:1.2}
+  .sa-sub{font-size:14px;color:#6c757d;margin-top:6px}
+  .sa-card{background:#fff;border:1px solid #e4e8ed;border-radius:14px;padding:24px;margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+  .sa-section-title{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#6c757d;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+  .sa-section-title i{font-size:16px;color:#198754}
+  label{font-size:12px;font-weight:700;color:#4a5a6a;text-transform:uppercase;letter-spacing:.03em;margin-bottom:4px}
+  .form-control,.form-select{border-radius:8px;border:1px solid #e4e8ed;font-size:14px;padding:10px 12px}
+  .form-control:focus,.form-select:focus{border-color:#198754;box-shadow:0 0 0 3px rgba(25,135,84,.12)}
+  .req{color:#dc3545}
+  .btn-submit{background:#198754;color:#fff;border:none;border-radius:10px;padding:14px 32px;font-size:15px;font-weight:700;width:100%;cursor:pointer;transition:background .15s}
+  .btn-submit:hover{background:#146c43}
+  .success-banner{background:#d1fae5;border:1px solid #6ee7b7;border-radius:12px;padding:20px 24px;margin-bottom:24px}
+  .reject-banner{background:#fef3c7;border:1px solid #fcd34d;border-radius:12px;padding:20px 24px;margin-bottom:24px}
+  .divider{height:1px;background:#f0f2f5;margin:4px 0 16px}
+</style>
+</head>
+<body>
+<div class="sa-wrap">
+  <div class="sa-header">
+    <div class="sa-brand">MOF <span>Jobs</span></div>
+    <div class="sa-title">Supervisor Registration</div>
+    <div class="sa-sub">Complete all sections to request a supervisor account. Admins will review your application.</div>
+  </div>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+    <div class="alert alert-{{ 'danger' if cat == 'danger' else 'warning' if cat == 'warning' else 'success' }} rounded-3 mb-3" role="alert">
+      <i class="bi bi-exclamation-circle-fill me-2"></i>{{ msg }}
+    </div>
+    {% endfor %}
+  {% endwith %}
+
+  {% if submitted %}
+  <div class="success-banner">
+    <div style="font-size:18px;font-weight:800;color:#065f46"><i class="bi bi-check-circle-fill me-2"></i>Application Submitted!</div>
+    <div style="font-size:14px;color:#047857;margin-top:6px">Thank you, we've received your application. Admins will review it and get back to you by email.</div>
+  </div>
+  {% endif %}
+
+  {% if req and req.status == 'rejected' %}
+  <div class="reject-banner">
+    <div style="font-size:16px;font-weight:800;color:#92400e"><i class="bi bi-exclamation-triangle-fill me-2"></i>Application Rejected — Please Review & Resubmit</div>
+    {% if req.rejection_reason %}
+    <div style="font-size:14px;color:#78350f;margin-top:8px"><strong>Reason:</strong> {{ req.rejection_reason }}</div>
+    {% endif %}
+    <div style="font-size:13px;color:#92400e;margin-top:6px">Update the information below and click Resubmit.</div>
+  </div>
+  {% endif %}
+
+  <form method="POST" enctype="multipart/form-data">
+    <!-- PERSONAL INFO -->
+    <div class="sa-card">
+      <div class="sa-section-title"><i class="bi bi-person-fill"></i> Your Account Details</div>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label>Full Name <span class="req">*</span></label>
+          <input type="text" name="full_name" class="form-control" value="{{ data.get('full_name','') }}" required placeholder="e.g. Ahmad Al-Rashid">
+        </div>
+        <div class="col-md-6">
+          <label>Email Address <span class="req">*</span></label>
+          <input type="email" name="email" class="form-control" value="{{ data.get('email','') }}" required placeholder="you@company.com">
+        </div>
+        <div class="col-md-6">
+          <label>Phone Number <span class="req">*</span></label>
+          <input type="tel" name="phone" class="form-control" value="{{ data.get('phone','') }}" required placeholder="+964 ...">
+        </div>
+        <div class="col-md-6">
+          <label>Job Title / Headline <span class="req">*</span></label>
+          <input type="text" name="headline" class="form-control" value="{{ data.get('headline','') }}" required placeholder="e.g. HR Manager">
+        </div>
+        <div class="col-md-6">
+          <label>City / Location <span class="req">*</span></label>
+          <input type="text" name="location_city" class="form-control" value="{{ data.get('location_city','') }}" required placeholder="e.g. Sulaymaniyah">
+        </div>
+        <div class="col-md-3">
+          <label>Nationality <span class="req">*</span></label>
+          <input type="text" name="nationality" class="form-control" value="{{ data.get('nationality','') }}" required placeholder="e.g. Iraqi">
+        </div>
+        <div class="col-md-3">
+          <label>Gender <span class="req">*</span></label>
+          <select name="gender" class="form-select" required>
+            <option value="">Select…</option>
+            {% for g in ['Male','Female','Other','Prefer not to say'] %}
+            <option value="{{ g }}" {% if data.get('gender') == g %}selected{% endif %}>{{ g }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-12">
+          <label>Professional Bio <span class="req">*</span></label>
+          <textarea name="bio" class="form-control" rows="4" required placeholder="Brief professional background, experience, and why you want to manage hiring…">{{ data.get('bio','') }}</textarea>
+        </div>
+        <div class="col-md-6">
+          <label>LinkedIn URL <small class="text-muted">(optional)</small></label>
+          <input type="url" name="linkedin_url" class="form-control" value="{{ data.get('linkedin_url','') }}" placeholder="https://linkedin.com/in/…">
+        </div>
+        <div class="col-12"><div class="divider"></div></div>
+        <div class="col-md-6">
+          <label>Password {% if not req %}<span class="req">*</span>{% else %}<small class="text-muted">(leave blank to keep current)</small>{% endif %}</label>
+          <input type="password" name="password" class="form-control" {% if not req %}required{% endif %} placeholder="Min. 8 characters" autocomplete="new-password">
+        </div>
+        <div class="col-md-6">
+          <label>Confirm Password {% if not req %}<span class="req">*</span>{% endif %}</label>
+          <input type="password" name="confirm_password" class="form-control" {% if not req %}required{% endif %} placeholder="Re-enter password" autocomplete="new-password">
+        </div>
+      </div>
+    </div>
+
+    <!-- COMPANY INFO -->
+    <div class="sa-card">
+      <div class="sa-section-title"><i class="bi bi-building-fill"></i> Your Company Details</div>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label>Company Name <span class="req">*</span></label>
+          <input type="text" name="company_name" class="form-control" value="{{ data.get('company_name','') }}" required placeholder="e.g. MOF Engineering">
+        </div>
+        <div class="col-md-6">
+          <label>Industry <span class="req">*</span></label>
+          <input type="text" name="company_industry" class="form-control" value="{{ data.get('company_industry','') }}" required placeholder="e.g. Construction, Oil & Gas…">
+        </div>
+        <div class="col-md-4">
+          <label>Company Size <span class="req">*</span></label>
+          <select name="company_size" class="form-select" required>
+            <option value="">Select…</option>
+            {% for s in COMPANY_SIZES %}
+            <option value="{{ s }}" {% if data.get('company_size') == s %}selected{% endif %}>{{ s }} employees</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label>Company Location <span class="req">*</span></label>
+          <input type="text" name="company_location" class="form-control" value="{{ data.get('company_location','') }}" required placeholder="City, Country">
+        </div>
+        <div class="col-md-4">
+          <label>Founded Year <small class="text-muted">(optional)</small></label>
+          <input type="number" name="company_founded_year" class="form-control" value="{{ data.get('company_founded_year','') }}" placeholder="e.g. 2010" min="1900" max="2025">
+        </div>
+        <div class="col-md-6">
+          <label>Company Contact Email <span class="req">*</span></label>
+          <input type="email" name="company_contact_email" class="form-control" value="{{ data.get('company_contact_email','') }}" required placeholder="hr@company.com">
+        </div>
+        <div class="col-md-6">
+          <label>Company Phone <small class="text-muted">(optional)</small></label>
+          <input type="tel" name="company_contact_phone" class="form-control" value="{{ data.get('company_contact_phone','') }}" placeholder="+964 ...">
+        </div>
+        <div class="col-md-6">
+          <label>Company Website <small class="text-muted">(optional)</small></label>
+          <input type="url" name="company_website" class="form-control" value="{{ data.get('company_website','') }}" placeholder="https://company.com">
+        </div>
+        <div class="col-md-6">
+          <label>Company Logo <small class="text-muted">(optional — JPG, PNG, WebP)</small></label>
+          <input type="file" name="company_logo" class="form-control" accept="image/*">
+        </div>
+        <div class="col-12">
+          <label>Company Description <span class="req">*</span></label>
+          <textarea name="company_description" class="form-control" rows="4" required placeholder="What does your company do? Products, services, mission…">{{ data.get('company_description','') }}</textarea>
+        </div>
+      </div>
+    </div>
+
+    <button type="submit" class="btn-submit">
+      <i class="bi bi-send-fill me-2"></i>{{ 'Resubmit Application' if req else 'Submit Application' }}
+    </button>
+  </form>
+
+  <div style="text-align:center;margin-top:20px;font-size:12px;color:#adb5bd">
+    Already have an account? <a href="/login" style="color:#198754">Sign in</a>
+  </div>
+</div>
+</body>
+</html>
