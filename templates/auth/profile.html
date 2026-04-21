@@ -69,6 +69,11 @@
 .ap-mini-actions{display:flex;gap:8px;flex-wrap:wrap}
 .ap-delete-btn{color:#dc2626;border-color:#fecaca;background:#fff7f7}
 .ap-side-note{padding:14px;border-radius:12px;background:#f8fbfc;border:1px solid var(--border)}
+.ap-tab-mob-grid{display:none;grid-template-columns:repeat(3,1fr);gap:8px}
+.ap-tab-mini{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:12px 6px;border:1px solid var(--border);border-radius:12px;background:var(--card);color:var(--text2);text-decoration:none;font-size:11px;font-weight:700;text-align:center;line-height:1.2;transition:all 0.15s}
+.ap-tab-mini i{font-size:18px}
+.ap-tab-mini:hover{text-decoration:none;border-color:var(--green);color:var(--green)}
+.ap-tab-mini.active{background:var(--green);border-color:var(--green);color:#fff;box-shadow:0 4px 12px rgba(25,135,84,.25)}
 @media (max-width: 980px){
   .ap-grid{grid-template-columns:1fr}
   .ap-hero{grid-template-columns:1fr}
@@ -82,7 +87,8 @@
   .ap-name{font-size:20px}
   .ap-form-grid{grid-template-columns:1fr}
   .ap-tabs{display:none!important}
-  .ap-tab-mob{display:block!important}
+  .ap-tab-mob{display:none!important}
+  .ap-tab-mob-grid{display:grid!important}
   .ap-row{flex-direction:column;align-items:flex-start}
   .ap-row-value{text-align:left}
   .ap-card{padding:16px}
@@ -278,13 +284,13 @@
       <a href="{{ url_for('auth.profile', mode='edit', tab='languages') }}" class="ap-tab {% if tab == 'languages' %}active{% endif %}">Languages &amp; Certs</a>
       <a href="{{ url_for('auth.profile', mode='edit', tab='security') }}" class="ap-tab {% if tab == 'security' %}active{% endif %}">Security</a>
     </div>
-    <select class="form-control ap-tab-mob" style="display:none" onchange="location.href=this.value">
-      <option value="{{ url_for('auth.profile', mode='edit', tab='info') }}"{% if tab=='info' %} selected{% endif %}>Personal Info</option>
-      <option value="{{ url_for('auth.profile', mode='edit', tab='skills') }}"{% if tab=='skills' %} selected{% endif %}>Skills</option>
-      <option value="{{ url_for('auth.profile', mode='edit', tab='experience') }}"{% if tab=='experience' %} selected{% endif %}>Experience &amp; Education</option>
-      <option value="{{ url_for('auth.profile', mode='edit', tab='languages') }}"{% if tab=='languages' %} selected{% endif %}>Languages &amp; Certs</option>
-      <option value="{{ url_for('auth.profile', mode='edit', tab='security') }}"{% if tab=='security' %} selected{% endif %}>Security</option>
-    </select>
+    <div class="ap-tab-mob-grid">
+      <a href="{{ url_for('auth.profile', mode='edit', tab='info') }}" class="ap-tab-mini {% if tab=='info' %}active{% endif %}"><i class="bi bi-person-fill"></i>Personal Info</a>
+      <a href="{{ url_for('auth.profile', mode='edit', tab='skills') }}" class="ap-tab-mini {% if tab=='skills' %}active{% endif %}"><i class="bi bi-stars"></i>Skills</a>
+      <a href="{{ url_for('auth.profile', mode='edit', tab='experience') }}" class="ap-tab-mini {% if tab=='experience' %}active{% endif %}"><i class="bi bi-briefcase-fill"></i>Experience</a>
+      <a href="{{ url_for('auth.profile', mode='edit', tab='languages') }}" class="ap-tab-mini {% if tab=='languages' %}active{% endif %}"><i class="bi bi-translate"></i>Languages</a>
+      <a href="{{ url_for('auth.profile', mode='edit', tab='security') }}" class="ap-tab-mini {% if tab=='security' %}active{% endif %}"><i class="bi bi-shield-lock-fill"></i>Security</a>
+    </div>
 
     {% if tab == 'info' %}
     <div class="ap-grid">
