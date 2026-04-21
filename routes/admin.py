@@ -1462,6 +1462,59 @@ def supervisor_request_reject(req_id):
     return redirect(url_for('admin.supervisor_requests'))
 
 
+@admin_bp.route('/supervisor_requests/<int:req_id>/edit', methods=['POST'])
+@admin_required
+def supervisor_request_edit(req_id):
+    req = db.get_or_404(SupervisorRequest, req_id)
+
+    req.full_name            = request.form.get('full_name', '').strip() or req.full_name
+    req.email                = request.form.get('email', '').strip() or req.email
+    req.phone                = request.form.get('phone', '').strip() or req.phone
+    req.headline             = request.form.get('headline', '').strip() or None
+    req.location_city        = request.form.get('location_city', '').strip() or None
+    req.nationality          = request.form.get('nationality', '').strip() or None
+    req.gender               = request.form.get('gender', '').strip() or None
+    req.bio                  = request.form.get('bio', '').strip() or None
+    req.linkedin_url         = request.form.get('linkedin_url', '').strip() or None
+    req.company_name         = request.form.get('company_name', '').strip() or req.company_name
+    req.company_industry     = request.form.get('company_industry', '').strip() or None
+    req.company_size         = request.form.get('company_size', '').strip() or None
+    req.company_location     = request.form.get('company_location', '').strip() or None
+    req.company_website      = request.form.get('company_website', '').strip() or None
+    req.company_description  = request.form.get('company_description', '').strip() or None
+    req.company_contact_email= request.form.get('company_contact_email', '').strip() or None
+    req.company_contact_phone= request.form.get('company_contact_phone', '').strip() or None
+    yr = request.form.get('company_founded_year', '').strip()
+    req.company_founded_year = int(yr) if yr.isdigit() else req.company_founded_year
+
+    # Optional logo replacement
+    logo_file = request.files.get('company_logo')
+    if logo_file and logo_file.filename:
+        import uuid as _uuid
+        ext = logo_file.filename.rsplit('.', 1)[-1].lower()
+        if ext in {'jpg', 'jpeg', 'png', 'webp', 'gif'}:
+            logo_dir = os.path.join(current_app.root_path, 'static', 'uploads', 'company_logos')
+            os.makedirs(logo_dir, exist_ok=True)
+            fname = f'{_uuid.uuid4().hex}.{ext}'
+            logo_file.save(os.path.join(logo_dir, fname))
+            req.company_logo_filename = fname
+
+    # Optional password reset
+    new_pw = request.form.get('new_password', '').strip()
+    if new_pw:
+        req.set_password(new_pw)
+
+    # Optionally reset to pending so it can be re-reviewed
+    if request.form.get('reset_to_pending') and req.status != 'approved':
+        req.status = 'pending'
+        req.rejection_reason = None
+
+    _audit('supervisor_request.edit', f'{req.full_name} <{req.email}>')
+    db.session.commit()
+    flash('Application updated successfully.', 'success')
+    return redirect(url_for('admin.supervisor_request_detail', req_id=req_id))
+
+
 # ─── EXPORT HELPER ────────────────────────────────────────────────────────────
 
 def _export(headers, data, filename_base, fmt='csv'):

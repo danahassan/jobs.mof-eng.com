@@ -158,4 +158,153 @@
   {% endif %}
 </div>
 {% endif %}
+
+<!-- ── Admin Edit Form ── -->
+<div style="margin-top:24px">
+  <button type="button" onclick="toggleEdit()" class="btn btn-outline btn-sm" id="editToggleBtn">
+    <i class="bi bi-pencil-square"></i> Edit Application
+  </button>
+</div>
+
+<div id="editFormWrap" style="display:none;margin-top:16px">
+<div class="table-card" style="padding:20px">
+  <div style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--text2);margin-bottom:18px;display:flex;align-items:center;gap:8px">
+    <i class="bi bi-pencil-fill" style="color:var(--green)"></i> Edit All Fields
+  </div>
+  <form method="POST" action="{{ url_for('admin.supervisor_request_edit', req_id=req.id) }}" enctype="multipart/form-data">
+
+    <!-- Personal -->
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--border)">Personal Details</div>
+    <div class="sr-edit-grid">
+      <div class="form-group">
+        <label class="form-label-sm">Full Name</label>
+        <input type="text" name="full_name" class="form-control" value="{{ req.full_name }}" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label-sm">Email</label>
+        <input type="email" name="email" class="form-control" value="{{ req.email }}" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label-sm">Phone</label>
+        <input type="tel" name="phone" class="form-control" value="{{ req.phone or '' }}">
+      </div>
+      <div class="form-group">
+        <label class="form-label-sm">Job Title / Headline</label>
+        <input type="text" name="headline" class="form-control" value="{{ req.headline or '' }}">
+      </div>
+      <div class="form-group">
+        <label class="form-label-sm">City / Location</label>
+        <input type="text" name="location_city" class="form-control" value="{{ req.location_city or '' }}">
+      </div>
+      <div class="form-group">
+        <label class="form-label-sm">Nationality</label>
+        <input type="text" name="nationality" class="form-control" value="{{ req.nationality or '' }}">
+      </div>
+      <div class="form-group">
+        <label class="form-label-sm">Gender</label>
+        <select name="gender" class="form-control">
+          <option value="">—</option>
+          {% for g in ['Male','Female','Other','Prefer not to say'] %}
+          <option value="{{ g }}" {% if req.gender == g %}selected{% endif %}>{{ g }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label-sm">LinkedIn URL</label>
+        <input type="url" name="linkedin_url" class="form-control" value="{{ req.linkedin_url or '' }}">
+      </div>
+      <div class="form-group sr-edit-full">
+        <label class="form-label-sm">Bio</label>
+        <textarea name="bio" class="form-control" rows="4">{{ req.bio or '' }}</textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label-sm">New Password <small style="color:var(--text3);font-weight:400">(leave blank to keep)</small></label>
+        <input type="password" name="new_password" class="form-control" placeholder="Set new password…" autocomplete="new-password">
+      </div>
+    </div>
+
+    <!-- Company -->
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);margin:20px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--border)">Company Details</div>
+    <div class="sr-edit-grid">
+      <div class="form-group">
+        <label class="form-label-sm">Company Name</label>
+        <input type="text" name="company_name" class="form-control" value="{{ req.company_name }}" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label-sm">Industry</label>
+        <input type="text" name="company_industry" class="form-control" value="{{ req.company_industry or '' }}">
+      </div>
+      <div class="form-group">
+        <label class="form-label-sm">Size</label>
+        <select name="company_size" class="form-control">
+          <option value="">—</option>
+          {% for s in ['1–10','11–50','51–200','201–500','501–1000','1000+'] %}
+          <option value="{{ s }}" {% if req.company_size == s %}selected{% endif %}>{{ s }} employees</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label-sm">Location</label>
+        <input type="text" name="company_location" class="form-control" value="{{ req.company_location or '' }}">
+      </div>
+      <div class="form-group">
+        <label class="form-label-sm">Contact Email</label>
+        <input type="email" name="company_contact_email" class="form-control" value="{{ req.company_contact_email or '' }}">
+      </div>
+      <div class="form-group">
+        <label class="form-label-sm">Contact Phone</label>
+        <input type="tel" name="company_contact_phone" class="form-control" value="{{ req.company_contact_phone or '' }}">
+      </div>
+      <div class="form-group">
+        <label class="form-label-sm">Website</label>
+        <input type="url" name="company_website" class="form-control" value="{{ req.company_website or '' }}">
+      </div>
+      <div class="form-group">
+        <label class="form-label-sm">Founded Year</label>
+        <input type="number" name="company_founded_year" class="form-control" value="{{ req.company_founded_year or '' }}" min="1900" max="2099">
+      </div>
+      <div class="form-group sr-edit-full">
+        <label class="form-label-sm">Company Description</label>
+        <textarea name="company_description" class="form-control" rows="4">{{ req.company_description or '' }}</textarea>
+      </div>
+      <div class="form-group sr-edit-full">
+        <label class="form-label-sm">Replace Company Logo <small style="color:var(--text3);font-weight:400">(optional)</small></label>
+        {% if req.company_logo_filename %}
+        <div style="margin-bottom:8px"><img src="{{ url_for('static', filename='uploads/company_logos/' + req.company_logo_filename) }}" style="max-height:48px;border-radius:6px;border:1px solid var(--border)" alt="Current logo"></div>
+        {% endif %}
+        <input type="file" name="company_logo" class="form-control" accept="image/*">
+      </div>
+    </div>
+
+    {% if req.status == 'rejected' %}
+    <div style="margin-top:16px;padding:12px;background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;display:flex;align-items:center;gap:10px">
+      <input type="checkbox" name="reset_to_pending" id="resetPending" value="1" style="width:16px;height:16px;accent-color:var(--green);flex-shrink:0">
+      <label for="resetPending" style="font-size:13px;color:#92400e;font-weight:600;cursor:pointer;margin:0">Reset status to Pending so this request can be re-reviewed</label>
+    </div>
+    {% endif %}
+
+    <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap">
+      <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Save Changes</button>
+      <button type="button" onclick="toggleEdit()" class="btn btn-outline">Cancel</button>
+    </div>
+  </form>
+</div>
+</div>
+
+<style>
+.sr-edit-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.sr-edit-full{grid-column:1 / -1}
+.form-label-sm{display:block;font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.03em;margin-bottom:5px}
+@media(max-width:600px){.sr-edit-grid{grid-template-columns:1fr}.sr-edit-full{grid-column:1}}
+</style>
+<script>
+function toggleEdit(){
+  var w = document.getElementById('editFormWrap');
+  var b = document.getElementById('editToggleBtn');
+  var open = w.style.display === 'none';
+  w.style.display = open ? 'block' : 'none';
+  b.innerHTML = open ? '<i class="bi bi-x-lg"></i> Cancel Edit' : '<i class="bi bi-pencil-square"></i> Edit Application';
+  if(open) w.scrollIntoView({behavior:'smooth', block:'start'});
+}
+</script>
 {% endblock %}
