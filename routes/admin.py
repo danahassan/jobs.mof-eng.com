@@ -1490,14 +1490,10 @@ def supervisor_request_edit(req_id):
     # Optional logo replacement
     logo_file = request.files.get('company_logo')
     if logo_file and logo_file.filename:
-        import uuid as _uuid
-        ext = logo_file.filename.rsplit('.', 1)[-1].lower()
-        if ext in {'jpg', 'jpeg', 'png', 'webp', 'gif'}:
-            logo_dir = os.path.join(current_app.root_path, 'static', 'uploads', 'company_logos')
-            os.makedirs(logo_dir, exist_ok=True)
-            fname = f'{_uuid.uuid4().hex}.{ext}'
-            logo_file.save(os.path.join(logo_dir, fname))
-            req.company_logo_filename = fname
+        try:
+            req.company_logo_filename = save_company_image(logo_file)
+        except ValueError as e:
+            flash(str(e), 'warning')
 
     # Optional password reset
     new_pw = request.form.get('new_password', '').strip()
