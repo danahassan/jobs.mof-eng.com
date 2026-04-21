@@ -9,6 +9,7 @@ from flask_login import current_user
 from models import (db, User, Position, Application, ApplicationHistory,
                     Interview, AuditLog, Company, CompanyMember, CompanyFollow,
                     UserSkill, UserExperience, UserEducation,
+                    UserLanguage, UserCertification,
                     Message,
                     ROLE_ADMIN, ROLE_SUPERVISOR, ROLE_USER, LANG_LEVELS,
                     ALL_STATUSES, SOURCES, STATUS_NEW)
@@ -786,15 +787,16 @@ def user_edit(user_id):
                     end_year=_parse_int(ey)))
 
         # ── Languages ────────────────────────────────────────────────────────
-        # Removed UserLanguage delete (rollback)
+        UserLanguage.query.filter_by(user_id=user.id).delete(synchronize_session=False)
         for lname, lprof in zip(request.form.getlist('lang_name[]'),
                                 request.form.getlist('lang_prof[]')):
             lname = lname.strip()
             if lname:
-                pass  # Removed UserLanguage add (rollback)
+                db.session.add(UserLanguage(user_id=user.id, language=lname,
+                                             proficiency=lprof or 'Intermediate'))
 
-        # ── Certifications ───────────────────────────────────────────────────
-        # Removed UserCertification delete (rollback)
+        # ── Certifications ───────────────────────────────────────────────────────
+        UserCertification.query.filter_by(user_id=user.id).delete(synchronize_session=False)
         for cname, corg, cissued, ccid, curl in zip(
                 request.form.getlist('cert_name[]'),
                 request.form.getlist('cert_org[]'),
@@ -803,7 +805,19 @@ def user_edit(user_id):
                 request.form.getlist('cert_url[]')):
             cname = cname.strip()
             if cname:
-                pass  # Removed UserCertification add (rollback)
+                cert = UserCertification(
+                    user_id=user.id, name=cname,
+                    issuing_org=corg.strip() or None,
+                    credential_id=ccid.strip() or None,
+                    credential_url=curl.strip() or None,
+                )
+                if cissued:
+                    try:
+                        from datetime import datetime as _dt
+                        cert.issue_date = _dt.strptime(cissued, '%Y-%m-%d').date()
+                    except ValueError:
+                        pass
+                db.session.add(cert)
 
         _audit('user.edit', f'{user.full_name} <{user.email}>')
         db.session.commit()

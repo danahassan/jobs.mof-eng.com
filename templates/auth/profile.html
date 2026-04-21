@@ -81,11 +81,15 @@
   .ap-avatar{width:62px;height:62px;font-size:24px}
   .ap-name{font-size:20px}
   .ap-form-grid{grid-template-columns:1fr}
-  .ap-tabs{flex-wrap:nowrap;overflow-x:auto}
-  .ap-tab{min-width:max-content;flex:none;padding:10px 14px}
+  .ap-tabs{display:none!important}
+  .ap-tab-mob{display:block!important}
   .ap-row{flex-direction:column;align-items:flex-start}
   .ap-row-value{text-align:left}
   .ap-card{padding:16px}
+  .ap-actions{gap:8px}
+  .ap-actions .btn{flex:1;justify-content:center;font-size:12px}
+  .ap-hero-side{width:100%}
+  .ap-strength-card{max-width:100%}
 }
 </style>
 {% endblock %}
@@ -274,6 +278,13 @@
       <a href="{{ url_for('auth.profile', mode='edit', tab='languages') }}" class="ap-tab {% if tab == 'languages' %}active{% endif %}">Languages &amp; Certs</a>
       <a href="{{ url_for('auth.profile', mode='edit', tab='security') }}" class="ap-tab {% if tab == 'security' %}active{% endif %}">Security</a>
     </div>
+    <select class="form-control ap-tab-mob" style="display:none" onchange="location.href=this.value">
+      <option value="{{ url_for('auth.profile', mode='edit', tab='info') }}"{% if tab=='info' %} selected{% endif %}>Personal Info</option>
+      <option value="{{ url_for('auth.profile', mode='edit', tab='skills') }}"{% if tab=='skills' %} selected{% endif %}>Skills</option>
+      <option value="{{ url_for('auth.profile', mode='edit', tab='experience') }}"{% if tab=='experience' %} selected{% endif %}>Experience &amp; Education</option>
+      <option value="{{ url_for('auth.profile', mode='edit', tab='languages') }}"{% if tab=='languages' %} selected{% endif %}>Languages &amp; Certs</option>
+      <option value="{{ url_for('auth.profile', mode='edit', tab='security') }}"{% if tab=='security' %} selected{% endif %}>Security</option>
+    </select>
 
     {% if tab == 'info' %}
     <div class="ap-grid">
