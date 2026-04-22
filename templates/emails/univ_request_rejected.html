@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>University Coordinator Application — Update Required — MOF Jobs</title>
+<style>
+  body{margin:0;padding:0;background:#f0f4f8;font-family:'Segoe UI',Arial,sans-serif}
+  .wrapper{max-width:580px;margin:32px auto;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #dde3ea;box-shadow:0 4px 16px rgba(0,0,0,.07)}
+  .header{background:linear-gradient(135deg,#1a2332 0%,#d97706 100%);padding:32px 36px 28px}
+  .header-logo{color:#fff;font-size:20px;font-weight:700;letter-spacing:-0.3px}
+  .header-tagline{color:rgba(255,255,255,.65);font-size:13px;margin-top:4px}
+  .hero-banner{background:#fffbeb;border-left:4px solid #d97706;padding:18px 24px}
+  .hero-icon{font-size:36px;margin-bottom:8px}
+  .hero-title{font-size:22px;font-weight:700;color:#1a2332;margin:0}
+  .body{padding:28px 36px}
+  .greeting{font-size:16px;color:#1a2332;margin-bottom:12px}
+  .text{font-size:14px;color:#4a5568;line-height:1.6;margin-bottom:16px}
+  .feedback-box{background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:16px 20px;margin:16px 0}
+  .feedback-title{color:#92400e;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+  .feedback-text{color:#78350f;font-size:14px;line-height:1.6}
+  .cta-btn{display:inline-block;background:#d97706;color:#fff;text-decoration:none;padding:13px 28px;border-radius:7px;font-weight:600;font-size:14px;margin:8px 0}
+  .divider{height:1px;background:#edf2f7;margin:24px 0}
+  .footer{background:#f8fafc;padding:16px 36px;border-top:1px solid #e2e8f0}
+  .footer-text{font-size:11px;color:#a0aec0;line-height:1.6;text-align:center}
+  .footer-text a{color:#d97706}
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="header">
+    <div class="header-logo">MOF Engineering — Careers Administration</div>
+    <div class="header-tagline">Managing Of Future Engineering Company · Slemani, Iraq</div>
+  </div>
+  <div class="hero-banner">
+    <div class="hero-icon">📋</div>
+    <div class="hero-title">Application Update Required</div>
+  </div>
+  <div class="body">
+    <p class="greeting">Dear <strong>{{ req.full_name.split()[0] }}</strong>,</p>
+    <p class="text">
+      Thank you for applying as a university coordinator for <strong>{{ req.university_name }}</strong>.
+      After reviewing your application, we need you to make some updates before we can proceed.
+    </p>
+    {% if req.rejection_reason %}
+    <div class="feedback-box">
+      <div class="feedback-title">Feedback from our team</div>
+      <div class="feedback-text">{{ req.rejection_reason }}</div>
+    </div>
+    {% endif %}
+    <p class="text">
+      Please click the button below to update your application details and resubmit for review.
+    </p>
+    <div style="text-align:center;margin:24px 0">
+      <a href="{{ edit_url }}" class="cta-btn">Update &amp; Resubmit Application &rarr;</a>
+    </div>
+    <p class="text" style="font-size:13px;color:#718096">
+      If you have questions, contact us at <a href="mailto:admin@mof-eng.com" style="color:#d97706">admin@mof-eng.com</a>.
+    </p>
+    <div class="divider"></div>
+    <div style="font-size:13px;color:#4a5568">
+      <div>Best regards,</div>
+      <div style="font-weight:700;color:#1a2332;font-size:14px;margin-top:6px">MOF Engineering — System Administration</div>
+      <div style="color:#718096;font-size:12px">Jobs Portal · jobs.mof-eng.com</div>
+    </div>
+  </div>
+  <div class="footer">
+    <div class="footer-text">
+      <img src="https://mof-eng.com/wp-content/uploads/2025/05/cropped-MOF-LOGO-transparent--100x46.png"
+           alt="MOF Engineering" width="72" style="display:block;margin:0 auto 12px;filter:brightness(0);opacity:.55"
+           onerror="this.style.display='none'">
+      This email was sent to <strong>{{ req.email }}</strong>.<br>
+      MOF Engineering Company · Slemani, Iraq · <a href="https://mof-eng.com">mof-eng.com</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

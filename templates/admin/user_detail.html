@@ -65,10 +65,13 @@
 @media(max-width:860px){.ud-grid{grid-template-columns:1fr 260px}}
 @media(max-width:680px){
   .ud-grid{grid-template-columns:1fr}
-  .ud-sidebar{position:static}
+  .ud-sidebar{position:static;order:-1}
   .ud-hero{padding:16px 18px}
   .ud-hero-name{font-size:18px}
   .ud-hero-left{gap:12px}
+  .ud-hero-actions{width:100%;justify-content:flex-start}
+  .ud-info-row{flex-wrap:wrap;gap:4px}
+  .ud-info-val{text-align:left}
 }
 </style>
 {% endblock %}
@@ -112,7 +115,7 @@
         <i class="bi bi-arrow-left"></i> Back
       </a>
       <a href="{{ url_for('admin.user_edit', user_id=user.id) }}" class="btn btn-primary btn-sm">
-        <i class="bi bi-pencil"></i> Edit User
+        <i class="bi bi-pencil-square"></i> Edit Full Profile
       </a>
     </div>
   </div>
@@ -352,7 +355,7 @@
         </div>
         <div class="ud-info-row">
           <span class="ud-info-lbl">Last Login</span>
-          <span class="ud-info-val">{{ user.last_login.strftime('%b %d, %Y') if user.last_login else 'Never' }}</span>
+          <span class="ud-info-val">{{ (user.last_login | localdt).strftime('%b %d, %Y %H:%M') if user.last_login else 'Never' }}</span>
         </div>
         <div class="ud-info-row">
           <span class="ud-info-lbl">2FA</span>
@@ -405,7 +408,7 @@
         <a href="{{ url_for('admin.application_detail', app_id=app.id) }}" class="ud-app-row">
           <div style="flex:1;min-width:0">
             <div class="ud-app-pos">{{ app.position.title }}</div>
-            <div class="ud-app-meta">{{ app.applied_at.strftime('%b %d, %Y') }}</div>
+            <div class="ud-app-meta">{{ (app.applied_at | localdt).strftime('%b %d, %Y') }}</div>
           </div>
           <span class="badge badge-{{ 'active' if app.status in ('new', 'shortlisted') else 'inactive' }}"
                 style="font-size:10px;align-self:center;text-transform:capitalize">{{ app.status }}</span>

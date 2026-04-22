@@ -1,0 +1,237 @@
+{% extends 'base.html' %}
+{% block title %}Universities — Admin — MOF Jobs{% endblock %}
+{% block page_title %}Universities{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Admin university cards (mirrors ac-* from companies) ── */
+.au-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px;margin-bottom:24px}
+.au-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;display:flex;flex-direction:column;transition:box-shadow .15s,transform .15s}
+.au-card:hover{box-shadow:0 4px 18px rgba(0,0,0,.08);transform:translateY(-2px)}
+.au-card-cover{height:90px;background:linear-gradient(135deg,#1a3a5c 0%,#0f5c3a 100%);flex-shrink:0}
+.au-card-logo-float{position:relative;margin-top:-24px;margin-left:14px;width:48px;height:48px}
+.au-card-logo{width:48px;height:48px;border-radius:10px;object-fit:contain;background:#fff;border:2px solid var(--card);padding:4px}
+.au-card-logo-ph{width:48px;height:48px;border-radius:10px;background:var(--green-light);color:var(--green);font-weight:700;font-size:18px;display:flex;align-items:center;justify-content:center;border:2px solid var(--card)}
+.au-card-body{padding:8px 14px 14px;display:flex;flex-direction:column;gap:5px;flex:1}
+.au-card-name-row{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:2px}
+.au-card-name{font-size:14px;font-weight:700;color:var(--text);text-decoration:none}
+.au-card-name:hover{color:var(--green)}
+.au-card-sub{font-size:12px;color:var(--text3)}
+.au-card-stats{display:flex;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--text3)}
+.au-card-stats span{display:inline-flex;align-items:center;gap:4px}
+.au-card-actions{display:flex;gap:6px;margin-top:auto;padding-top:10px;border-top:1px solid var(--border)}
+.view-toggle{display:flex;background:var(--bg2,#f1f5f9);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.view-toggle a{padding:6px 11px;color:var(--text3);text-decoration:none;font-size:14px;display:flex;align-items:center;transition:background .1s}
+.view-toggle a.active{background:var(--green);color:#fff}
+.view-toggle a:not(.active):hover{background:var(--border);color:var(--text)}
+@media(max-width:600px){.au-grid{grid-template-columns:1fr}}
+</style>
+{% endblock %}
+
+{% set view = request.args.get('view', 'card') %}
+
+{% block content %}
+<!-- KPI strip -->
+<div class="kpi-strip">
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#e8f5ee;color:#198754"><i class="bi bi-mortarboard-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_total }}</div><div class="kpi-lbl">Total</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#e8f5ee;color:#059669"><i class="bi bi-check-circle-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_active }}</div><div class="kpi-lbl">Active</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#eff6ff;color:#2563eb"><i class="bi bi-person-video3"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_coords }}</div><div class="kpi-lbl">Coordinators</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#f5f3ff;color:#7c3aed"><i class="bi bi-person-badge-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_students }}</div><div class="kpi-lbl">Students</div></div>
+  </div>
+</div>
+
+<!-- Section header -->
+<div class="section-header">
+  <h2><i class="bi bi-mortarboard-fill" style="color:var(--green)"></i> All Universities</h2>
+  <div class="d-flex gap-2 align-center">
+    <div class="view-toggle">
+      <a href="?q={{ q_str }}&status={{ status_f }}&view=card"
+         class="{% if view == 'card' %}active{% endif %}" title="Card view"><i class="bi bi-grid-3x3-gap-fill"></i></a>
+      <a href="?q={{ q_str }}&status={{ status_f }}&view=table"
+         class="{% if view == 'table' %}active{% endif %}" title="Table view"><i class="bi bi-table"></i></a>
+    </div>
+    <a href="{{ url_for('admin.university_new') }}" class="btn btn-primary">
+      <i class="bi bi-plus-lg"></i> New University
+    </a>
+  </div>
+</div>
+
+<!-- Filter bar -->
+<form method="GET" class="filter-bar">
+  <div class="filter-row">
+    <div class="filter-search">
+      <label class="msd-label">Search</label>
+      <div style="position:relative">
+        <i class="bi bi-search filter-search-icon"></i>
+        <input type="text" name="q" class="form-control" placeholder="University name…" value="{{ q_str }}">
+        <input type="hidden" name="view" value="{{ view }}">
+      </div>
+    </div>
+    <div class="filter-group">
+      <label>Status</label>
+      <select name="status" class="form-control">
+        <option value="">All</option>
+        <option value="active"   {% if status_f == 'active'   %}selected{% endif %}>Active</option>
+        <option value="inactive" {% if status_f == 'inactive' %}selected{% endif %}>Inactive</option>
+      </select>
+    </div>
+    <div class="filter-actions">
+      <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-funnel"></i> Filter</button>
+      <a href="{{ url_for('admin.universities') }}" class="btn btn-outline btn-sm">Reset</a>
+    </div>
+  </div>
+</form>
+{% if q_str or status_f %}
+<div class="filter-chips">
+  {% if q_str %}<span class="filter-chip"><i class="bi bi-search"></i> {{ q_str }}</span>{% endif %}
+  {% if status_f %}<span class="filter-chip"><i class="bi bi-circle-fill" style="font-size:8px"></i> {{ status_f|capitalize }}</span>{% endif %}
+  <a href="{{ url_for('admin.universities') }}" class="filter-chip" style="background:#fee2e2;color:#991b1b;border-color:#fca5a5"><i class="bi bi-x-lg"></i> Clear all</a>
+</div>
+{% endif %}
+
+{% if univs.items %}
+
+{# ── CARD VIEW ── #}
+{% if view == 'card' %}
+<div class="au-grid">
+  {% for u in univs.items %}
+  <div class="au-card">
+    <div class="au-card-cover"></div>
+    <div class="au-card-logo-float">
+      {% if u.logo_filename %}
+        <img src="{{ url_for('static', filename='uploads/company/' + u.logo_filename) }}"
+             alt="{{ u.name }}" class="au-card-logo">
+      {% else %}
+        <div class="au-card-logo-ph">{{ u.name[0]|upper }}</div>
+      {% endif %}
+    </div>
+    <div class="au-card-body">
+      <div class="au-card-name-row">
+        <a href="{{ url_for('admin.university_detail', univ_id=u.id) }}" class="au-card-name">{{ u.name }}</a>
+        {% if not u.is_active %}<span class="badge badge-inactive" style="font-size:10px">Inactive</span>{% endif %}
+      </div>
+      {% if u.location %}<div class="au-card-sub"><i class="bi bi-geo-alt"></i> {{ u.location }}</div>{% endif %}
+      <div class="au-card-stats">
+        <span style="color:#7c3aed;font-weight:600"><i class="bi bi-person-badge-fill"></i> {{ u.students.filter_by(role='student').count() }} student{{ 's' if u.students.filter_by(role='student').count() != 1 }}</span>
+        <span><i class="bi bi-person-video3"></i> {{ u.members.count() }} coord{{ 's' if u.members.count() != 1 }}</span>
+        {% if u.website %}<span><i class="bi bi-globe2"></i> Website</span>{% endif %}
+      </div>
+      <div class="au-card-actions">
+        <a href="{{ url_for('admin.university_detail', univ_id=u.id) }}" class="btn btn-outline btn-sm" style="flex:1;justify-content:center">
+          <i class="bi bi-eye"></i> View
+        </a>
+        <a href="{{ url_for('admin.university_edit', univ_id=u.id) }}" class="btn btn-outline btn-sm">
+          <i class="bi bi-pencil"></i>
+        </a>
+        <form method="POST" action="{{ url_for('admin.university_delete', univ_id=u.id) }}"
+              onsubmit="return confirm('Delete {{ u.name|e }}? This cannot be undone.')">
+          <button class="btn btn-danger btn-sm"><i class="bi bi-trash"></i></button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{# ── TABLE VIEW ── #}
+{% else %}
+<div class="table-card">
+  <div class="table-responsive">
+    <table class="tbl">
+      <thead>
+        <tr><th>#</th><th>University</th><th>Location</th><th>Students</th><th>Coordinators</th><th>Status</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for u in univs.items %}
+        <tr>
+          <td data-label="#">{{ loop.index }}</td>
+          <td data-label="University">
+            <div class="d-flex align-center gap-3">
+              {% if u.logo_filename %}
+                <img src="{{ url_for('static', filename='uploads/company/' + u.logo_filename) }}"
+                     alt="{{ u.name }}" style="width:38px;height:38px;border-radius:8px;object-fit:contain;background:#f8f9fa;border:1px solid var(--border);padding:3px;flex-shrink:0">
+              {% else %}
+                <div style="width:38px;height:38px;border-radius:8px;background:var(--green-light);color:var(--green);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;font-size:15px">
+                  {{ u.name[0]|upper }}
+                </div>
+              {% endif %}
+              <div>
+                <a href="{{ url_for('admin.university_detail', univ_id=u.id) }}" class="td-name" style="color:var(--text)">{{ u.name }}</a>
+                {% if u.website %}<div class="text-muted text-sm">{{ u.website }}</div>{% endif %}
+              </div>
+            </div>
+          </td>
+          <td data-label="Location">{{ u.location or '—' }}</td>
+          <td data-label="Students">
+            <span style="background:#f5f3ff;color:#7c3aed;padding:2px 8px;border-radius:10px;font-size:12px;font-weight:600">
+              {{ u.students.filter_by(role='student').count() }}
+            </span>
+          </td>
+          <td data-label="Coordinators">
+            <span style="background:#eff6ff;color:#2563eb;padding:2px 8px;border-radius:10px;font-size:12px;font-weight:600">
+              {{ u.members.count() }}
+            </span>
+          </td>
+          <td data-label="Status">
+            {% if u.is_active %}<span class="badge badge-active">Active</span>
+            {% else %}<span class="badge badge-inactive">Inactive</span>{% endif %}
+          </td>
+          <td data-label="Actions">
+            <div class="d-flex gap-2">
+              <a href="{{ url_for('admin.university_detail', univ_id=u.id) }}" class="btn btn-outline btn-sm">
+                <i class="bi bi-eye"></i> View
+              </a>
+              <a href="{{ url_for('admin.university_edit', univ_id=u.id) }}" class="btn btn-outline btn-sm">
+                <i class="bi bi-pencil"></i>
+              </a>
+              <form method="POST" action="{{ url_for('admin.university_delete', univ_id=u.id) }}"
+                    onsubmit="return confirm('Delete {{ u.name|e }}? This cannot be undone.')">
+                <button class="btn btn-danger btn-sm"><i class="bi bi-trash"></i></button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}{# end table view #}
+
+{% else %}
+<div class="empty-state">
+  <i class="bi bi-mortarboard"></i>
+  <h3>No universities yet</h3>
+  <p>Create the first university to link students and assign coordinators.</p>
+  <a href="{{ url_for('admin.university_new') }}" class="btn btn-primary mt-3">
+    <i class="bi bi-plus-lg"></i> New University
+  </a>
+</div>
+{% endif %}
+
+{% if univs.pages > 1 %}
+<div class="pagination" style="margin-top:16px">
+  <a href="{{ url_for('admin.universities', page=univs.prev_num, q=q_str, status=status_f, view=view) }}"
+     class="page-link {% if not univs.has_prev %}disabled{% endif %}"><i class="bi bi-chevron-left"></i></a>
+  {% for p in univs.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+    {% if p %}
+      <a href="{{ url_for('admin.universities', page=p, q=q_str, status=status_f, view=view) }}"
+         class="page-link {% if p == univs.page %}active{% endif %}">{{ p }}</a>
+    {% else %}<span class="page-link">…</span>{% endif %}
+  {% endfor %}
+  <a href="{{ url_for('admin.universities', page=univs.next_num, q=q_str, status=status_f, view=view) }}"
+     class="page-link {% if not univs.has_next %}disabled{% endif %}"><i class="bi bi-chevron-right"></i></a>
+</div>
+{% endif %}
+{% endblock %}

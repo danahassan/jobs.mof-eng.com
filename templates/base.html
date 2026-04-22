@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script>if(localStorage.getItem('theme')==='dark')document.documentElement.classList.add('dark');</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <meta name="theme-color" content="#0f1923">
 <meta name="mobile-web-app-capable" content="yes">
@@ -61,24 +62,12 @@ img{max-width:100%}
 .sidebar-logo-sub{color:rgba(255,255,255,0.35);font-size:10px;margin-top:2px}
 .role-pill{display:none}
 nav.sidebar-nav{padding:8px 10px;flex:1}
-.sidebar-user-card{margin:10px 10px 0;background:rgba(255,255,255,0.05);border-radius:10px;padding:10px 12px;border:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;gap:10px;cursor:pointer;transition:background 0.18s,border-color 0.18s;text-decoration:none}
-.sidebar-user-card:hover{background:rgba(255,255,255,0.09);border-color:rgba(255,255,255,0.14);text-decoration:none}
-.sidebar-user-avatar{width:38px;height:38px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;border:2px solid rgba(255,255,255,0.18);overflow:hidden}
-.sidebar-user-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
-.sidebar-user-info{flex:1;min-width:0}
+.sidebar-user-meta{display:flex;align-items:center;justify-content:space-between;padding:10px 16px 4px;gap:8px}
 .sidebar-user-name{color:#fff;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.3}
 .sidebar-user-role{display:inline-flex;align-items:center;gap:4px;background:rgba(25,135,84,0.25);color:#4ade80;font-size:10px;padding:2px 7px;border-radius:10px;font-weight:600;margin-top:2px}
 .sidebar-user-role::before{content:'';width:5px;height:5px;border-radius:50%;background:#4ade80;display:inline-block}
-.sidebar-user-headline{color:rgba(255,255,255,0.38);font-size:10.5px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.2}
-.sidebar-strength{display:flex;align-items:center;gap:6px;margin-top:5px}
-.sidebar-strength-bar{flex:1;height:3px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden}
-.sidebar-strength-fill{height:100%;background:linear-gradient(90deg,#f59e0b,#4ade80);border-radius:2px;transition:width 0.6s ease}
-.sidebar-strength-pct{color:rgba(255,255,255,0.35);font-size:9px;font-weight:600;flex-shrink:0}
-.sidebar-account-links{display:flex;gap:6px;padding:8px 10px 6px}
-.sidebar-account-link{font-size:12px;padding:8px 10px}
-.sidebar-account-link.profile-link{flex:1;justify-content:center}
-.sidebar-account-link.logout-link{width:38px;justify-content:center;padding:8px;color:rgba(255,110,110,0.85)}
-.sidebar-account-link.logout-link i{width:auto}
+.sidebar-logout-btn{width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:8px;color:rgba(255,110,110,0.85);font-size:15px;transition:background 0.15s;flex-shrink:0;text-decoration:none}
+.sidebar-logout-btn:hover{background:rgba(220,38,38,0.12);text-decoration:none}
 .nav-section{font-size:10px;color:rgba(255,255,255,0.2);padding:14px 8px 4px;text-transform:uppercase;letter-spacing:1px;font-weight:600}
 .nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;color:rgba(255,255,255,0.5);font-size:13px;margin-bottom:1px;transition:all 0.15s;cursor:pointer;position:relative}
 .nav-item:hover{background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.9);text-decoration:none}
@@ -184,6 +173,8 @@ table.tbl tbody tr:hover td{background:#fafbfc}
 .badge-admin{background:#0f1923;color:#fff}.badge-admin::before{background:var(--green)}
 .badge-supervisor{background:#dbeafe;color:#1d4ed8}.badge-supervisor::before{background:#2563eb}
 .badge-user{background:#f1f5f9;color:#475569}.badge-user::before{background:#64748b}
+.badge-student{background:#f5f3ff;color:#6d28d9}.badge-student::before{background:#7c3aed}
+.badge-university_coordinator{background:#ecfdf5;color:#065f46}.badge-university_coordinator::before{background:#059669}
 .badge-active{background:#dcfce7;color:#15803d}.badge-active::before{background:#16a34a}
 .badge-inactive{background:#fee2e2;color:#991b1b}.badge-inactive::before{background:#dc2626}
 
@@ -425,6 +416,53 @@ select.form-control{cursor:pointer}
   .stat-num{font-size:17px}
   .quick-actions{grid-template-columns:repeat(3,1fr)}
 }
+
+/* ═══ DARK MODE ═══ */
+html.dark{
+  --text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;
+  --bg:#0f172a;--card:#1e293b;--border:#334155;--border2:#475569;
+  --green-light:#052e16;--green-mid:#14532d;
+  --shadow:0 1px 3px rgba(0,0,0,.3),0 4px 12px rgba(0,0,0,.2);
+  --shadow-md:0 4px 16px rgba(0,0,0,.35),0 1px 4px rgba(0,0,0,.2);
+  color-scheme:dark;
+}
+html.dark .topbar-btn:hover{background:#334155}
+html.dark .avatar-wrap:hover{background:#2d3f53}
+html.dark .table-head{background:var(--card);border-bottom-color:var(--border)}
+html.dark table.tbl th{background:#263548}
+html.dark table.tbl tbody tr:hover td{background:#263548}
+html.dark .form-control{background:#263548;color:var(--text)}
+html.dark .form-control:focus{background:#2d3f53;box-shadow:0 0 0 3px rgba(25,135,84,.15)}
+html.dark .btn-outline{background:var(--card);color:var(--text2)}
+html.dark .btn-outline:hover{background:#334155;color:var(--text)}
+html.dark .msd-btn{background:var(--card);color:var(--text)}
+html.dark .msd-btn:hover{background:#263548}
+html.dark .msd.msd-active .msd-btn{background:#1a3022}
+html.dark .msd-panel{background:var(--card)}
+html.dark .msd-opt:hover,html.dark .msd-option:hover{background:#1a3022}
+html.dark .msd-opt:has(input:checked),html.dark .msd-option:has(input:checked){background:#052e16;color:#4ade80}
+html.dark .pwa-guide-card{background:var(--card)}
+html.dark .pwa-guide-step{background:#263548;border-color:var(--border)}
+html.dark .quick-action:hover{background:#1a3022}
+html.dark .export-group{background:var(--card)}
+html.dark .export-group .btn-export.csv:hover{background:#052e16}
+html.dark .export-group .btn-export.xlsx:hover{background:#1e3a8a;color:#93c5fd}
+html.dark .alert-success{background:#052e16;color:#4ade80;border-color:#16a34a}
+html.dark .alert-danger{background:#450a0a;color:#fca5a5;border-color:#dc2626}
+html.dark .alert-warning{background:#422006;color:#fcd34d;border-color:#d97706}
+html.dark .alert-info{background:#1e3a8a;color:#93c5fd;border-color:#2563eb}
+html.dark .filter-chip{background:#052e16;color:#4ade80;border-color:#14532d}
+html.dark .filter-chip a{color:#4ade80}
+html.dark .badge-future,html.dark .badge-futureconsideration{background:#334155;color:#94a3b8}
+html.dark .badge-user{background:#334155;color:#94a3b8}
+html.dark .badge-underreview,html.dark .badge-review{background:#1e3a8a;color:#93c5fd}
+html.dark .badge-interview{background:#2e1065;color:#c4b5fd}
+html.dark .badge-offer{background:#451a03;color:#fcd34d}
+html.dark .badge-rejected{background:#450a0a;color:#fca5a5}
+html.dark .page-link{background:var(--card);border-color:var(--border);color:var(--text2)}
+html.dark .page-link:hover{background:#334155}
+html.dark .tl-dot{border-color:var(--bg)}
+html.dark select.form-control option{background:#1e293b}
 </style>
 {% block extra_css %}{% endblock %}
 </head>
@@ -446,28 +484,16 @@ select.form-control{cursor:pointer}
       </div>
     </a>
 
-    <a href="{{ url_for('auth.profile') }}" class="sidebar-user-card" onclick="closeSidebar()">
-      <div class="sidebar-user-avatar">
-        {% if current_user.avatar_filename %}
-        <img src="{{ url_for('static', filename='uploads/avatars/' + current_user.avatar_filename) }}" alt="{{ current_user.initials }}">
-        {% else %}{{ current_user.initials }}{% endif %}
-      </div>
-      <div class="sidebar-user-info">
+    <div class="sidebar-user-meta">
+      <div style="min-width:0">
         <div class="sidebar-user-name">{{ current_user.full_name }}</div>
         <div class="sidebar-user-role">{{ current_user.role|capitalize }}</div>
-        {% if current_user.headline %}<div class="sidebar-user-headline">{{ current_user.headline }}</div>{% endif %}
-        <div class="sidebar-strength">
-          <div class="sidebar-strength-bar"><div class="sidebar-strength-fill" style="width:{{ current_user.profile_strength }}%"></div></div>
-          <div class="sidebar-strength-pct">{{ current_user.profile_strength }}%</div>
-        </div>
       </div>
-    </a>
-    <div class="sidebar-account-links">
-      <a href="{{ url_for('auth.profile') }}" class="nav-item sidebar-account-link profile-link {% if request.blueprint == 'auth' and request.endpoint == 'auth.profile' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-person-circle"></i> My Profile</a>
-      <a href="{{ url_for('auth.logout') }}" class="nav-item sidebar-account-link logout-link" onclick="closeSidebar()" aria-label="Logout" title="Logout"><i class="bi bi-box-arrow-right"></i></a>
+      <a href="{{ url_for('auth.logout') }}" class="sidebar-logout-btn" onclick="closeSidebar()" aria-label="Logout" title="Logout"><i class="bi bi-box-arrow-right"></i></a>
     </div>
-
     <nav class="sidebar-nav">
+      <a href="{{ url_for('auth.profile') }}" class="nav-item {% if request.blueprint == 'auth' and request.endpoint == 'auth.profile' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-person-circle"></i> My Profile</a>
+      <div style="height:1px;background:rgba(255,255,255,0.07);margin:4px 0 6px"></div>
       {% if current_user.role == 'admin' %}
         <div class="nav-section">Main</div>
         <a href="{{ url_for('admin.dashboard') }}" class="nav-item {% if request.endpoint == 'admin.dashboard' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
@@ -475,7 +501,16 @@ select.form-control{cursor:pointer}
         <a href="{{ url_for('admin.applications') }}" class="nav-item {% if 'application' in request.endpoint and request.blueprint == 'admin' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-file-earmark-person-fill"></i> Applications</a>
         <div class="nav-section">Management</div>
         <a href="{{ url_for('admin.companies') }}" class="nav-item {% if request.blueprint == 'admin' and 'compan' in request.endpoint %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-building"></i> Companies</a>
+        <a href="{{ url_for('admin.universities') }}" class="nav-item {% if request.blueprint == 'admin' and 'universit' in request.endpoint and 'request' not in request.endpoint %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-mortarboard"></i> Universities</a>
         <a href="{{ url_for('admin.users') }}" class="nav-item {% if 'user' in request.endpoint and request.blueprint == 'admin' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-people-fill"></i> Users & Roles</a>
+        <a href="{{ url_for('admin.supervisor_requests') }}" class="nav-item {% if request.endpoint == 'admin.supervisor_requests' or request.endpoint == 'admin.supervisor_request_detail' %}active{% endif %}" onclick="closeSidebar()">
+          <i class="bi bi-person-badge-fill"></i> Sup. Requests
+          {% if pending_sup_requests %}<span class="nav-badge">{{ pending_sup_requests }}</span>{% endif %}
+        </a>
+        <a href="{{ url_for('admin.university_requests') }}" class="nav-item {% if 'university_request' in request.endpoint %}active{% endif %}" onclick="closeSidebar()">
+          <i class="bi bi-mortarboard-fill"></i> Univ. Requests
+          {% if pending_univ_requests %}<span class="nav-badge">{{ pending_univ_requests }}</span>{% endif %}
+        </a>
         <a href="{{ url_for('messages.inbox') }}" class="nav-item {% if request.blueprint == 'messages' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-chat-dots-fill"></i> Messages{% if unread_count %}<span class="nav-badge">{{ unread_count }}</span>{% endif %}</a>
         <a href="{{ url_for('admin.audit_trail') }}" class="nav-item {% if request.endpoint == 'admin.audit_trail' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-clock-history"></i> Audit Trail</a>
         <a href="{{ url_for('admin.settings') }}" class="nav-item {% if request.endpoint == 'admin.settings' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-gear-fill"></i> Settings</a>
@@ -503,12 +538,28 @@ select.form-control{cursor:pointer}
         <a href="{{ url_for('companies.listing') }}" class="nav-item {% if request.blueprint == 'companies' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-building"></i> Companies</a>
         <a href="{{ url_for('messages.inbox') }}" class="nav-item {% if request.blueprint == 'messages' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-chat-dots-fill"></i> Messages{% if unread_count %}<span class="nav-badge">{{ unread_count }}</span>{% endif %}</a>
 
+      {% elif current_user.role == ROLE_UNIVERSITY_COORD %}
+        <div class="nav-section">University Portal</div>
+        <a href="{{ url_for('university.dashboard') }}" class="nav-item {% if request.endpoint == 'university.dashboard' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
+        <a href="{{ url_for('university.students') }}" class="nav-item {% if request.endpoint == 'university.students' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-people-fill"></i> Students</a>
+        <a href="{{ url_for('university.applications') }}" class="nav-item {% if request.blueprint == 'university' and 'application' in request.endpoint %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-collection-fill"></i> Internship Apps</a>
+        <div class="nav-section">Other</div>
+        <a href="{{ url_for('messages.inbox') }}" class="nav-item {% if request.blueprint == 'messages' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-chat-dots-fill"></i> Messages{% if unread_count %}<span class="nav-badge">{{ unread_count }}</span>{% endif %}</a>
+
+      {% elif current_user.role == ROLE_STUDENT %}
+        <div class="nav-section">Student Portal</div>
+        <a href="{{ url_for('student.dashboard') }}" class="nav-item {% if request.blueprint == 'student' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
+        <a href="{{ url_for('user.browse') }}" class="nav-item {% if request.endpoint == 'user.browse' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-search"></i> Browse Internships</a>
+        <div class="nav-section">Account</div>
+        <a href="{{ url_for('profile.view') }}" class="nav-item {% if request.blueprint == 'profile' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-person-circle"></i> My Profile</a>
+        <a href="{{ url_for('messages.inbox') }}" class="nav-item {% if request.blueprint == 'messages' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-chat-dots-fill"></i> Messages{% if unread_count %}<span class="nav-badge">{{ unread_count }}</span>{% endif %}</a>
+
       {% else %}
         <div class="nav-section">Careers</div>
         <a href="{{ url_for('user.dashboard') }}" class="nav-item {% if request.endpoint == 'user.dashboard' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
         <a href="{{ url_for('jobs.listing') }}" class="nav-item {% if request.blueprint == 'jobs' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-search"></i> Browse Jobs</a>
         <a href="{{ url_for('user.my_applications') }}" class="nav-item {% if request.endpoint == 'user.my_applications' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-collection-fill"></i> My Applications</a>
-        <a href="{{ url_for('user.saved_jobs') }}" class="nav-item {% if request.endpoint == 'user.saved_jobs' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-bookmark-fill"></i> Saved Jobs</a>
+        <a href="{{ url_for('user.saved_jobs') }}" class="nav-item {% if request.endpoint == 'user.saved_jobs' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-bookmark-fill"></i> Saved</a>
         <a href="{{ url_for('analytics.candidate') }}" class="nav-item {% if request.endpoint == 'analytics.candidate' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-bar-chart-fill"></i> My Analytics</a>
         <div class="nav-section">Discover</div>
         <a href="{{ url_for('companies.listing') }}" class="nav-item {% if request.blueprint == 'companies' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-building"></i> Companies</a>
@@ -534,24 +585,20 @@ select.form-control{cursor:pointer}
         <button class="pwa-install-btn js-pwa-install" onclick="installPWA()" title="Install as App">
           <i class="bi bi-box-arrow-down"></i> Install
         </button>
+        <button id="darkToggleBtn" class="topbar-btn" title="Switch to Dark Mode" aria-label="Toggle dark mode">
+          <i class="bi bi-moon-fill"></i>
+        </button>
+        {% if current_user.is_authenticated %}
+        <button id="pushEnableBtn" class="pwa-install-btn js-push-enable" title="Enable Push Notifications" style="display:none">
+          <i class="bi bi-bell-slash"></i> Notify
+        </button>
+        {% endif %}
         <a href="{{ url_for('notifications.index') }}" class="topbar-btn" title="Notifications" style="position:relative">
           <i class="bi bi-bell-fill"></i>
           {% if unread_notifications %}
           <span style="position:absolute;top:4px;right:4px;width:8px;height:8px;background:#dc3545;border-radius:50%;border:1.5px solid #fff"></span>
           {% endif %}
         </a>
-        <div class="topbar-divider"></div>
-        <div class="avatar-wrap" style="cursor:default">
-          {% if current_user.avatar_filename %}
-          <img src="{{ url_for('static', filename='uploads/avatars/' + current_user.avatar_filename) }}" class="avatar" style="object-fit:cover" alt="{{ current_user.initials }}">
-          {% else %}
-          <div class="avatar">{{ current_user.initials }}</div>
-          {% endif %}
-          <div class="avatar-info">
-            <div class="avatar-name">{{ current_user.full_name }}</div>
-            <div class="avatar-role">{{ current_user.role|capitalize }}</div>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -602,6 +649,24 @@ select.form-control{cursor:pointer}
 
 {% block extra_js %}{% endblock %}
 <script>
+// Dark mode — runs first so icon reflects current state immediately
+(function(){
+  var btn = document.getElementById('darkToggleBtn');
+  function applyTheme(t) {
+    var dark = t === 'dark';
+    document.documentElement.classList.toggle('dark', dark);
+    if (btn) {
+      btn.innerHTML = dark ? '<i class="bi bi-sun-fill"></i>' : '<i class="bi bi-moon-fill"></i>';
+      btn.title = dark ? 'Switch to Light Mode' : 'Switch to Dark Mode';
+    }
+  }
+  applyTheme(localStorage.getItem('theme') || 'light');
+  if (btn) btn.addEventListener('click', function() {
+    var next = document.documentElement.classList.contains('dark') ? 'light' : 'dark';
+    localStorage.setItem('theme', next);
+    applyTheme(next);
+  });
+})();
 function toggleSidebar(){
   document.getElementById('sidebar').classList.toggle('open');
   document.getElementById('sidebarOverlay').classList.toggle('open');
@@ -759,6 +824,61 @@ function installPWA() {
     openInstallGuide('android');
   }
 }
+{% if current_user.is_authenticated %}
+// ── Web Push subscription ────────────────────────────────────────────────────
+function _urlBase64ToUint8Array(b64) {
+  const pad = '='.repeat((4 - b64.length % 4) % 4);
+  const raw = atob((b64 + pad).replace(/-/g, '+').replace(/_/g, '/'));
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+(async function initPush() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  try {
+    const sw  = await navigator.serviceWorker.ready;
+    const btn = document.getElementById('pushEnableBtn');
+    const existing = await sw.pushManager.getSubscription();
+    async function doSubscribe() {
+      try {
+        const r = await fetch('/api/v1/push/vapid-public-key', {credentials:'same-origin'});
+        const { publicKey } = await r.json();
+        if (!publicKey) return;
+        const sub = await sw.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: _urlBase64ToUint8Array(publicKey),
+        });
+        await fetch('/api/v1/push/subscribe', {
+          method: 'POST', credentials: 'same-origin',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify(sub.toJSON()),
+        });
+        if (btn) btn.style.display = 'none';
+      } catch(e) { /* user denied or error — stay silent */ }
+    }
+    if (existing) {
+      // Re-sync existing subscription in case it changed
+      await fetch('/api/v1/push/subscribe', {
+        method: 'POST', credentials: 'same-origin',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(existing.toJSON()),
+      });
+      if (btn) btn.style.display = 'none';
+    } else {
+      if (Notification.permission === 'granted') {
+        await doSubscribe();
+      } else if (Notification.permission !== 'denied') {
+        if (btn) btn.style.display = 'inline-flex';
+      }
+    }
+    if (btn) {
+      btn.addEventListener('click', async () => {
+        const perm = await Notification.requestPermission();
+        if (perm === 'granted') await doSubscribe();
+        else btn.style.display = 'none';
+      });
+    }
+  } catch(e) {}
+})();
+{% endif %}
 </script>
 </body>
 </html>

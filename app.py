@@ -8,7 +8,9 @@ from flask_login import (LoginManager, login_user, logout_user,
 
 from config import config
 from models import (db, User, Message, Notification, Position, Application, ApplicationHistory,
-                    Interview, CompanyMember, ROLE_ADMIN, ROLE_SUPERVISOR, ROLE_USER, ROLE_EMPLOYER,
+                    Interview, CompanyMember, SupervisorRequest, UniversityRequest,
+                    ROLE_ADMIN, ROLE_SUPERVISOR, ROLE_USER, ROLE_EMPLOYER,
+                    ROLE_STUDENT, ROLE_UNIVERSITY_COORD,
                     ALL_STATUSES, SOURCES, SALARY_RANGES, STATUS_NEW)
 
 # ─── APP FACTORY ──────────────────────────────────────────────────────────────
@@ -53,34 +55,62 @@ def create_app(config_name=None):
     def load_user(user_id):
         return db.session.get(User, int(user_id))
 
+    from zoneinfo import ZoneInfo
+    from datetime import timezone as _utc
+    _baghdad = ZoneInfo('Asia/Baghdad')
+
+    @app.template_filter('localdt')
+    def localdt_filter(dt):
+        """Convert a naive UTC datetime to Asia/Baghdad (GMT+3)."""
+        if dt is None:
+            return dt
+        return dt.replace(tzinfo=_utc.utc).astimezone(_baghdad)
+
+    @app.before_request
+    def update_last_seen():
+        if current_user.is_authenticated:
+            now = datetime.utcnow()
+            if (current_user.last_seen is None or
+                    (now - current_user.last_seen).total_seconds() > 60):
+                current_user.last_seen = now
+                db.session.commit()
+
     # Register blueprints
-    from routes.auth          import auth_bp
-    from routes.admin         import admin_bp
-    from routes.supervisor    import supervisor_bp
-    from routes.user          import user_bp
-    from routes.messages      import messages_bp
-    from routes.notifications import notifications_bp
-    from routes.employer      import employer_bp
-    from routes.company       import company_bp
-    from routes.jobs          import jobs_bp
-    from routes.profile       import profile_bp
-    from routes.assessments   import assessments_bp
-    from routes.analytics     import analytics_bp
-    from routes.api           import api_bp
+    from routes.auth              import auth_bp
+    from routes.admin             import admin_bp
+    from routes.supervisor        import supervisor_bp
+    from routes.user              import user_bp
+    from routes.messages          import messages_bp
+    from routes.notifications     import notifications_bp
+    from routes.employer          import employer_bp
+    from routes.company           import company_bp
+    from routes.jobs              import jobs_bp
+    from routes.profile           import profile_bp
+    from routes.assessments       import assessments_bp
+    from routes.analytics         import analytics_bp
+    from routes.api               import api_bp
+    from routes.supervisor_apply  import supervisor_apply_bp
+    from routes.university_apply  import university_apply_bp
+    from routes.university        import university_bp
+    from routes.student           import student_bp
 
     app.register_blueprint(auth_bp)
-    app.register_blueprint(admin_bp,          url_prefix='/admin')
-    app.register_blueprint(supervisor_bp,     url_prefix='/supervisor')
-    app.register_blueprint(user_bp,           url_prefix='/portal')
-    app.register_blueprint(messages_bp,       url_prefix='/messages')
-    app.register_blueprint(notifications_bp,  url_prefix='/notifications')
-    app.register_blueprint(employer_bp,       url_prefix='/employer')
-    app.register_blueprint(company_bp,        url_prefix='/companies')
-    app.register_blueprint(jobs_bp,           url_prefix='/jobs')
-    app.register_blueprint(profile_bp,        url_prefix='/profile')
-    app.register_blueprint(assessments_bp,    url_prefix='/assessments')
-    app.register_blueprint(analytics_bp,      url_prefix='/analytics')
-    app.register_blueprint(api_bp,            url_prefix='/api/v1')
+    app.register_blueprint(admin_bp,             url_prefix='/admin')
+    app.register_blueprint(supervisor_bp,        url_prefix='/supervisor')
+    app.register_blueprint(user_bp,              url_prefix='/portal')
+    app.register_blueprint(messages_bp,          url_prefix='/messages')
+    app.register_blueprint(notifications_bp,     url_prefix='/notifications')
+    app.register_blueprint(employer_bp,          url_prefix='/employer')
+    app.register_blueprint(company_bp,           url_prefix='/companies')
+    app.register_blueprint(jobs_bp,              url_prefix='/jobs')
+    app.register_blueprint(profile_bp,           url_prefix='/profile')
+    app.register_blueprint(assessments_bp,       url_prefix='/assessments')
+    app.register_blueprint(analytics_bp,         url_prefix='/analytics')
+    app.register_blueprint(api_bp,               url_prefix='/api/v1')
+    app.register_blueprint(supervisor_apply_bp)
+    app.register_blueprint(university_apply_bp)
+    app.register_blueprint(university_bp,        url_prefix='/university')
+    app.register_blueprint(student_bp,           url_prefix='/student')
 
     # Root redirect
     @app.route('/')
@@ -124,6 +154,10 @@ def create_app(config_name=None):
             return redirect(url_for('supervisor.dashboard'))
         elif current_user.role == ROLE_EMPLOYER:
             return redirect(url_for('employer.dashboard'))
+        elif current_user.role == ROLE_UNIVERSITY_COORD:
+            return redirect(url_for('university.dashboard'))
+        elif current_user.role == ROLE_STUDENT:
+            return redirect(url_for('student.dashboard'))
         return redirect(url_for('user.dashboard'))
 
     # Context processor — available in all templates
@@ -132,6 +166,8 @@ def create_app(config_name=None):
         unread_messages = 0
         unread_notifications = 0
         managed_companies = []
+        pending_sup_requests = 0
+        pending_univ_requests = 0
         if current_user.is_authenticated:
             unread_messages = (Message.query
                                .filter_by(receiver_id=current_user.id, is_read=False)
@@ -143,25 +179,35 @@ def create_app(config_name=None):
                 managed_companies = (CompanyMember.query
                                      .filter_by(user_id=current_user.id, role='manager')
                                      .all())
-        from datetime import timedelta
+            if current_user.role == ROLE_ADMIN:
+                pending_sup_requests = (SupervisorRequest.query
+                                        .filter_by(status='pending')
+                                        .count())
+                pending_univ_requests = (UniversityRequest.query
+                                         .filter_by(status='pending')
+                                         .count())
+        from zoneinfo import ZoneInfo as _ZI
         return dict(
-            now=datetime.utcnow(),
-            timedelta=timedelta,
+            now=datetime.now(_ZI('Asia/Baghdad')),
             ROLE_ADMIN=ROLE_ADMIN,
             ROLE_SUPERVISOR=ROLE_SUPERVISOR,
             ROLE_USER=ROLE_USER,
             ROLE_EMPLOYER=ROLE_EMPLOYER,
+            ROLE_STUDENT=ROLE_STUDENT,
+            ROLE_UNIVERSITY_COORD=ROLE_UNIVERSITY_COORD,
             unread_count=unread_messages,
             unread_notifications=unread_notifications,
             managed_companies=managed_companies,
             SALARY_RANGES=SALARY_RANGES,
+            pending_sup_requests=pending_sup_requests,
+            pending_univ_requests=pending_univ_requests,
         )
 
     # Create DB tables and seed admin on first run
     with app.app_context():
         db.create_all()
-        _seed_admin(app)
         _migrate_db(app)
+        _seed_admin(app)
         # Ensure all upload folders exist
         for folder_key in ('UPLOAD_FOLDER', 'AVATAR_FOLDER', 'PORTFOLIO_FOLDER', 'COMPANY_LOGO_FOLDER'):
             folder = app.config.get(folder_key)
@@ -193,6 +239,21 @@ def _migrate_db(app):
         with db.engine.connect() as conn:
             _safe_add_column(conn, 'companies', 'contact_email', 'VARCHAR(200)')
             _safe_add_column(conn, 'companies', 'contact_phone', 'VARCHAR(100)')
+            _safe_add_column(conn, 'users', 'last_seen', 'DATETIME')
+            # Student fields
+            _safe_add_column(conn, 'users', 'university_id', 'INTEGER')
+            _safe_add_column(conn, 'users', 'university_name', 'VARCHAR(200)')
+            _safe_add_column(conn, 'users', 'university_major', 'VARCHAR(200)')
+            _safe_add_column(conn, 'users', 'student_gpa', 'VARCHAR(20)')
+            _safe_add_column(conn, 'users', 'graduation_year', 'INTEGER')
+            _safe_add_column(conn, 'users', 'student_id_number', 'VARCHAR(50)')
+            # Internship fields on applications
+            _safe_add_column(conn, 'applications', 'internship_duration', 'VARCHAR(50)')
+            _safe_add_column(conn, 'applications', 'internship_start_date', 'DATE')
+            _safe_add_column(conn, 'applications', 'academic_credit_required', 'BOOLEAN')
+            _safe_add_column(conn, 'applications', 'supervisor_evaluation', 'TEXT')
+            _safe_add_column(conn, 'applications', 'evaluation_score', 'INTEGER')
+            _safe_add_column(conn, 'applications', 'completion_confirmed', 'BOOLEAN')
 
 
 def _safe_add_column(conn, table, column, col_type):

@@ -8,6 +8,9 @@ from models import (db, User, UserSkill, UserExperience, UserEducation,
                     UserLanguage, UserCertification, UserPortfolioItem,
                     Position, ROLE_USER, ROLE_EMPLOYER, LANG_LEVELS)
 from sqlalchemy import or_
+from helpers import (log_audit, send_email, generate_reset_token,
+                     verify_reset_token)
+from werkzeug.utils import secure_filename
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -48,6 +51,7 @@ def login():
                 session['2fa_next'] = next_page
                 return redirect(url_for('auth.verify_2fa'))
             user.last_login = datetime.utcnow()
+            log_audit('auth.login', user.email, user_id=user.id)
             db.session.commit()
             login_user(user, remember=remember)
             return redirect(next_page or url_for('dashboard'))
@@ -164,6 +168,7 @@ def profile():
                 current_user.avatar_filename = fname
             else:
                 flash('Photo not updated: allowed formats are PNG, JPG, WEBP, GIF.', 'warning')
+        log_audit('user.profile_update', current_user.email)
         db.session.commit()
         flash('Profile updated.', 'success')
         return redirect(url_for('auth.profile', mode='edit', tab='info'))

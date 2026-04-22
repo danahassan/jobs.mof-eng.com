@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% block title %}Submit Internship Application — MOF Jobs{% endblock %}
+{% block page_title %}Submit Internship Application{% endblock %}
+
+{% block content %}
+<div style="max-width:620px;margin:0 auto">
+  <div class="card" style="padding:28px 32px">
+    <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:20px;display:flex;align-items:center;gap:10px">
+      <div style="width:40px;height:40px;border-radius:10px;background:var(--green-light);color:var(--green);display:flex;align-items:center;justify-content:center;font-size:18px">
+        <i class="bi bi-send-fill"></i>
+      </div>
+      Submit Internship Application
+    </div>
+
+    {% if not students %}
+    <div style="background:#fef9c3;border:1px solid #fde68a;border-radius:8px;padding:14px 18px;margin-bottom:16px;font-size:13px;color:#92400e">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      No students are registered under your university yet.
+      <a href="{{ url_for('university.student_add') }}" style="color:#92400e;font-weight:600">Add a student first →</a>
+    </div>
+    {% endif %}
+
+    {% if not positions %}
+    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:14px 18px;margin-bottom:16px;font-size:13px;color:#1e40af">
+      <i class="bi bi-info-circle-fill"></i>
+      No internship positions are currently open.
+    </div>
+    {% endif %}
+
+    <form method="POST">
+      <div style="display:grid;gap:18px">
+        <!-- Student -->
+        <div>
+          <label class="af-label">Student <span style="color:#dc2626">*</span></label>
+          <select name="student_id" class="form-control" required {% if not students %}disabled{% endif %}>
+            <option value="">— Select student —</option>
+            {% for s in students %}
+            <option value="{{ s.id }}">{{ s.full_name }} ({{ s.email }}){% if s.university_major %} · {{ s.university_major }}{% endif %}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Position -->
+        <div>
+          <label class="af-label">Internship Position <span style="color:#dc2626">*</span></label>
+          <select name="position_id" class="form-control" required {% if not positions %}disabled{% endif %}>
+            <option value="">— Select position —</option>
+            {% for p in positions %}
+            <option value="{{ p.id }}">{{ p.title }}{% if p.company %} — {{ p.company.name }}{% endif %}{% if p.location %} ({{ p.location }}){% endif %}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Internship duration -->
+        <div>
+          <label class="af-label">Preferred Duration</label>
+          <select name="internship_duration" class="form-control">
+            <option value="">— Select duration —</option>
+            {% for d in ['1 month','2 months','3 months','4 months','6 months','9 months','12 months'] %}
+            <option value="{{ d }}">{{ d }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Academic credit -->
+        <div>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+            <input type="checkbox" name="academic_credit_required" value="1">
+            <span>This internship is for academic credit / university requirement</span>
+          </label>
+        </div>
+
+        <!-- Cover letter -->
+        <div>
+          <label class="af-label">Cover Letter <span style="font-size:10px;font-weight:400;text-transform:none;color:var(--text3)">(optional)</span></label>
+          <textarea name="cover_letter" class="form-control" rows="4" style="resize:vertical"
+                    placeholder="Brief note on why this student is a good fit…"></textarea>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:24px;padding-top:18px;border-top:1px solid var(--border)">
+        <button type="submit" class="btn btn-primary" {% if not students or not positions %}disabled{% endif %}>
+          <i class="bi bi-send"></i> Submit Application
+        </button>
+        <a href="{{ url_for('university.applications') }}" class="btn btn-outline">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+.af-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);display:block;margin-bottom:6px}
+</style>
+{% endblock %}

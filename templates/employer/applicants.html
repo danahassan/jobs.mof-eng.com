@@ -45,7 +45,7 @@
         <div style="font-size:12px;color:var(--text3)">{{ a.applicant.email }}</div>
         {% if a.applicant.headline %}<div style="font-size:12px;color:var(--text2);margin-top:2px">{{ a.applicant.headline }}</div>{% endif %}
         <div style="font-size:11px;color:var(--text3);margin-top:4px;">
-          <i class="bi bi-calendar3"></i> Applied {{ a.applied_at.strftime('%b %d, %Y') }}
+          <i class="bi bi-calendar3"></i> Applied {{ (a.applied_at | localdt).strftime('%b %d, %Y') }}
           {% if a.cv_filename %} · <i class="bi bi-file-earmark-pdf"></i> Has CV{% endif %}
         </div>
       </div>

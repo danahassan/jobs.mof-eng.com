@@ -8,10 +8,12 @@ from slugify import slugify
 db = SQLAlchemy()
 
 # ─── ROLES ────────────────────────────────────────────────────────────────────
-ROLE_ADMIN      = 'admin'
-ROLE_SUPERVISOR = 'supervisor'
-ROLE_EMPLOYER   = 'employer'
-ROLE_USER       = 'user'
+ROLE_ADMIN             = 'admin'
+ROLE_SUPERVISOR        = 'supervisor'
+ROLE_EMPLOYER          = 'employer'
+ROLE_USER              = 'user'
+ROLE_STUDENT           = 'student'
+ROLE_UNIVERSITY_COORD  = 'university_coordinator'
 
 EXPERIENCE_LEVELS = ['Entry Level', 'Junior', 'Mid-Level', 'Senior', 'Lead', 'Manager', 'Director']
 JOB_TYPES         = ['Full-time', 'Part-time', 'Contract', 'Freelance', 'Internship', 'Temporary']
@@ -64,6 +66,7 @@ class User(UserMixin, db.Model):
     is_active     = db.Column(db.Boolean, default=True)
     created_at    = db.Column(db.DateTime, default=datetime.utcnow)
     last_login    = db.Column(db.DateTime)
+    last_seen     = db.Column(db.DateTime)
     bio           = db.Column(db.Text)
     linkedin_url  = db.Column(db.String(200))
     github_url    = db.Column(db.String(200))
@@ -79,6 +82,14 @@ class User(UserMixin, db.Model):
     nationality     = db.Column(db.String(50))
     gender          = db.Column(db.String(20))
     resume_headline = db.Column(db.String(300))   # one-line resume summary
+
+    # Student-specific fields
+    university_id     = db.Column(db.Integer, db.ForeignKey('universities.id'), nullable=True)
+    university_name   = db.Column(db.String(200))   # free-text fallback if no university record
+    university_major  = db.Column(db.String(200))
+    student_gpa       = db.Column(db.String(20))    # e.g. "3.8 / 4.0"
+    graduation_year   = db.Column(db.Integer)
+    student_id_number = db.Column(db.String(50))
 
     # Relationships
     applications      = db.relationship('Application', foreign_keys='Application.applicant_id',
@@ -115,6 +126,8 @@ class User(UserMixin, db.Model):
                                              lazy='dynamic', cascade='all,delete-orphan')
     company_follows        = db.relationship('CompanyFollow', back_populates='user',
                                              lazy='dynamic', cascade='all,delete-orphan')
+    university_memberships = db.relationship('UniversityMember', back_populates='user',
+                                             lazy='dynamic', cascade='all,delete-orphan')
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -141,6 +154,14 @@ class User(UserMixin, db.Model):
     @property
     def is_supervisor(self):
         return self.role == ROLE_SUPERVISOR
+
+    @property
+    def is_student(self):
+        return self.role == ROLE_STUDENT
+
+    @property
+    def is_university_coordinator(self):
+        return self.role == ROLE_UNIVERSITY_COORD
 
     @property
     def initials(self):
@@ -231,6 +252,15 @@ class Application(db.Model):
     cv_original    = db.Column(db.String(200))    # original uploaded filename
     notes             = db.Column(db.Text)           # internal admin/supervisor notes
     expected_salary   = db.Column(db.String(100))    # applicant's expected salary range
+
+    # Internship-specific fields
+    internship_duration       = db.Column(db.String(50))   # e.g. "3 months"
+    internship_start_date     = db.Column(db.Date)
+    academic_credit_required  = db.Column(db.Boolean, default=False)
+    # Post-internship evaluation
+    supervisor_evaluation     = db.Column(db.Text)
+    evaluation_score          = db.Column(db.Integer)      # 1–5
+    completion_confirmed      = db.Column(db.Boolean, default=False)
 
     applied_at     = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at     = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -658,6 +688,151 @@ class AssessmentAnswer(db.Model):
 
 # Ensure all string-based relationship references resolve after every class is defined.
 # This prevents SQLAlchemy mapper errors during Flask hot-reload.
+class PushSubscription(db.Model):
+    __tablename__ = 'push_subscriptions'
+
+    id         = db.Column(db.Integer, primary_key=True)
+    user_id    = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    endpoint   = db.Column(db.Text, nullable=False, unique=True)
+    p256dh     = db.Column(db.Text, nullable=False)
+    auth       = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', backref=db.backref(
+        'push_subscriptions_rel', lazy='dynamic', cascade='all,delete-orphan'))
+
+
+class SupervisorRequest(db.Model):
+    __tablename__ = 'supervisor_requests'
+    id                    = db.Column(db.Integer, primary_key=True)
+    status                = db.Column(db.String(20), default='pending', nullable=False)  # pending/approved/rejected
+    token                 = db.Column(db.String(64), unique=True, index=True, nullable=False)
+    # Personal
+    full_name             = db.Column(db.String(120), nullable=False)
+    email                 = db.Column(db.String(120), nullable=False)
+    phone                 = db.Column(db.String(30), nullable=False)
+    password_hash         = db.Column(db.String(256), nullable=False)
+    headline              = db.Column(db.String(200))
+    bio                   = db.Column(db.Text)
+    nationality           = db.Column(db.String(50))
+    location_city         = db.Column(db.String(100))
+    gender                = db.Column(db.String(20))
+    linkedin_url          = db.Column(db.String(200))
+    # Company
+    company_name          = db.Column(db.String(200), nullable=False)
+    company_industry      = db.Column(db.String(100))
+    company_size          = db.Column(db.String(30))
+    company_website       = db.Column(db.String(300))
+    company_description   = db.Column(db.Text)
+    company_location      = db.Column(db.String(200))
+    company_founded_year  = db.Column(db.Integer)
+    company_contact_email = db.Column(db.String(200))
+    company_contact_phone = db.Column(db.String(100))
+    company_logo_filename = db.Column(db.String(200))
+    # Review
+    rejection_reason      = db.Column(db.Text)
+    reviewed_by_id        = db.Column(db.Integer, db.ForeignKey('users.id'))
+    reviewed_at           = db.Column(db.DateTime)
+    created_at            = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at            = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    reviewed_by = db.relationship('User', foreign_keys=[reviewed_by_id])
+
+    def set_password(self, pw):
+        self.password_hash = generate_password_hash(pw)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# UNIVERSITY & STUDENT PORTAL
+# ─────────────────────────────────────────────────────────────────────────────
+
+class University(db.Model):
+    __tablename__ = 'universities'
+
+    id            = db.Column(db.Integer, primary_key=True)
+    name          = db.Column(db.String(200), nullable=False)
+    slug          = db.Column(db.String(200), unique=True, nullable=False, index=True)
+    description   = db.Column(db.Text)
+    location      = db.Column(db.String(200))
+    website       = db.Column(db.String(300))
+    logo_filename = db.Column(db.String(200))
+    contact_email = db.Column(db.String(200))
+    contact_phone = db.Column(db.String(100))
+    is_active     = db.Column(db.Boolean, default=True)
+    created_at    = db.Column(db.DateTime, default=datetime.utcnow)
+    created_by    = db.Column(db.Integer, db.ForeignKey('users.id'))
+
+    members  = db.relationship('UniversityMember', back_populates='university',
+                                lazy='dynamic', cascade='all,delete-orphan')
+    students = db.relationship('User', foreign_keys='User.university_id',
+                                backref=db.backref('university', lazy='joined'),
+                                lazy='dynamic')
+
+    def save_slug(self):
+        from slugify import slugify
+        base = slugify(self.name)
+        slug = base
+        i = 2
+        while University.query.filter_by(slug=slug).first():
+            slug = f'{base}-{i}'; i += 1
+        self.slug = slug
+
+    def __repr__(self):
+        return f'<University {self.name}>'
+
+
+class UniversityMember(db.Model):
+    """Links university_coordinator users to a university."""
+    __tablename__ = 'university_members'
+
+    id            = db.Column(db.Integer, primary_key=True)
+    university_id = db.Column(db.Integer, db.ForeignKey('universities.id'), nullable=False)
+    user_id       = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    role          = db.Column(db.String(30), default='coordinator')
+    joined_at     = db.Column(db.DateTime, default=datetime.utcnow)
+    __table_args__ = (db.UniqueConstraint('university_id', 'user_id'),)
+
+    university = db.relationship('University', back_populates='members')
+    user       = db.relationship('User', back_populates='university_memberships')
+
+
+class UniversityRequest(db.Model):
+    """Self-registration request from a university coordinator — pending admin approval."""
+    __tablename__ = 'university_requests'
+
+    id                    = db.Column(db.Integer, primary_key=True)
+    status                = db.Column(db.String(20), default='pending', nullable=False)
+    token                 = db.Column(db.String(64), unique=True, index=True, nullable=False)
+    # Coordinator personal info
+    full_name             = db.Column(db.String(120), nullable=False)
+    email                 = db.Column(db.String(120), nullable=False)
+    phone                 = db.Column(db.String(30), nullable=False)
+    password_hash         = db.Column(db.String(256), nullable=False)
+    headline              = db.Column(db.String(200))
+    bio                   = db.Column(db.Text)
+    nationality           = db.Column(db.String(50))
+    location_city         = db.Column(db.String(100))
+    gender                = db.Column(db.String(20))
+    linkedin_url          = db.Column(db.String(200))
+    # University info
+    university_name          = db.Column(db.String(200), nullable=False)
+    university_location      = db.Column(db.String(200))
+    university_website       = db.Column(db.String(300))
+    university_description   = db.Column(db.Text)
+    university_contact_email = db.Column(db.String(200))
+    university_contact_phone = db.Column(db.String(100))
+    university_logo_filename = db.Column(db.String(200))
+    # Review
+    rejection_reason  = db.Column(db.Text)
+    reviewed_by_id    = db.Column(db.Integer, db.ForeignKey('users.id'))
+    reviewed_at       = db.Column(db.DateTime)
+    created_at        = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at        = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    reviewed_by = db.relationship('User', foreign_keys=[reviewed_by_id])
+
+    def set_password(self, pw):
+        self.password_hash = generate_password_hash(pw)
+
+
 from sqlalchemy.orm import configure_mappers  # noqa: E402
 configure_mappers()
 

@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+{% block title %}University Request #{{ req.id }} — MOF Jobs{% endblock %}
+{% block page_title %}University Request #{{ req.id }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.ur-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.ur-info-row{display:flex;align-items:baseline;gap:8px;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px}
+.ur-info-row:last-child{border-bottom:none;padding-bottom:0}
+.ur-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text3);min-width:110px;flex-shrink:0}
+.ur-val{color:var(--text);flex:1;min-width:0;word-break:break-word}
+.ur-inp{display:none;flex:1;min-width:0}
+.ur-bio-val{font-size:13px;color:var(--text2);line-height:1.7;white-space:pre-wrap}
+.ur-bio-inp{display:none;width:100%;min-height:80px;resize:vertical}
+body.editing .ur-val{display:none}
+body.editing .ur-inp{display:block}
+body.editing .ur-bio-val{display:none}
+body.editing .ur-bio-inp{display:block}
+body.editing #actionCards{display:none!important}
+body.editing #editForm{display:block!important}
+#editForm{display:none}
+@media(max-width:768px){
+  .ur-grid{grid-template-columns:1fr}
+  .ur-info-row{flex-direction:column;gap:4px}
+  .ur-lbl{min-width:unset}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+  <a href="{{ url_for('admin.university_requests') }}" class="btn btn-outline btn-sm"><i class="bi bi-arrow-left"></i> Back</a>
+  {% if req.status == 'pending' %}
+    <span class="badge" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d;font-size:12px;padding:5px 12px">Pending Review</span>
+  {% elif req.status == 'approved' %}
+    <span class="badge badge-active" style="font-size:12px;padding:5px 12px">Approved</span>
+  {% else %}
+    <span class="badge badge-inactive" style="font-size:12px;padding:5px 12px">Rejected</span>
+  {% endif %}
+  <span style="font-size:12px;color:var(--text3);margin-left:auto">Submitted {{ (req.created_at | localdt).strftime('%d %b %Y, %H:%M') }}</span>
+</div>
+
+<div class="ur-grid">
+
+  <!-- LEFT: Coordinator info -->
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div class="card">
+      <div class="card-title"><i class="bi bi-person-fill"></i> Coordinator Details</div>
+      <div class="ur-info-row"><span class="ur-lbl">Full Name</span>
+        <span class="ur-val">{{ req.full_name }}</span>
+        <input class="ur-inp form-control form-control-sm" name="full_name" value="{{ req.full_name }}">
+      </div>
+      <div class="ur-info-row"><span class="ur-lbl">Email</span>
+        <span class="ur-val">{{ req.email }}</span>
+        <input class="ur-inp form-control form-control-sm" name="email" type="email" value="{{ req.email }}">
+      </div>
+      <div class="ur-info-row"><span class="ur-lbl">Phone</span>
+        <span class="ur-val">{{ req.phone }}</span>
+        <input class="ur-inp form-control form-control-sm" name="phone" value="{{ req.phone }}">
+      </div>
+      <div class="ur-info-row"><span class="ur-lbl">Headline</span>
+        <span class="ur-val">{{ req.headline or '—' }}</span>
+        <input class="ur-inp form-control form-control-sm" name="headline" value="{{ req.headline or '' }}">
+      </div>
+      <div class="ur-info-row"><span class="ur-lbl">Location</span>
+        <span class="ur-val">{{ req.location_city or '—' }}</span>
+        <input class="ur-inp form-control form-control-sm" name="location_city" value="{{ req.location_city or '' }}">
+      </div>
+      <div class="ur-info-row"><span class="ur-lbl">Nationality</span>
+        <span class="ur-val">{{ req.nationality or '—' }}</span>
+        <input class="ur-inp form-control form-control-sm" name="nationality" value="{{ req.nationality or '' }}">
+      </div>
+      <div class="ur-info-row"><span class="ur-lbl">Gender</span>
+        <span class="ur-val">{{ req.gender or '—' }}</span>
+        <input class="ur-inp form-control form-control-sm" name="gender" value="{{ req.gender or '' }}">
+      </div>
+      <div class="ur-info-row"><span class="ur-lbl">LinkedIn</span>
+        <span class="ur-val">{% if req.linkedin_url %}<a href="{{ req.linkedin_url }}" target="_blank">{{ req.linkedin_url }}</a>{% else %}—{% endif %}</span>
+        <input class="ur-inp form-control form-control-sm" name="linkedin_url" value="{{ req.linkedin_url or '' }}">
+      </div>
+      <div style="padding:9px 0">
+        <div class="ur-lbl" style="margin-bottom:6px">Bio</div>
+        <div class="ur-bio-val">{{ req.bio or '—' }}</div>
+        <textarea class="ur-bio-inp form-control form-control-sm" name="bio">{{ req.bio or '' }}</textarea>
+      </div>
+      <div class="ur-info-row" id="pwRow" style="display:none">
+        <span class="ur-lbl">New Password</span>
+        <input class="ur-inp form-control form-control-sm" name="new_password" type="password" placeholder="Leave blank to keep current">
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: University info + Actions -->
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div class="card">
+      <div class="card-title"><i class="bi bi-mortarboard-fill"></i> University Details</div>
+      {% if req.university_logo_filename %}
+      <img src="{{ url_for('static', filename='uploads/company/' + req.university_logo_filename) }}"
+           style="width:72px;height:72px;border-radius:12px;object-fit:contain;border:1px solid var(--border);margin-bottom:14px;background:#f8fafb">
+      {% endif %}
+      <div class="ur-info-row"><span class="ur-lbl">University</span>
+        <span class="ur-val">{{ req.university_name }}</span>
+        <input class="ur-inp form-control form-control-sm" name="university_name" value="{{ req.university_name }}">
+      </div>
+      <div class="ur-info-row"><span class="ur-lbl">Location</span>
+        <span class="ur-val">{{ req.university_location or '—' }}</span>
+        <input class="ur-inp form-control form-control-sm" name="university_location" value="{{ req.university_location or '' }}">
+      </div>
+      <div class="ur-info-row"><span class="ur-lbl">Website</span>
+        <span class="ur-val">{% if req.university_website %}<a href="{{ req.university_website }}" target="_blank">{{ req.university_website }}</a>{% else %}—{% endif %}</span>
+        <input class="ur-inp form-control form-control-sm" name="university_website" value="{{ req.university_website or '' }}">
+      </div>
+      <div class="ur-info-row"><span class="ur-lbl">Contact Email</span>
+        <span class="ur-val">{{ req.university_contact_email or '—' }}</span>
+        <input class="ur-inp form-control form-control-sm" name="university_contact_email" value="{{ req.university_contact_email or '' }}">
+      </div>
+      <div class="ur-info-row"><span class="ur-lbl">Contact Phone</span>
+        <span class="ur-val">{{ req.university_contact_phone or '—' }}</span>
+        <input class="ur-inp form-control form-control-sm" name="university_contact_phone" value="{{ req.university_contact_phone or '' }}">
+      </div>
+      <div style="padding:9px 0">
+        <div class="ur-lbl" style="margin-bottom:6px">Description</div>
+        <div class="ur-bio-val">{{ req.university_description or '—' }}</div>
+        <textarea class="ur-bio-inp form-control form-control-sm" name="university_description">{{ req.university_description or '' }}</textarea>
+      </div>
+      <div class="ur-info-row" id="logoRow" style="display:none">
+        <span class="ur-lbl">Replace Logo</span>
+        <input class="ur-inp" name="university_logo" type="file" accept="image/*" style="display:block;flex:1">
+      </div>
+    </div>
+
+    <!-- Action cards -->
+    <div id="actionCards">
+      {% if req.status != 'approved' %}
+      <!-- Approve -->
+      <div class="card" style="margin-bottom:16px;border-left:4px solid #198754">
+        <div class="card-title" style="color:#198754"><i class="bi bi-check-circle-fill"></i> Approve Request</div>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Creates a coordinator account and university record.</p>
+        <form method="POST" action="{{ url_for('admin.university_request_approve', req_id=req.id) }}"
+              onsubmit="return confirm('Approve this university coordinator request?')">
+          <button class="btn btn-primary btn-sm" style="width:100%;justify-content:center"><i class="bi bi-check-lg"></i> Approve & Create Account</button>
+        </form>
+      </div>
+
+      <!-- Reject -->
+      <div class="card" style="border-left:4px solid #dc2626">
+        <div class="card-title" style="color:#dc2626"><i class="bi bi-x-circle-fill"></i> Reject Request</div>
+        <form method="POST" action="{{ url_for('admin.university_request_reject', req_id=req.id) }}">
+          <div style="margin-bottom:10px">
+            <label style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:5px">Reason <small style="text-transform:none;font-weight:400">(sent to applicant)</small></label>
+            <textarea name="rejection_reason" class="form-control" rows="3" placeholder="Explain why the application was rejected…">{{ req.rejection_reason or '' }}</textarea>
+          </div>
+          <button class="btn btn-danger btn-sm" style="width:100%;justify-content:center"><i class="bi bi-x-lg"></i> Reject</button>
+        </form>
+      </div>
+      {% else %}
+      <div class="card" style="border-left:4px solid #198754">
+        <div class="card-title" style="color:#198754"><i class="bi bi-check-circle-fill"></i> Approved</div>
+        <p style="font-size:13px;color:var(--text2)">Reviewed by {{ req.reviewed_by.full_name if req.reviewed_by else 'Admin' }} on {{ (req.reviewed_at | localdt).strftime('%d %b %Y') if req.reviewed_at else '—' }}.</p>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Edit buttons (view mode) -->
+    <div id="editBtns">
+      <button class="btn btn-outline btn-sm" onclick="startEdit()" style="width:100%;justify-content:center"><i class="bi bi-pencil"></i> Edit Request</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- Edit form (hidden until Edit clicked) -->
+<form id="editForm" method="POST" action="{{ url_for('admin.university_request_edit', req_id=req.id) }}" enctype="multipart/form-data" style="margin-top:12px">
+  {% if req.status == 'rejected' %}
+  <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:10px">
+    <input type="checkbox" name="reset_to_pending"> Reset status to Pending after save
+  </label>
+  {% endif %}
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-save"></i> Save Changes</button>
+    <button type="button" class="btn btn-outline btn-sm" onclick="cancelEdit()"><i class="bi bi-x"></i> Cancel</button>
+  </div>
+</form>
+
+<script>
+function startEdit() {
+  document.body.classList.add('editing');
+  document.getElementById('pwRow').style.display = 'flex';
+  document.getElementById('logoRow').style.display = 'flex';
+  document.getElementById('editBtns').style.display = 'none';
+
+  // Move all named inputs into the edit form
+  var form = document.getElementById('editForm');
+  document.querySelectorAll('.ur-inp, .ur-bio-inp').forEach(function(el) {
+    if (el.name) form.appendChild(el.cloneNode(true));
+  });
+}
+function cancelEdit() {
+  document.body.classList.remove('editing');
+  document.getElementById('pwRow').style.display = 'none';
+  document.getElementById('logoRow').style.display = 'none';
+  document.getElementById('editBtns').style.display = 'block';
+}
+</script>
+{% endblock %}

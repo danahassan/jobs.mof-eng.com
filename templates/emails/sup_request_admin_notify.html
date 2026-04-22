@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>New Supervisor Application — MOF Jobs</title>
+<style>
+  body{margin:0;padding:0;background:#f0f4f8;font-family:'Segoe UI',Arial,sans-serif}
+  .wrapper{max-width:600px;margin:32px auto;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #dde3ea;box-shadow:0 4px 16px rgba(0,0,0,.07)}
+  .header{background:linear-gradient(135deg,#0f1923 0%,#1a2d40 60%,#0d2818 100%);padding:28px 32px 24px}
+  .header-logo{color:#fff;font-size:18px;font-weight:800;letter-spacing:-.3px}
+  .header-tagline{color:rgba(255,255,255,.5);font-size:12px;margin-top:3px}
+  .alert-band{background:#198754;padding:16px 32px;color:#fff;font-size:15px;font-weight:700;display:flex;align-items:center;gap:10px}
+  .body{padding:24px 32px}
+  .section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#6b7280;margin:18px 0 10px;padding-bottom:6px;border-bottom:2px solid #e5e7eb}
+  .row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f3f4f6;font-size:13px;gap:10px}
+  .row:last-child{border-bottom:none}
+  .lbl{color:#6b7280;font-weight:500;flex-shrink:0;min-width:130px}
+  .val{color:#111827;font-weight:600;text-align:right;word-break:break-word}
+  .desc-box{background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px 14px;font-size:13px;color:#374151;line-height:1.6;white-space:pre-wrap;margin-top:6px}
+  .cta-btn{display:inline-block;background:#198754;color:#fff;text-decoration:none;padding:13px 28px;border-radius:8px;font-weight:700;font-size:14px;margin:20px 0 4px}
+  .footer{background:#f8fafc;padding:14px 32px;border-top:1px solid #e5e7eb}
+  .footer-text{font-size:11px;color:#9ca3af;line-height:1.6;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="header">
+    <div class="header-logo">MOF Engineering — Jobs Portal</div>
+    <div class="header-tagline">Admin Notification · jobs.mof-eng.com</div>
+  </div>
+  <div class="alert-band">
+    <span style="font-size:20px">&#128203;</span>
+    New Supervisor Application Received
+  </div>
+  <div class="body">
+    <p style="font-size:14px;color:#374151;margin:0 0 4px">A new supervisor registration request has been submitted and is awaiting your review.</p>
+
+    <div class="section-title">&#128100; Personal Details</div>
+    <div class="row"><span class="lbl">Full Name</span><span class="val">{{ req.full_name }}</span></div>
+    <div class="row"><span class="lbl">Email</span><span class="val">{{ req.email }}</span></div>
+    <div class="row"><span class="lbl">Phone</span><span class="val">{{ req.phone }}</span></div>
+    <div class="row"><span class="lbl">Headline</span><span class="val">{{ req.headline or '—' }}</span></div>
+    <div class="row"><span class="lbl">Location</span><span class="val">{{ req.location_city or '—' }}</span></div>
+    <div class="row"><span class="lbl">Nationality</span><span class="val">{{ req.nationality or '—' }}</span></div>
+    <div class="row"><span class="lbl">Gender</span><span class="val">{{ req.gender or '—' }}</span></div>
+    {% if req.linkedin_url %}
+    <div class="row"><span class="lbl">LinkedIn</span><span class="val"><a href="{{ req.linkedin_url }}" style="color:#198754">View Profile</a></span></div>
+    {% endif %}
+    {% if req.bio %}
+    <div style="font-size:12px;color:#6b7280;font-weight:600;margin-top:12px;margin-bottom:4px">BIO</div>
+    <div class="desc-box">{{ req.bio }}</div>
+    {% endif %}
+
+    <div class="section-title">&#127970; Company Details</div>
+    <div class="row"><span class="lbl">Company Name</span><span class="val">{{ req.company_name }}</span></div>
+    <div class="row"><span class="lbl">Industry</span><span class="val">{{ req.company_industry or '—' }}</span></div>
+    <div class="row"><span class="lbl">Size</span><span class="val">{{ req.company_size or '—' }}</span></div>
+    <div class="row"><span class="lbl">Location</span><span class="val">{{ req.company_location or '—' }}</span></div>
+    <div class="row"><span class="lbl">Founded Year</span><span class="val">{{ req.company_founded_year or '—' }}</span></div>
+    <div class="row"><span class="lbl">Contact Email</span><span class="val">{{ req.company_contact_email or '—' }}</span></div>
+    <div class="row"><span class="lbl">Contact Phone</span><span class="val">{{ req.company_contact_phone or '—' }}</span></div>
+    {% if req.company_website %}
+    <div class="row"><span class="lbl">Website</span><span class="val"><a href="{{ req.company_website }}" style="color:#198754">{{ req.company_website }}</a></span></div>
+    {% endif %}
+    {% if req.company_description %}
+    <div style="font-size:12px;color:#6b7280;font-weight:600;margin-top:12px;margin-bottom:4px">COMPANY DESCRIPTION</div>
+    <div class="desc-box">{{ req.company_description }}</div>
+    {% endif %}
+
+    <div style="text-align:center;margin-top:24px">
+      <a href="{{ detail_url }}" class="cta-btn">Review Request &#8594;</a>
+    </div>
+    <p style="font-size:12px;color:#9ca3af;text-align:center">Or copy this link: <a href="{{ detail_url }}" style="color:#198754">{{ detail_url }}</a></p>
+  </div>
+  <div class="footer">
+    <div class="footer-text">
+      This notification was sent to you because you are an administrator on MOF Jobs.<br>
+      MOF Engineering Company &middot; Slemani, Iraq &middot; <a href="https://jobs.mof-eng.com" style="color:#198754">jobs.mof-eng.com</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

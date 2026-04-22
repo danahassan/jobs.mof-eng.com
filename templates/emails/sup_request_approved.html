@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Supervisor Account Approved — MOF Jobs</title>
+<style>
+  body{margin:0;padding:0;background:#f0f4f8;font-family:'Segoe UI',Arial,sans-serif}
+  .wrapper{max-width:580px;margin:32px auto;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #dde3ea;box-shadow:0 4px 16px rgba(0,0,0,.07)}
+  .header{background:linear-gradient(135deg,#0f1923 0%,#1a2d40 60%,#0d2818 100%);padding:28px 32px 24px}
+  .header-logo{color:#fff;font-size:18px;font-weight:800;letter-spacing:-.3px}
+  .header-tagline{color:rgba(255,255,255,.5);font-size:12px;margin-top:3px}
+  .hero-band{background:#e8f5ee;border-left:4px solid #198754;padding:20px 24px}
+  .hero-icon{font-size:32px;margin-bottom:6px}
+  .hero-title{font-size:20px;font-weight:800;color:#065f46;line-height:1.2}
+  .body{padding:24px 32px}
+  .greeting{font-size:15px;color:#111827;font-weight:600;margin-bottom:10px}
+  .text{font-size:14px;color:#4b5563;line-height:1.7;margin-bottom:14px}
+  .cred-box{background:#0f1923;border-radius:8px;padding:18px 22px;margin:18px 0}
+  .cred-title{color:rgba(255,255,255,.55);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px}
+  .cred-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.08)}
+  .cred-row:last-child{border-bottom:none}
+  .cred-lbl{color:rgba(255,255,255,.55);font-size:12px}
+  .cred-val{color:#fff;font-weight:700;font-size:13px;font-family:monospace}
+  .perm-list{list-style:none;padding:0;margin:10px 0}
+  .perm-list li{font-size:13px;color:#4b5563;padding:5px 0;display:flex;align-items:center;gap:8px}
+  .perm-list li::before{content:'✓';color:#198754;font-weight:800;font-size:14px}
+  .cta-btn{display:inline-block;background:#198754;color:#fff;text-decoration:none;padding:13px 28px;border-radius:8px;font-weight:700;font-size:14px;margin:8px 0}
+  .divider{height:1px;background:#e5e7eb;margin:20px 0}
+  .footer{background:#f8fafc;padding:14px 32px;border-top:1px solid #e5e7eb}
+  .footer-text{font-size:11px;color:#9ca3af;line-height:1.6;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="header">
+    <div class="header-logo">MOF Engineering — Jobs Portal</div>
+    <div class="header-tagline">Managing Of Future Engineering &middot; Slemani, Iraq</div>
+  </div>
+  <div class="hero-band">
+    <div class="hero-icon">&#127881;</div>
+    <div class="hero-title">Your Application Was Approved!</div>
+  </div>
+  <div class="body">
+    <p class="greeting">Dear {{ req.full_name }},</p>
+    <p class="text">
+      We are pleased to inform you that your supervisor registration application for
+      <strong>{{ req.company_name }}</strong> has been <strong style="color:#198754">approved</strong>.
+      Your account is now active and you can log in to the MOF Jobs portal.
+    </p>
+    <div class="cred-box">
+      <div class="cred-title">Your Login Credentials</div>
+      <div class="cred-row">
+        <span class="cred-lbl">Portal URL</span>
+        <span class="cred-val">jobs.mof-eng.com</span>
+      </div>
+      <div class="cred-row">
+        <span class="cred-lbl">Email</span>
+        <span class="cred-val">{{ req.email }}</span>
+      </div>
+      <div class="cred-row">
+        <span class="cred-lbl">Password</span>
+        <span class="cred-val">Your submitted password</span>
+      </div>
+    </div>
+    <p class="text" style="font-weight:600;color:#111827;margin-bottom:8px">As a supervisor, you can:</p>
+    <ul class="perm-list">
+      <li>Review and manage job applications for your company</li>
+      <li>Post and manage job positions</li>
+      <li>Evaluate candidates and update application statuses</li>
+      <li>Schedule and conduct interviews</li>
+      <li>Communicate with applicants through the messaging system</li>
+    </ul>
+    <div style="text-align:center;margin:22px 0 10px">
+      <a href="{{ login_url }}" class="cta-btn">Log In to Your Dashboard &#8594;</a>
+    </div>
+    <div class="divider"></div>
+    <p style="font-size:13px;color:#4b5563">
+      If you have any questions, please contact our admin team at
+      <a href="mailto:admin@mof-eng.com" style="color:#198754">admin@mof-eng.com</a>.
+    </p>
+    <div style="font-size:13px;color:#4b5563;margin-top:14px">
+      Best regards,<br>
+      <strong style="color:#111827">MOF Engineering — Recruitment Team</strong><br>
+      <span style="color:#9ca3af;font-size:12px">jobs.mof-eng.com</span>
+    </div>
+  </div>
+  <div class="footer">
+    <div class="footer-text">
+      MOF Engineering Company &middot; Slemani, Iraq &middot;
+      <a href="https://jobs.mof-eng.com" style="color:#198754">jobs.mof-eng.com</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -13,7 +13,8 @@ from flask import current_app, abort
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 
-from models import ApplicationHistory, ROLE_ADMIN, ROLE_SUPERVISOR
+from models import (ApplicationHistory, ROLE_ADMIN, ROLE_SUPERVISOR,
+                    ROLE_UNIVERSITY_COORD)
 
 
 def allowed_file(filename):
@@ -141,6 +142,12 @@ def send_email(to, subject, html_body, attachment_path=None, attachment_name=Non
         s.starttls(context=context)
         s.login(cfg['MAIL_USERNAME'], cfg['MAIL_PASSWORD'])
         s.sendmail(cfg['MAIL_USERNAME'], to, msg.as_string())
+    try:
+        from models import db as _db
+        log_audit('email.send', f'{subject} → {to}')
+        _db.session.commit()
+    except Exception:
+        pass
 
 
 def log_history(application, changed_by, new_status=None, note=None, is_internal=False):
@@ -177,8 +184,62 @@ def supervisor_or_admin_required(f):
     return decorated
 
 
+def university_coordinator_required(f):
+    @wraps(f)
+    @login_required
+    def decorated(*args, **kwargs):
+        if current_user.role not in (ROLE_ADMIN, ROLE_UNIVERSITY_COORD):
+            abort(403)
+        return f(*args, **kwargs)
+    return decorated
+
+
 def push_notification(user_id, message, link=None, icon='bi-bell-fill'):
-    """Create an in-app notification. Caller must still db.session.commit()."""
+    """Create an in-app notification and send Web Push if subscriptions exist."""
     from models import Notification, db
     n = Notification(user_id=user_id, message=message, link=link, icon=icon)
     db.session.add(n)
+    _send_web_push(user_id, message, link)
+
+
+def _send_web_push(user_id, message, link=None):
+    """Fire-and-forget Web Push to all subscriptions for a user."""
+    try:
+        from models import PushSubscription, db as _db
+        from pywebpush import webpush, WebPushException
+        import json as _json
+        cfg = current_app.config
+        private_key = cfg.get('VAPID_PRIVATE_KEY', '')
+        if not private_key:
+            return
+        subs = PushSubscription.query.filter_by(user_id=user_id).all()
+        if not subs:
+            return
+        payload = _json.dumps({
+            'title': 'MOF Jobs',
+            'body':  message,
+            'url':   link or '/',
+        })
+        dead = []
+        for sub in subs:
+            try:
+                webpush(
+                    subscription_info={
+                        'endpoint': sub.endpoint,
+                        'keys': {'p256dh': sub.p256dh, 'auth': sub.auth},
+                    },
+                    data=payload,
+                    vapid_private_key=private_key,
+                    vapid_claims={'sub': cfg.get('VAPID_SUBJECT', 'mailto:admin@mof-eng.com')},
+                )
+            except WebPushException as exc:
+                if exc.response is not None and exc.response.status_code in (404, 410):
+                    dead.append(sub.id)
+            except Exception:
+                pass
+        if dead:
+            PushSubscription.query.filter(PushSubscription.id.in_(dead)).delete(
+                synchronize_session=False)
+            _db.session.commit()
+    except Exception:
+        pass

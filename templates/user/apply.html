@@ -116,6 +116,42 @@
                    onchange="handleCvChange(this)">
           </div>
 
+          <!-- Internship-specific fields -->
+          {% if pos.type == 'Internship' %}
+          <div class="ap-field-group" id="internship-fields" style="background:var(--green-light);border:1px solid var(--green-mid);border-radius:10px;padding:14px 16px">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--green);margin-bottom:14px;display:flex;align-items:center;gap:6px">
+              <i class="bi bi-mortarboard-fill"></i> Internship Details
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div class="ap-field-group" style="margin-bottom:0">
+                <label class="ap-label" for="ap-duration">PREFERRED DURATION</label>
+                <div class="ap-input-wrap">
+                  <i class="bi bi-clock ap-field-icon"></i>
+                  <select name="internship_duration" id="ap-duration" class="form-control ap-has-icon">
+                    <option value="">Select…</option>
+                    {% for d in ['1 month','2 months','3 months','4 months','6 months','9 months','12 months'] %}
+                    <option value="{{ d }}">{{ d }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+              <div class="ap-field-group" style="margin-bottom:0">
+                <label class="ap-label" for="ap-start">PREFERRED START DATE</label>
+                <div class="ap-input-wrap">
+                  <i class="bi bi-calendar3 ap-field-icon"></i>
+                  <input type="date" name="internship_start_date" id="ap-start" class="form-control ap-has-icon">
+                </div>
+              </div>
+            </div>
+            <div style="margin-top:12px">
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+                <input type="checkbox" name="academic_credit_required" value="1">
+                <span>This internship is for academic credit / university requirement</span>
+              </label>
+            </div>
+          </div>
+          {% endif %}
+
           <!-- Cover letter -->
           <div class="ap-field-group" style="margin-bottom:0">
             <label class="ap-label" style="display:flex;justify-content:space-between;align-items:center">
@@ -224,6 +260,7 @@
   .ap-submit-bar .btn{width:100%;justify-content:center}
   .ap-upload-zone{padding:14px}
   .ap-tips-card{display:none}
+  #internship-fields div[style*="grid-template-columns"]{grid-template-columns:1fr!important}
 }
 </style>
 

@@ -7,4 +7,4 @@ from flask import Blueprint
 
 api_bp = Blueprint('api', __name__)
 
-from . import auth, jobs, profile, applications, employer, admin  # noqa: F401, E402
+from . import auth, jobs, profile, applications, employer, admin, push  # noqa: F401, E402

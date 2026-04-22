@@ -324,7 +324,7 @@
       {# ──────────────── LANGUAGES ──────────────── #}
       <div class="uf-section"><i class="bi bi-translate"></i> Languages</div>
       <div class="uf-list" id="lang-list">
-        {% for lang in [] %}
+        {% for lang in user.languages.all() %}
         <div class="uf-row uf-row-lang">
           <input type="text" name="lang_name[]" class="form-control"
                  value="{{ lang.language }}" placeholder="English">
@@ -346,7 +346,7 @@
       {# ──────────────── CERTIFICATIONS ──────────────── #}
       <div class="uf-section"><i class="bi bi-patch-check-fill"></i> Certifications</div>
       <div class="uf-list" id="cert-list">
-        {% for cert in [] %}
+        {% for cert in user.certifications.all() %}
         <div class="uf-row">
           <div class="uf-row-cert-grid">
             <div class="form-group" style="margin:0">
@@ -485,7 +485,7 @@
         </div>
         <div class="uf-stat">
           <span class="uf-stat-lbl">Last Login</span>
-          <span class="uf-stat-val">{{ user.last_login.strftime('%b %d, %Y') if user.last_login else '—' }}</span>
+          <span class="uf-stat-val">{{ (user.last_login | localdt).strftime('%b %d, %Y') if user.last_login else '—' }}</span>
         </div>
       </div>
 

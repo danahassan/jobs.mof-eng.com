@@ -1,0 +1,270 @@
+{% extends 'base.html' %}
+{% block title %}Supervisor Request #{{ req.id }} — MOF Jobs{% endblock %}
+{% block page_title %}Supervisor Request #{{ req.id }}{% endblock %}
+
+{% block content %}
+<style>
+.sr-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.sr-actions-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px}
+.sr-info-row{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:9px 0;border-bottom:1px solid var(--border)}
+.sr-info-row:last-child{border-bottom:none;padding-bottom:0}
+.sr-lbl{font-size:12px;color:var(--text3);font-weight:600;flex-shrink:0;padding-top:2px}
+.sr-val{font-size:13px;color:var(--text);font-weight:600;text-align:right;word-break:break-all}
+.sr-inp{display:none;width:100%;border:1.5px solid var(--border);border-radius:7px;font-size:13px;padding:6px 9px;font-family:inherit;color:var(--text);background:var(--card);outline:none;transition:border-color .15s}
+.sr-inp:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(25,135,84,.1)}
+.sr-inp-file{padding:4px 9px;background:#f8fafb;cursor:pointer}
+.sr-bio-wrap{margin-top:14px}
+.sr-bio-label{font-size:12px;color:var(--text3);font-weight:600;margin-bottom:6px}
+.sr-bio-val{font-size:13px;color:var(--text2);line-height:1.7;white-space:pre-wrap}
+.sr-bio-inp{display:none;width:100%;border:1.5px solid var(--border);border-radius:7px;font-size:13px;padding:8px 10px;font-family:inherit;color:var(--text);background:var(--card);resize:vertical;outline:none}
+.sr-bio-inp:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(25,135,84,.1)}
+/* edit mode */
+body.editing .sr-val{display:none}
+body.editing .sr-inp{display:block}
+body.editing .sr-bio-val{display:none}
+body.editing .sr-bio-inp{display:block}
+body.editing .sr-info-row{align-items:center}
+/* edit bar */
+.edit-bar{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+.edit-bar-edit{display:flex;gap:10px;flex-wrap:wrap;display:none}
+body.editing .edit-bar-view{display:none}
+body.editing .edit-bar-edit{display:flex}
+@media(max-width:768px){
+  .sr-grid{grid-template-columns:1fr}
+  .sr-actions-grid{grid-template-columns:1fr}
+  .sr-info-row{flex-direction:column;gap:4px}
+  .sr-val{text-align:left}
+  .sr-inp{text-align:left}
+}
+</style>
+
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+  <a href="{{ url_for('admin.supervisor_requests') }}" class="btn btn-outline btn-sm"><i class="bi bi-arrow-left"></i> Back</a>
+  {% if req.status == 'pending' %}
+    <span class="badge" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d;font-size:13px;padding:6px 12px">Pending Review</span>
+  {% elif req.status == 'approved' %}
+    <span class="badge badge-active" style="font-size:13px;padding:6px 12px">Approved</span>
+  {% else %}
+    <span class="badge badge-inactive" style="font-size:13px;padding:6px 12px">Rejected</span>
+  {% endif %}
+  <span class="text-muted" style="font-size:12px">Submitted {{ (req.created_at | localdt).strftime('%d %b %Y, %H:%M') }} +3</span>
+</div>
+
+<form method="POST" action="{{ url_for('admin.supervisor_request_edit', req_id=req.id) }}" enctype="multipart/form-data" id="editForm">
+
+<div class="sr-grid">
+
+  <!-- Personal info -->
+  <div class="table-card" style="padding:20px">
+    <div style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--text2);margin-bottom:16px">
+      <i class="bi bi-person-fill" style="color:var(--green)"></i> Personal Details
+    </div>
+
+    <div class="sr-info-row">
+      <span class="sr-lbl">Full Name</span>
+      <span class="sr-val">{{ req.full_name }}</span>
+      <input class="sr-inp" type="text" name="full_name" value="{{ req.full_name }}" required>
+    </div>
+    <div class="sr-info-row">
+      <span class="sr-lbl">Email</span>
+      <span class="sr-val">{{ req.email }}</span>
+      <input class="sr-inp" type="email" name="email" value="{{ req.email }}" required>
+    </div>
+    <div class="sr-info-row">
+      <span class="sr-lbl">Phone</span>
+      <span class="sr-val">{{ req.phone or '—' }}</span>
+      <input class="sr-inp" type="tel" name="phone" value="{{ req.phone or '' }}">
+    </div>
+    <div class="sr-info-row">
+      <span class="sr-lbl">Headline</span>
+      <span class="sr-val">{{ req.headline or '—' }}</span>
+      <input class="sr-inp" type="text" name="headline" value="{{ req.headline or '' }}">
+    </div>
+    <div class="sr-info-row">
+      <span class="sr-lbl">Location</span>
+      <span class="sr-val">{{ req.location_city or '—' }}</span>
+      <input class="sr-inp" type="text" name="location_city" value="{{ req.location_city or '' }}">
+    </div>
+    <div class="sr-info-row">
+      <span class="sr-lbl">Nationality</span>
+      <span class="sr-val">{{ req.nationality or '—' }}</span>
+      <input class="sr-inp" type="text" name="nationality" value="{{ req.nationality or '' }}">
+    </div>
+    <div class="sr-info-row">
+      <span class="sr-lbl">Gender</span>
+      <span class="sr-val">{{ req.gender or '—' }}</span>
+      <select class="sr-inp" name="gender">
+        <option value="">—</option>
+        {% for g in ['Male','Female','Other','Prefer not to say'] %}
+        <option value="{{ g }}" {% if req.gender == g %}selected{% endif %}>{{ g }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="sr-info-row">
+      <span class="sr-lbl">LinkedIn</span>
+      <span class="sr-val">{% if req.linkedin_url %}<a href="{{ req.linkedin_url }}" target="_blank">{{ req.linkedin_url }}</a>{% else %}—{% endif %}</span>
+      <input class="sr-inp" type="url" name="linkedin_url" value="{{ req.linkedin_url or '' }}">
+    </div>
+    <div class="sr-info-row" style="border-bottom:none">
+      <span class="sr-lbl">Password</span>
+      <span class="sr-val" style="color:var(--text3)">••••••••</span>
+      <input class="sr-inp" type="password" name="new_password" placeholder="Leave blank to keep current" autocomplete="new-password">
+    </div>
+
+    <div class="sr-bio-wrap">
+      <div class="sr-bio-label">Bio</div>
+      <div class="sr-bio-val">{{ req.bio or '—' }}</div>
+      <textarea class="sr-bio-inp" name="bio" rows="4">{{ req.bio or '' }}</textarea>
+    </div>
+  </div>
+
+  <!-- Company info -->
+  <div class="table-card" style="padding:20px">
+    <div style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--text2);margin-bottom:16px">
+      <i class="bi bi-building-fill" style="color:var(--green)"></i> Company Details
+    </div>
+
+    {% if req.company_logo_filename %}
+    <div style="margin-bottom:14px">
+      <img id="logoPreview" src="{{ url_for('static', filename='uploads/company/' + req.company_logo_filename) }}"
+           alt="Logo" style="max-height:60px;border-radius:8px;border:1px solid var(--border)">
+    </div>
+    {% endif %}
+
+    <div class="sr-info-row">
+      <span class="sr-lbl">Company Name</span>
+      <span class="sr-val">{{ req.company_name }}</span>
+      <input class="sr-inp" type="text" name="company_name" value="{{ req.company_name }}" required>
+    </div>
+    <div class="sr-info-row">
+      <span class="sr-lbl">Industry</span>
+      <span class="sr-val">{{ req.company_industry or '—' }}</span>
+      <input class="sr-inp" type="text" name="company_industry" value="{{ req.company_industry or '' }}">
+    </div>
+    <div class="sr-info-row">
+      <span class="sr-lbl">Size</span>
+      <span class="sr-val">{{ req.company_size or '—' }}</span>
+      <select class="sr-inp" name="company_size">
+        <option value="">—</option>
+        {% for s in ['1–10','11–50','51–200','201–500','501–1000','1000+'] %}
+        <option value="{{ s }}" {% if req.company_size == s %}selected{% endif %}>{{ s }} employees</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="sr-info-row">
+      <span class="sr-lbl">Location</span>
+      <span class="sr-val">{{ req.company_location or '—' }}</span>
+      <input class="sr-inp" type="text" name="company_location" value="{{ req.company_location or '' }}">
+    </div>
+    <div class="sr-info-row">
+      <span class="sr-lbl">Contact Email</span>
+      <span class="sr-val">{{ req.company_contact_email or '—' }}</span>
+      <input class="sr-inp" type="email" name="company_contact_email" value="{{ req.company_contact_email or '' }}">
+    </div>
+    <div class="sr-info-row">
+      <span class="sr-lbl">Contact Phone</span>
+      <span class="sr-val">{{ req.company_contact_phone or '—' }}</span>
+      <input class="sr-inp" type="tel" name="company_contact_phone" value="{{ req.company_contact_phone or '' }}">
+    </div>
+    <div class="sr-info-row">
+      <span class="sr-lbl">Website</span>
+      <span class="sr-val">{% if req.company_website %}<a href="{{ req.company_website }}" target="_blank">{{ req.company_website }}</a>{% else %}—{% endif %}</span>
+      <input class="sr-inp" type="url" name="company_website" value="{{ req.company_website or '' }}">
+    </div>
+    <div class="sr-info-row">
+      <span class="sr-lbl">Founded</span>
+      <span class="sr-val">{{ req.company_founded_year or '—' }}</span>
+      <input class="sr-inp" type="number" name="company_founded_year" value="{{ req.company_founded_year or '' }}" min="1900" max="2099">
+    </div>
+    <div class="sr-info-row" style="border-bottom:none">
+      <span class="sr-lbl">Logo</span>
+      <span class="sr-val" style="color:var(--text3)">{{ 'Uploaded' if req.company_logo_filename else '—' }}</span>
+      <input class="sr-inp sr-inp-file" type="file" name="company_logo" accept="image/*">
+    </div>
+
+    <div class="sr-bio-wrap">
+      <div class="sr-bio-label">Description</div>
+      <div class="sr-bio-val">{{ req.company_description or '—' }}</div>
+      <textarea class="sr-bio-inp" name="company_description" rows="4">{{ req.company_description or '' }}</textarea>
+    </div>
+  </div>
+</div>
+
+{% if req.status == 'rejected' %}
+<div id="resetRow" style="display:none;margin-top:12px;padding:12px 16px;background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;align-items:center;gap:10px">
+  <input type="checkbox" name="reset_to_pending" id="resetPending" value="1" style="width:16px;height:16px;accent-color:var(--green);flex-shrink:0">
+  <label for="resetPending" style="font-size:13px;color:#92400e;font-weight:600;cursor:pointer;margin:0">Reset status to Pending for re-review</label>
+</div>
+{% endif %}
+
+<!-- Edit / Save / Cancel bar -->
+<div class="edit-bar" style="margin-top:20px">
+  <div class="edit-bar-view">
+    <button type="button" onclick="startEdit()" class="btn btn-outline"><i class="bi bi-pencil-square"></i> Edit</button>
+  </div>
+  <div class="edit-bar-edit">
+    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Save Changes</button>
+    <button type="button" onclick="cancelEdit()" class="btn btn-outline">Cancel</button>
+  </div>
+</div>
+
+</form>
+
+<!-- Approve / Reject actions (shown only in view mode) -->
+{% if req.status == 'pending' %}
+<div class="sr-actions-grid" id="actionCards">
+  <div class="table-card" style="padding:20px">
+    <div style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#198754;margin-bottom:12px"><i class="bi bi-check-circle-fill"></i> Approve Request</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6">Creates the supervisor account and company. Applicant will receive a welcome email.</p>
+    <form method="POST" action="{{ url_for('admin.supervisor_request_approve', req_id=req.id) }}"
+          onsubmit="return confirm('Approve and create supervisor + company?')">
+      <button type="submit" class="btn btn-primary" style="width:100%"><i class="bi bi-check-lg"></i> Approve &amp; Create Account</button>
+    </form>
+  </div>
+  <div class="table-card" style="padding:20px">
+    <div style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#dc2626;margin-bottom:12px"><i class="bi bi-x-circle-fill"></i> Reject Request</div>
+    <form method="POST" action="{{ url_for('admin.supervisor_request_reject', req_id=req.id) }}">
+      <div style="margin-bottom:12px">
+        <label style="font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:6px">Reason <small style="font-weight:400;color:var(--text3)">(shown to applicant)</small></label>
+        <textarea name="reason" class="form-control" rows="3" placeholder="Explain why the application was rejected…"></textarea>
+      </div>
+      <button type="submit" class="btn btn-sm" style="background:#dc2626;color:#fff;border:1px solid #dc2626;width:100%;border-radius:8px;padding:10px;font-weight:600">
+        <i class="bi bi-x-lg"></i> Reject Application
+      </button>
+    </form>
+  </div>
+</div>
+
+{% elif req.status == 'rejected' %}
+<div class="table-card" style="padding:20px;margin-top:18px;border-left:4px solid #dc2626">
+  <div style="font-size:13px;font-weight:700;color:#dc2626;margin-bottom:6px"><i class="bi bi-x-circle-fill"></i> Rejected</div>
+  {% if req.rejection_reason %}<div style="font-size:13px;color:var(--text2);line-height:1.6"><strong>Reason:</strong> {{ req.rejection_reason }}</div>{% endif %}
+  {% if req.reviewed_at %}<div style="font-size:12px;color:var(--text3);margin-top:4px">on {{ (req.reviewed_at | localdt).strftime('%d %b %Y, %H:%M') }} +3</div>{% endif %}
+  <div style="margin-top:8px;font-size:13px;color:var(--text3)">The applicant received a rejection email with a link to edit and resubmit.</div>
+</div>
+
+{% elif req.status == 'approved' %}
+<div class="table-card" style="padding:20px;margin-top:18px;border-left:4px solid #198754">
+  <div style="font-size:13px;font-weight:700;color:#198754;margin-bottom:6px"><i class="bi bi-check-circle-fill"></i> Approved</div>
+  {% if req.reviewed_at %}<div style="font-size:12px;color:var(--text3)">on {{ (req.reviewed_at | localdt).strftime('%d %b %Y, %H:%M') }} +3</div>{% endif %}
+</div>
+{% endif %}
+
+<script>
+function startEdit(){
+  document.body.classList.add('editing');
+  var r = document.getElementById('resetRow');
+  if(r) r.style.display = 'flex';
+  var ac = document.getElementById('actionCards');
+  if(ac) ac.style.display = 'none';
+  document.getElementById('editForm').scrollIntoView({behavior:'smooth', block:'start'});
+}
+function cancelEdit(){
+  document.body.classList.remove('editing');
+  var r = document.getElementById('resetRow');
+  if(r) r.style.display = 'none';
+  var ac = document.getElementById('actionCards');
+  if(ac) ac.style.display = '';
+}
+</script>
+{% endblock %}

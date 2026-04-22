@@ -53,7 +53,7 @@
       <div class="msg-bubble {% if msg.sender_id == current_user.id %}mine{% else %}theirs{% endif %}">
         <div class="bubble {% if msg.sender_id == current_user.id %}mine{% else %}theirs{% endif %}">{{ msg.body }}</div>
         <div style="display:flex;align-items:center;gap:6px">
-          <div class="msg-time">{{ msg.created_at.strftime('%b %d, %Y · %H:%M') }}</div>
+          <div class="msg-time">{{ (msg.created_at | localdt).strftime('%b %d, %Y · %H:%M') }}</div>
           <div class="msg-actions">
             <form method="POST" action="{{ url_for('messages.delete_message', msg_id=msg.id) }}"
                   onsubmit="return confirm('Delete this message? The other person\'s copy is not affected.')">

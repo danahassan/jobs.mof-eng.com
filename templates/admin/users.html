@@ -6,6 +6,11 @@
 <style>
 /* ── Users page ── */
 .usr-tbl th:last-child,.usr-tbl td:last-child{text-align:right}
+@media(max-width:768px){
+  .user-actions{flex-wrap:wrap!important;justify-content:flex-end!important;gap:5px!important}
+  .user-actions .btn-text{display:none}
+  .user-actions .btn,.user-actions button.btn{padding:6px 8px!important;min-width:32px;justify-content:center}
+}
 </style>
 <!-- KPI Strip -->
 <div class="kpi-strip">
@@ -28,6 +33,14 @@
   <div class="kpi-card">
     <div class="kpi-icon" style="background:#ede9fe;color:#7c3aed"><i class="bi bi-person-fill"></i></div>
     <div class="kpi-body"><div class="kpi-val">{{ kpi_users }}</div><div class="kpi-lbl">Candidates</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#f5f3ff;color:#6d28d9"><i class="bi bi-person-badge-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_students }}</div><div class="kpi-lbl">Students</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#ecfdf5;color:#059669"><i class="bi bi-mortarboard-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_coordinators }}</div><div class="kpi-lbl">Coordinators</div></div>
   </div>
   <div class="kpi-card">
     <div class="kpi-icon" style="background:#f8f9fa;color:#6c757d"><i class="bi bi-person-x-fill"></i></div>
@@ -114,25 +127,24 @@
           </td>
           <td data-label="Email">{{ u.email }}</td>
           <td data-label="Phone" class="text-muted">{{ u.phone or '—' }}</td>
-          <td data-label="Role"><span class="badge badge-{{ u.role }}">{{ u.role|capitalize }}</span></td>
+          <td data-label="Role"><span class="badge badge-{{ u.role }}">{{ u.role|replace('_',' ')|title }}</span></td>
           <td data-label="Status">
             {% if u.is_active %}<span class="badge badge-active">Active</span>
             {% else %}<span class="badge badge-inactive">Inactive</span>{% endif %}
           </td>
-          <td data-label="Last Login" class="text-muted">{{ u.last_login.strftime('%b %d, %Y') if u.last_login else 'Never' }}</td>
-          <td>
-            <div class="d-flex gap-2" style="justify-content:flex-end">
-              <a href="{{ url_for('admin.user_detail', user_id=u.id) }}" class="btn btn-outline btn-sm">
-                <i class="bi bi-eye"></i> View
+          <td data-label="Last Login" class="text-muted">{{ (u.last_login | localdt).strftime('%b %d, %Y %H:%M') if u.last_login else 'Never' }}</td>
+          <td data-label="Actions">
+            <div class="d-flex gap-2 user-actions" style="justify-content:flex-end">
+              <a href="{{ url_for('admin.user_detail', user_id=u.id) }}" class="btn btn-outline btn-sm" title="View">
+                <i class="bi bi-eye"></i><span class="btn-text"> View</span>
               </a>
-              <a href="{{ url_for('admin.user_edit', user_id=u.id) }}" class="btn btn-outline btn-sm">
-                <i class="bi bi-pencil"></i> Edit
+              <a href="{{ url_for('admin.user_edit', user_id=u.id) }}" class="btn btn-outline btn-sm" title="Edit">
+                <i class="bi bi-pencil"></i><span class="btn-text"> Edit</span>
               </a>
               {% if u.id != current_user.id %}
               <form method="POST" action="{{ url_for('admin.user_toggle', user_id=u.id) }}">
-                <button type="submit" class="btn btn-outline btn-sm">
-                  <i class="bi bi-toggle-{{ 'off' if u.is_active else 'on' }}"></i>
-                  {{ 'Deactivate' if u.is_active else 'Activate' }}
+                <button type="submit" class="btn btn-outline btn-sm" title="{{ 'Deactivate' if u.is_active else 'Activate' }}">
+                  <i class="bi bi-toggle-{{ 'off' if u.is_active else 'on' }}"></i><span class="btn-text"> {{ 'Deactivate' if u.is_active else 'Activate' }}</span>
                 </button>
               </form>
               <form method="POST" action="{{ url_for('admin.user_delete', user_id=u.id) }}"

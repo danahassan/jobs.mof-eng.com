@@ -9,9 +9,10 @@ from flask_login import current_user
 from models import (db, User, Position, Application, ApplicationHistory,
                     Interview, AuditLog, Company, CompanyMember, CompanyFollow,
                     UserSkill, UserExperience, UserEducation,
-                    Message,
-                    ROLE_ADMIN, ROLE_SUPERVISOR, ROLE_USER, LANG_LEVELS,
-                    ALL_STATUSES, SOURCES, STATUS_NEW)
+                    UserLanguage, UserCertification,
+                    Message, SupervisorRequest, University, UniversityMember, UniversityRequest,
+                    ROLE_ADMIN, ROLE_SUPERVISOR, ROLE_USER, ROLE_STUDENT, ROLE_UNIVERSITY_COORD,
+                    LANG_LEVELS, ALL_STATUSES, SOURCES, STATUS_NEW)
 from sqlalchemy import or_, and_
 from helpers import (admin_required, log_history, save_cv, allowed_file,
                      send_email, save_company_image, push_notification, log_audit,
@@ -333,6 +334,7 @@ def applications_export():
         # ── Application submission info ──────────────────────────────────
         'App ID', 'Applied At', 'Updated At', 'Status', 'Source',
         'Position', 'Department', 'Position Type', 'Company',
+        'Expected Salary',
         'Assigned To',
         'Cover Letter', 'CV Filename (Original)',
         'Internal Notes',
@@ -403,6 +405,7 @@ def applications_export():
             a.position.department or '',
             a.position.type,
             a.position.company.name if a.position.company else '',
+            a.expected_salary or '',
             a.assigned_to.full_name if a.assigned_to else '',
             a.cover_letter or '',
             a.cv_original or '',
@@ -632,14 +635,18 @@ def users():
     kpi_admins     = User.query.filter_by(role=ROLE_ADMIN).count()
     kpi_supervisors= User.query.filter_by(role=ROLE_SUPERVISOR).count()
     kpi_users      = User.query.filter_by(role=ROLE_USER).count()
+    kpi_students   = User.query.filter_by(role=ROLE_STUDENT).count()
+    kpi_coordinators = User.query.filter_by(role=ROLE_UNIVERSITY_COORD).count()
     kpi_active     = User.query.filter_by(is_active=True).count()
     kpi_inactive   = User.query.filter_by(is_active=False).count()
 
     return render_template('admin/users.html', users=users_paged,
                            q_str=q_str, roles_f=roles_f, status_f=status_f,
-                           ROLES=[ROLE_ADMIN, ROLE_SUPERVISOR, ROLE_USER],
+                           ROLES=[ROLE_ADMIN, ROLE_SUPERVISOR, ROLE_USER,
+                                  ROLE_STUDENT, ROLE_UNIVERSITY_COORD],
                            kpi_total=kpi_total, kpi_admins=kpi_admins,
                            kpi_supervisors=kpi_supervisors, kpi_users=kpi_users,
+                           kpi_students=kpi_students, kpi_coordinators=kpi_coordinators,
                            kpi_active=kpi_active, kpi_inactive=kpi_inactive)
 
 
@@ -705,7 +712,8 @@ def user_new():
         flash(f'User {user.full_name} created.', 'success')
         return redirect(url_for('admin.users'))
     return render_template('admin/user_form.html', user=None,
-                           ROLES=[ROLE_ADMIN, ROLE_SUPERVISOR, ROLE_USER])
+                           ROLES=[ROLE_ADMIN, ROLE_SUPERVISOR, ROLE_USER,
+                                  ROLE_STUDENT, ROLE_UNIVERSITY_COORD])
 
 
 @admin_bp.route('/users/<int:user_id>/edit', methods=['GET', 'POST'])
@@ -786,15 +794,16 @@ def user_edit(user_id):
                     end_year=_parse_int(ey)))
 
         # ── Languages ────────────────────────────────────────────────────────
-        # Removed UserLanguage delete (rollback)
+        UserLanguage.query.filter_by(user_id=user.id).delete(synchronize_session=False)
         for lname, lprof in zip(request.form.getlist('lang_name[]'),
                                 request.form.getlist('lang_prof[]')):
             lname = lname.strip()
             if lname:
-                pass  # Removed UserLanguage add (rollback)
+                db.session.add(UserLanguage(user_id=user.id, language=lname,
+                                             proficiency=lprof or 'Intermediate'))
 
-        # ── Certifications ───────────────────────────────────────────────────
-        # Removed UserCertification delete (rollback)
+        # ── Certifications ───────────────────────────────────────────────────────
+        UserCertification.query.filter_by(user_id=user.id).delete(synchronize_session=False)
         for cname, corg, cissued, ccid, curl in zip(
                 request.form.getlist('cert_name[]'),
                 request.form.getlist('cert_org[]'),
@@ -803,14 +812,27 @@ def user_edit(user_id):
                 request.form.getlist('cert_url[]')):
             cname = cname.strip()
             if cname:
-                pass  # Removed UserCertification add (rollback)
+                cert = UserCertification(
+                    user_id=user.id, name=cname,
+                    issuing_org=corg.strip() or None,
+                    credential_id=ccid.strip() or None,
+                    credential_url=curl.strip() or None,
+                )
+                if cissued:
+                    try:
+                        from datetime import datetime as _dt
+                        cert.issue_date = _dt.strptime(cissued, '%Y-%m-%d').date()
+                    except ValueError:
+                        pass
+                db.session.add(cert)
 
         _audit('user.edit', f'{user.full_name} <{user.email}>')
         db.session.commit()
         flash('User updated.', 'success')
         return redirect(url_for('admin.users'))
     return render_template('admin/user_form.html', user=user,
-                           ROLES=[ROLE_ADMIN, ROLE_SUPERVISOR, ROLE_USER],
+                           ROLES=[ROLE_ADMIN, ROLE_SUPERVISOR, ROLE_USER,
+                                  ROLE_STUDENT, ROLE_UNIVERSITY_COORD],
                            LANG_LEVELS=LANG_LEVELS)
 
 
@@ -913,6 +935,9 @@ def audit_trail():
     kpi_users_active = db.session.query(
         db.func.count(db.func.distinct(AuditLog.user_id))
     ).filter(AuditLog.created_at >= datetime.utcnow() - timedelta(days=7)).scalar() or 0
+    online_cutoff = datetime.utcnow() - timedelta(minutes=30)
+    kpi_online = User.query.filter(
+        User.last_seen >= online_cutoff, User.is_active == True).count()
 
     return render_template('admin/audit.html',
                            audit_entries=audit_entries,
@@ -921,7 +946,8 @@ def audit_trail():
                            action_f=action_f,
                            kpi_total=kpi_total, kpi_today=kpi_today,
                            kpi_this_week=kpi_this_week,
-                           kpi_users_active=kpi_users_active)
+                           kpi_users_active=kpi_users_active,
+                           kpi_online=kpi_online)
 
 
 @admin_bp.route('/audit/export')
@@ -1294,6 +1320,205 @@ def _send_company_job_alerts(position):
         db.session.commit()
 
 
+# ─── SUPERVISOR REQUESTS ──────────────────────────────────────────────────────
+
+@admin_bp.route('/supervisor_requests')
+@admin_required
+def supervisor_requests():
+    status_f = request.args.get('status', '')
+    page     = request.args.get('page', 1, type=int)
+
+    q = SupervisorRequest.query
+    if status_f:
+        q = q.filter_by(status=status_f)
+
+    requests_paged = q.order_by(SupervisorRequest.created_at.desc()).paginate(
+        page=page, per_page=20, error_out=False)
+
+    kpi_total    = SupervisorRequest.query.count()
+    kpi_pending  = SupervisorRequest.query.filter_by(status='pending').count()
+    kpi_approved = SupervisorRequest.query.filter_by(status='approved').count()
+    kpi_rejected = SupervisorRequest.query.filter_by(status='rejected').count()
+
+    return render_template('admin/supervisor_requests.html',
+                           requests=requests_paged,
+                           status_f=status_f,
+                           kpi_total=kpi_total,
+                           kpi_pending=kpi_pending,
+                           kpi_approved=kpi_approved,
+                           kpi_rejected=kpi_rejected)
+
+
+@admin_bp.route('/supervisor_requests/<int:req_id>')
+@admin_required
+def supervisor_request_detail(req_id):
+    req = db.get_or_404(SupervisorRequest, req_id)
+    return render_template('admin/supervisor_request_detail.html', req=req)
+
+
+@admin_bp.route('/supervisor_requests/<int:req_id>/approve', methods=['POST'])
+@admin_required
+def supervisor_request_approve(req_id):
+    req = db.get_or_404(SupervisorRequest, req_id)
+    if req.status != 'pending':
+        flash('This request is not pending.', 'warning')
+        return redirect(url_for('admin.supervisor_request_detail', req_id=req_id))
+
+    # Check if email already taken
+    if User.query.filter_by(email=req.email).first():
+        flash(f'A user with email {req.email} already exists.', 'danger')
+        return redirect(url_for('admin.supervisor_request_detail', req_id=req_id))
+
+    # Create User
+    from slugify import slugify as _slugify
+    new_user = User(
+        full_name     = req.full_name,
+        email         = req.email,
+        phone         = req.phone,
+        role          = ROLE_SUPERVISOR,
+        is_active     = True,
+        headline      = req.headline,
+        bio           = req.bio,
+        nationality   = req.nationality,
+        location_city = req.location_city,
+        gender        = req.gender,
+        linkedin_url  = req.linkedin_url,
+        password_hash = req.password_hash,  # already hashed
+    )
+    db.session.add(new_user)
+    db.session.flush()  # get new_user.id
+
+    # Create Company
+    company = Company(
+        name          = req.company_name,
+        description   = req.company_description,
+        industry      = req.company_industry,
+        size          = req.company_size,
+        website       = req.company_website,
+        location      = req.company_location,
+        founded_year  = req.company_founded_year,
+        contact_email = req.company_contact_email,
+        contact_phone = req.company_contact_phone,
+        logo_filename = req.company_logo_filename,
+        is_verified   = True,
+        is_active     = True,
+        created_by    = new_user.id,
+    )
+    company.save_slug()
+    db.session.add(company)
+    db.session.flush()
+
+    # Create CompanyMember
+    member = CompanyMember(
+        company_id = company.id,
+        user_id    = new_user.id,
+        role       = 'manager',
+    )
+    db.session.add(member)
+
+    # Mark request approved
+    req.status          = 'approved'
+    req.reviewed_by_id  = current_user.id
+    req.reviewed_at     = datetime.utcnow()
+
+    _audit('supervisor_request.approve',
+           f'{req.full_name} <{req.email}> → user#{new_user.id} company#{company.id}')
+    db.session.commit()
+
+    # Send welcome email
+    try:
+        site_url  = current_app.config.get('SITE_URL', '')
+        login_url = site_url + url_for('auth.login')
+        html = render_template('emails/sup_request_approved.html',
+                               req=req, user=new_user, login_url=login_url)
+        send_email(new_user.email, 'Your MOF Jobs Supervisor Account is Ready', html)
+    except Exception as exc:
+        current_app.logger.warning(f'Approval email failed: {exc}')
+
+    flash(f'Approved! User "{new_user.full_name}" and company "{company.name}" created.', 'success')
+    return redirect(url_for('admin.supervisor_requests'))
+
+
+@admin_bp.route('/supervisor_requests/<int:req_id>/reject', methods=['POST'])
+@admin_required
+def supervisor_request_reject(req_id):
+    req = db.get_or_404(SupervisorRequest, req_id)
+    if req.status != 'pending':
+        flash('This request is not pending.', 'warning')
+        return redirect(url_for('admin.supervisor_request_detail', req_id=req_id))
+
+    reason = request.form.get('reason', '').strip()
+    req.status           = 'rejected'
+    req.rejection_reason = reason or None
+    req.reviewed_by_id   = current_user.id
+    req.reviewed_at      = datetime.utcnow()
+
+    _audit('supervisor_request.reject', f'{req.full_name} <{req.email}>')
+    db.session.commit()
+
+    # Send rejection email with edit link
+    try:
+        site_url = current_app.config.get('SITE_URL', '')
+        edit_url = site_url + url_for('supervisor_apply.apply_edit', token=req.token)
+        html = render_template('emails/sup_request_rejected.html',
+                               req=req, edit_url=edit_url)
+        send_email(req.email, 'Update on Your MOF Jobs Supervisor Application', html)
+    except Exception as exc:
+        current_app.logger.warning(f'Rejection email failed: {exc}')
+
+    flash(f'Application from "{req.full_name}" rejected.', 'success')
+    return redirect(url_for('admin.supervisor_requests'))
+
+
+@admin_bp.route('/supervisor_requests/<int:req_id>/edit', methods=['POST'])
+@admin_required
+def supervisor_request_edit(req_id):
+    req = db.get_or_404(SupervisorRequest, req_id)
+
+    req.full_name            = request.form.get('full_name', '').strip() or req.full_name
+    req.email                = request.form.get('email', '').strip() or req.email
+    req.phone                = request.form.get('phone', '').strip() or req.phone
+    req.headline             = request.form.get('headline', '').strip() or None
+    req.location_city        = request.form.get('location_city', '').strip() or None
+    req.nationality          = request.form.get('nationality', '').strip() or None
+    req.gender               = request.form.get('gender', '').strip() or None
+    req.bio                  = request.form.get('bio', '').strip() or None
+    req.linkedin_url         = request.form.get('linkedin_url', '').strip() or None
+    req.company_name         = request.form.get('company_name', '').strip() or req.company_name
+    req.company_industry     = request.form.get('company_industry', '').strip() or None
+    req.company_size         = request.form.get('company_size', '').strip() or None
+    req.company_location     = request.form.get('company_location', '').strip() or None
+    req.company_website      = request.form.get('company_website', '').strip() or None
+    req.company_description  = request.form.get('company_description', '').strip() or None
+    req.company_contact_email= request.form.get('company_contact_email', '').strip() or None
+    req.company_contact_phone= request.form.get('company_contact_phone', '').strip() or None
+    yr = request.form.get('company_founded_year', '').strip()
+    req.company_founded_year = int(yr) if yr.isdigit() else req.company_founded_year
+
+    # Optional logo replacement
+    logo_file = request.files.get('company_logo')
+    if logo_file and logo_file.filename:
+        try:
+            req.company_logo_filename = save_company_image(logo_file)
+        except ValueError as e:
+            flash(str(e), 'warning')
+
+    # Optional password reset
+    new_pw = request.form.get('new_password', '').strip()
+    if new_pw:
+        req.set_password(new_pw)
+
+    # Optionally reset to pending so it can be re-reviewed
+    if request.form.get('reset_to_pending') and req.status != 'approved':
+        req.status = 'pending'
+        req.rejection_reason = None
+
+    _audit('supervisor_request.edit', f'{req.full_name} <{req.email}>')
+    db.session.commit()
+    flash('Application updated successfully.', 'success')
+    return redirect(url_for('admin.supervisor_request_detail', req_id=req_id))
+
+
 # ─── EXPORT HELPER ────────────────────────────────────────────────────────────
 
 def _export(headers, data, filename_base, fmt='csv'):
@@ -1342,3 +1567,341 @@ def _export(headers, data, filename_base, fmt='csv'):
         mimetype='text/csv',
         headers={'Content-Disposition': f'attachment; filename={filename_base}.csv'}
     )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# UNIVERSITY REQUESTS
+# ─────────────────────────────────────────────────────────────────────────────
+
+@admin_bp.route('/university_requests')
+@admin_required
+def university_requests():
+    status_f = request.args.get('status', '')
+    page     = request.args.get('page', 1, type=int)
+    q = UniversityRequest.query
+    if status_f:
+        q = q.filter_by(status=status_f)
+    reqs = q.order_by(UniversityRequest.created_at.desc()).paginate(
+        page=page, per_page=20, error_out=False)
+    kpi_total    = UniversityRequest.query.count()
+    kpi_pending  = UniversityRequest.query.filter_by(status='pending').count()
+    kpi_approved = UniversityRequest.query.filter_by(status='approved').count()
+    kpi_rejected = UniversityRequest.query.filter_by(status='rejected').count()
+    return render_template('admin/university_requests.html',
+        requests=reqs, status_f=status_f,
+        kpi_total=kpi_total, kpi_pending=kpi_pending,
+        kpi_approved=kpi_approved, kpi_rejected=kpi_rejected)
+
+
+@admin_bp.route('/university_requests/<int:req_id>')
+@admin_required
+def university_request_detail(req_id):
+    req = UniversityRequest.query.get_or_404(req_id)
+    return render_template('admin/university_request_detail.html', req=req)
+
+
+@admin_bp.route('/university_requests/<int:req_id>/approve', methods=['POST'])
+@admin_required
+def university_request_approve(req_id):
+    req = UniversityRequest.query.get_or_404(req_id)
+    if req.status == 'approved':
+        flash('Already approved.', 'info')
+        return redirect(url_for('admin.university_request_detail', req_id=req_id))
+
+    from slugify import slugify as _slug
+    from werkzeug.security import generate_password_hash
+
+    # Create coordinator User
+    coordinator = User(
+        full_name     = req.full_name,
+        email         = req.email,
+        phone         = req.phone,
+        role          = ROLE_UNIVERSITY_COORD,
+        password_hash = req.password_hash,
+        headline      = req.headline,
+        bio           = req.bio,
+        nationality   = req.nationality,
+        location_city = req.location_city,
+        gender        = req.gender,
+        linkedin_url  = req.linkedin_url,
+        is_active     = True,
+    )
+    db.session.add(coordinator)
+    db.session.flush()
+
+    # Create University
+    base_slug = _slug(req.university_name)
+    slug = base_slug
+    i = 2
+    while University.query.filter_by(slug=slug).first():
+        slug = f'{base_slug}-{i}'; i += 1
+    univ = University(
+        name          = req.university_name,
+        slug          = slug,
+        description   = req.university_description,
+        location      = req.university_location,
+        website       = req.university_website,
+        contact_email = req.university_contact_email,
+        contact_phone = req.university_contact_phone,
+        logo_filename = req.university_logo_filename,
+        created_by    = current_user.id,
+    )
+    db.session.add(univ)
+    db.session.flush()
+
+    coordinator.university_id = univ.id
+    db.session.add(UniversityMember(university_id=univ.id, user_id=coordinator.id, role='coordinator'))
+
+    req.status = 'approved'
+    req.reviewed_by_id = current_user.id
+    req.reviewed_at = datetime.utcnow()
+    db.session.commit()
+    _audit('university_request.approve', f'{req.full_name} → {req.university_name}')
+    db.session.commit()
+
+    site_url = current_app.config.get('SITE_URL', '')
+    try:
+        html = render_template('emails/univ_request_approved.html',
+                               req=req, login_url=site_url + url_for('auth.login'))
+        send_email(req.email,
+                   f'Your University Coordinator Account is Approved — {req.university_name}', html)
+    except Exception as e:
+        current_app.logger.warning(f'Approval email failed: {e}')
+
+    flash(f'Approved — {req.full_name} is now a University Coordinator for {req.university_name}.', 'success')
+    return redirect(url_for('admin.university_request_detail', req_id=req_id))
+
+
+@admin_bp.route('/university_requests/<int:req_id>/reject', methods=['POST'])
+@admin_required
+def university_request_reject(req_id):
+    req = UniversityRequest.query.get_or_404(req_id)
+    reason = request.form.get('rejection_reason', '').strip()
+    req.status = 'rejected'
+    req.rejection_reason = reason or None
+    req.reviewed_by_id = current_user.id
+    req.reviewed_at = datetime.utcnow()
+    db.session.commit()
+    _audit('university_request.reject', f'{req.full_name}')
+    db.session.commit()
+
+    site_url = current_app.config.get('SITE_URL', '')
+    edit_url = site_url + url_for('university_apply.apply_edit', token=req.token)
+    try:
+        html = render_template('emails/univ_request_rejected.html',
+                               req=req, edit_url=edit_url)
+        send_email(req.email,
+                   f'University Coordinator Application — Update Required', html)
+    except Exception as e:
+        current_app.logger.warning(f'Rejection email failed: {e}')
+
+    flash('Application rejected. Applicant has been notified.', 'success')
+    return redirect(url_for('admin.university_request_detail', req_id=req_id))
+
+
+@admin_bp.route('/university_requests/<int:req_id>/edit', methods=['POST'])
+@admin_required
+def university_request_edit(req_id):
+    req = UniversityRequest.query.get_or_404(req_id)
+    req.full_name                = request.form.get('full_name', '').strip() or req.full_name
+    req.email                    = request.form.get('email', '').strip() or req.email
+    req.phone                    = request.form.get('phone', '').strip() or req.phone
+    req.headline                 = request.form.get('headline', '').strip() or req.headline
+    req.nationality              = request.form.get('nationality', '').strip() or req.nationality
+    req.location_city            = request.form.get('location_city', '').strip() or req.location_city
+    req.gender                   = request.form.get('gender', '').strip() or req.gender
+    req.linkedin_url             = request.form.get('linkedin_url', '').strip() or req.linkedin_url
+    bio = request.form.get('bio', '').strip()
+    if bio:
+        req.bio = bio
+    req.university_name          = request.form.get('university_name', '').strip() or req.university_name
+    req.university_location      = request.form.get('university_location', '').strip() or req.university_location
+    req.university_website       = request.form.get('university_website', '').strip() or req.university_website
+    req.university_contact_email = request.form.get('university_contact_email', '').strip() or req.university_contact_email
+    req.university_contact_phone = request.form.get('university_contact_phone', '').strip() or req.university_contact_phone
+    univ_desc = request.form.get('university_description', '').strip()
+    if univ_desc:
+        req.university_description = univ_desc
+    logo_file = request.files.get('university_logo')
+    if logo_file and logo_file.filename:
+        try:
+            req.university_logo_filename = save_company_image(logo_file)
+        except ValueError as e:
+            flash(str(e), 'warning')
+    new_pw = request.form.get('new_password', '').strip()
+    if new_pw:
+        req.set_password(new_pw)
+    if request.form.get('reset_to_pending') and req.status != 'approved':
+        req.status = 'pending'
+    _audit('university_request.edit', f'#{req_id} {req.full_name}')
+    db.session.commit()
+    flash('Request updated.', 'success')
+    return redirect(url_for('admin.university_request_detail', req_id=req_id))
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# UNIVERSITIES
+# ─────────────────────────────────────────────────────────────────────────────
+
+@admin_bp.route('/universities')
+@admin_required
+def universities():
+    q_str    = request.args.get('q', '').strip()
+    status_f = request.args.get('status', '')
+    page     = request.args.get('page', 1, type=int)
+
+    q = University.query
+    if q_str:
+        q = q.filter(University.name.ilike(f'%{q_str}%'))
+    if status_f == 'active':
+        q = q.filter_by(is_active=True)
+    elif status_f == 'inactive':
+        q = q.filter_by(is_active=False)
+
+    univs = q.order_by(University.name).paginate(page=page, per_page=20, error_out=False)
+
+    kpi_total    = University.query.count()
+    kpi_active   = University.query.filter_by(is_active=True).count()
+    kpi_students = User.query.filter_by(role=ROLE_STUDENT).count()
+    kpi_coords   = User.query.filter_by(role=ROLE_UNIVERSITY_COORD).count()
+
+    return render_template('admin/universities.html',
+        univs=univs, q_str=q_str, status_f=status_f,
+        kpi_total=kpi_total, kpi_active=kpi_active,
+        kpi_students=kpi_students, kpi_coords=kpi_coords)
+
+
+@admin_bp.route('/universities/<int:univ_id>')
+@admin_required
+def university_detail(univ_id):
+    univ   = db.get_or_404(University, univ_id)
+    coords = (UniversityMember.query
+              .filter_by(university_id=univ_id)
+              .all())
+    students  = User.query.filter_by(university_id=univ_id, role=ROLE_STUDENT).all()
+    available_coords = User.query.filter_by(role=ROLE_UNIVERSITY_COORD, is_active=True).all()
+    assigned_ids = {m.user_id for m in coords}
+    available_coords = [c for c in available_coords if c.id not in assigned_ids]
+
+    # Internship applications for this university's students
+    student_ids = [s.id for s in students]
+    from sqlalchemy import func as _func
+    internship_count = 0
+    if student_ids:
+        internship_count = (Application.query
+            .join(Application.position)
+            .filter(Application.applicant_id.in_(student_ids),
+                    Position.type == 'Internship')
+            .count())
+
+    return render_template('admin/university_detail.html',
+        univ=univ, coords=coords, students=students,
+        available_coords=available_coords,
+        internship_count=internship_count)
+
+
+@admin_bp.route('/universities/<int:univ_id>/edit', methods=['POST'])
+@admin_required
+def university_edit(univ_id):
+    univ = db.get_or_404(University, univ_id)
+    univ.name          = request.form.get('name', univ.name).strip()
+    univ.description   = request.form.get('description', '').strip() or None
+    univ.location      = request.form.get('location', '').strip() or None
+    univ.website       = request.form.get('website', '').strip() or None
+    univ.contact_email = request.form.get('contact_email', '').strip() or None
+    univ.contact_phone = request.form.get('contact_phone', '').strip() or None
+    univ.is_active     = bool(request.form.get('is_active'))
+
+    logo = request.files.get('logo')
+    if logo and logo.filename:
+        try:
+            univ.logo_filename = save_company_image(logo)
+        except ValueError as e:
+            flash(str(e), 'warning')
+
+    _audit('university.edit', univ.name)
+    db.session.commit()
+    flash('University updated.', 'success')
+    return redirect(url_for('admin.university_detail', univ_id=univ_id))
+
+
+@admin_bp.route('/universities/<int:univ_id>/delete', methods=['POST'])
+@admin_required
+def university_delete(univ_id):
+    univ = db.get_or_404(University, univ_id)
+    name = univ.name
+    # Unlink students
+    User.query.filter_by(university_id=univ_id).update({'university_id': None})
+    db.session.delete(univ)
+    _audit('university.delete', name)
+    db.session.commit()
+    flash(f'University "{name}" deleted.', 'success')
+    return redirect(url_for('admin.universities'))
+
+
+@admin_bp.route('/universities/new', methods=['GET', 'POST'])
+@admin_required
+def university_new():
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        if not name:
+            flash('University name is required.', 'danger')
+            return redirect(url_for('admin.university_new'))
+        univ = University(
+            name          = name,
+            description   = request.form.get('description', '').strip() or None,
+            location      = request.form.get('location', '').strip() or None,
+            website       = request.form.get('website', '').strip() or None,
+            contact_email = request.form.get('contact_email', '').strip() or None,
+            contact_phone = request.form.get('contact_phone', '').strip() or None,
+            is_active     = bool(request.form.get('is_active', True)),
+            created_by    = current_user.id,
+        )
+        univ.save_slug()
+        logo = request.files.get('logo')
+        if logo and logo.filename:
+            try:
+                univ.logo_filename = save_company_image(logo)
+            except ValueError as e:
+                flash(str(e), 'warning')
+        db.session.add(univ)
+        _audit('university.create', univ.name)
+        db.session.commit()
+        flash(f'University "{univ.name}" created.', 'success')
+        return redirect(url_for('admin.university_detail', univ_id=univ.id))
+    return render_template('admin/university_form.html', univ=None)
+
+
+@admin_bp.route('/universities/<int:univ_id>/coordinators/add', methods=['POST'])
+@admin_required
+def university_coordinator_add(univ_id):
+    univ    = db.get_or_404(University, univ_id)
+    user_id = request.form.get('user_id', type=int)
+    if not user_id:
+        flash('Select a coordinator.', 'danger')
+        return redirect(url_for('admin.university_detail', univ_id=univ_id))
+    coord = db.get_or_404(User, user_id)
+    existing = UniversityMember.query.filter_by(
+        university_id=univ_id, user_id=user_id).first()
+    if not existing:
+        db.session.add(UniversityMember(
+            university_id=univ_id, user_id=user_id, role='coordinator'))
+    coord.university_id = univ_id
+    _audit('university.coordinator_add', f'{coord.full_name} → {univ.name}')
+    db.session.commit()
+    flash(f'{coord.full_name} added as coordinator.', 'success')
+    return redirect(url_for('admin.university_detail', univ_id=univ_id))
+
+
+@admin_bp.route('/universities/<int:univ_id>/coordinators/<int:user_id>/remove',
+                methods=['POST'])
+@admin_required
+def university_coordinator_remove(univ_id, user_id):
+    univ   = db.get_or_404(University, univ_id)
+    member = UniversityMember.query.filter_by(
+        university_id=univ_id, user_id=user_id).first_or_404()
+    db.session.delete(member)
+    _audit('university.coordinator_remove', f'user#{user_id} ← {univ.name}')
+    db.session.commit()
+    flash('Coordinator removed.', 'success')
+    return redirect(url_for('admin.university_detail', univ_id=univ_id))

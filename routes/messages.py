@@ -4,40 +4,59 @@ from datetime import datetime, timedelta
 from flask import (Blueprint, render_template, redirect, url_for,
                    flash, request, abort, Response)
 from flask_login import login_required, current_user
-from models import db, User, Message, Application, ROLE_ADMIN, ROLE_SUPERVISOR, ROLE_USER
-from helpers import push_notification
+from models import db, User, Message, Application, Position, CompanyMember, ROLE_ADMIN, ROLE_SUPERVISOR, ROLE_USER
+from helpers import push_notification, log_audit
 from sqlalchemy import or_, and_
 
 messages_bp = Blueprint('messages', __name__)
 
 
+def _supervisor_company_ids(supervisor_id):
+    """Return the set of company IDs a supervisor belongs to."""
+    return {m.company_id for m in
+            CompanyMember.query.filter_by(user_id=supervisor_id).all()}
+
+
 def _can_message(sender, receiver):
-    """Check if sender is allowed to message receiver based on roles."""
+    """Messaging permission rules:
+    - Admin  → anyone
+    - Supervisor → admin, other supervisors, or applicants who applied to their company
+    - User → supervisor only if user applied to a job at that supervisor's company
+    - Users may NOT message admins directly
+    """
     if sender.id == receiver.id:
         return False
     if not receiver.is_active:
         return False
+
     # Admin can message anyone
     if sender.role == ROLE_ADMIN:
         return True
-    # Anyone can message admin
-    if receiver.role == ROLE_ADMIN:
-        return True
-    # Supervisor can message other supervisors
-    if sender.role == ROLE_SUPERVISOR and receiver.role == ROLE_SUPERVISOR:
-        return True
-    # Supervisor can message applicants whose apps are assigned to them
-    if sender.role == ROLE_SUPERVISOR and receiver.role == ROLE_USER:
-        assigned = Application.query.filter_by(
-            assigned_to_id=sender.id, applicant_id=receiver.id
-        ).first()
-        return assigned is not None
-    # User can message supervisor assigned to their applications
+
+    # Supervisor → admin or other supervisor
+    if sender.role == ROLE_SUPERVISOR:
+        if receiver.role in (ROLE_ADMIN, ROLE_SUPERVISOR):
+            return True
+        # Supervisor → user: only if user applied to the supervisor's company
+        if receiver.role == ROLE_USER:
+            company_ids = _supervisor_company_ids(sender.id)
+            if not company_ids:
+                return False
+            return db.session.query(Application.id).join(Position).filter(
+                Application.applicant_id == receiver.id,
+                Position.company_id.in_(company_ids),
+            ).first() is not None
+
+    # User → supervisor only if user applied to that supervisor's company
     if sender.role == ROLE_USER and receiver.role == ROLE_SUPERVISOR:
-        assigned = Application.query.filter_by(
-            assigned_to_id=receiver.id, applicant_id=sender.id
-        ).first()
-        return assigned is not None
+        company_ids = _supervisor_company_ids(receiver.id)
+        if not company_ids:
+            return False
+        return db.session.query(Application.id).join(Position).filter(
+            Application.applicant_id == sender.id,
+            Position.company_id.in_(company_ids),
+        ).first() is not None
+
     return False
 
 
@@ -97,11 +116,17 @@ def inbox():
     kpi_conversations  = len(conversations)
     kpi_unread         = total_unread
     kpi_today          = Message.query.filter(
-        or_(Message.sender_id == current_user.id, Message.receiver_id == current_user.id),
+        or_(
+            and_(Message.sender_id == current_user.id, Message.deleted_by_sender == False),
+            and_(Message.receiver_id == current_user.id, Message.deleted_by_receiver == False)
+        ),
         Message.created_at >= today_start
     ).count()
     kpi_total_msgs     = Message.query.filter(
-        or_(Message.sender_id == current_user.id, Message.receiver_id == current_user.id)
+        or_(
+            and_(Message.sender_id == current_user.id, Message.deleted_by_sender == False),
+            and_(Message.receiver_id == current_user.id, Message.deleted_by_receiver == False)
+        )
     ).count()
 
     return render_template('messages/inbox.html',
@@ -175,6 +200,8 @@ def send():
         url_for('messages.thread', partner_id=current_user.id),
         icon='bi-chat-dots-fill'
     )
+    log_audit('message.send', f'{current_user.full_name} → {receiver.full_name}',
+              user_id=current_user.id)
     db.session.commit()
     flash('Message sent.', 'success')
 

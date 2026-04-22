@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+{% block title %}University Dashboard — MOF Jobs{% endblock %}
+{% block page_title %}University Dashboard{% endblock %}
+
+{% block content %}
+{% if not univ %}
+<div class="alert alert-warning"><i class="bi bi-exclamation-triangle-fill"></i> You are not linked to any university yet. Please contact an admin.</div>
+{% else %}
+
+<style>
+/* ── University dashboard ── */
+.univ-hero{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px 24px;margin-bottom:20px;display:flex;align-items:center;gap:18px;flex-wrap:wrap;box-shadow:var(--shadow)}
+.univ-logo{width:72px;height:72px;border-radius:14px;object-fit:contain;border:1px solid var(--border);background:#f8fafb;flex-shrink:0}
+.univ-logo-placeholder{width:72px;height:72px;border-radius:14px;background:var(--green-light);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:800;color:var(--green);flex-shrink:0}
+.univ-info{flex:1;min-width:160px}
+.univ-name{font-size:20px;font-weight:800;color:var(--text);line-height:1.2}
+.univ-meta{display:flex;gap:14px;flex-wrap:wrap;margin-top:6px;font-size:13px;color:var(--text3)}
+.univ-actions{display:flex;gap:8px;flex-wrap:wrap}
+.dash-grid{display:grid;grid-template-columns:280px 1fr;gap:16px;align-items:start}
+.status-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;box-shadow:var(--shadow)}
+.status-card-title{font-size:13px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:14px;display:flex;align-items:center;gap:6px}
+.status-row{margin-bottom:10px}
+.status-row-top{display:flex;justify-content:space-between;margin-bottom:4px}
+.status-label{font-size:12px;color:var(--text2)}
+.status-val{font-size:12px;font-weight:700;color:var(--text)}
+.mini-bar{height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.mini-bar-fill{height:100%;border-radius:3px;transition:width .3s}
+.ra-cards{display:none}
+.ra-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:8px}
+.ra-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px}
+.ra-card-name{font-size:14px;font-weight:700;color:var(--text)}
+.ra-card-sub{font-size:11px;color:var(--text3);margin-top:2px}
+
+@media(max-width:900px){
+  .dash-grid{grid-template-columns:1fr}
+}
+@media(max-width:640px){
+  .univ-hero{padding:16px}
+  .univ-name{font-size:17px}
+  .univ-logo,.univ-logo-placeholder{width:56px;height:56px;font-size:24px}
+  .univ-actions{width:100%;justify-content:flex-end}
+  /* hide table, show cards on mobile */
+  .ra-table-wrap{display:none!important}
+  .ra-cards{display:block}
+}
+</style>
+
+<!-- KPI Strip -->
+<div class="kpi-strip">
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#eff6ff;color:#2563eb"><i class="bi bi-mortarboard-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ total_students }}</div><div class="kpi-lbl">Students</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#ede9fe;color:#7c3aed"><i class="bi bi-inbox-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ internship_apps }}</div><div class="kpi-lbl">Applications</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#fff7ed;color:#ea580c"><i class="bi bi-hourglass-split"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ active_apps }}</div><div class="kpi-lbl">Active</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#e8f5ee;color:#198754"><i class="bi bi-patch-check-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ hired_count }}</div><div class="kpi-lbl">Placed</div></div>
+  </div>
+</div>
+
+<!-- University hero card -->
+<div class="univ-hero">
+  {% if univ.logo_filename %}
+    <img src="{{ url_for('static', filename='uploads/company/' + univ.logo_filename) }}"
+         class="univ-logo" alt="{{ univ.name }}">
+  {% else %}
+    <div class="univ-logo-placeholder">{{ univ.name[0] }}</div>
+  {% endif %}
+  <div class="univ-info">
+    <div class="univ-name">{{ univ.name }}</div>
+    <div class="univ-meta">
+      {% if univ.location %}<span><i class="bi bi-geo-alt"></i> {{ univ.location }}</span>{% endif %}
+      {% if univ.website %}<a href="{{ univ.website }}" target="_blank" rel="noopener" style="color:var(--green)"><i class="bi bi-globe2"></i> Website</a>{% endif %}
+      {% if univ.contact_email %}<span><i class="bi bi-envelope"></i> {{ univ.contact_email }}</span>{% endif %}
+    </div>
+  </div>
+  <div class="univ-actions">
+    <a href="{{ url_for('university.students') }}" class="btn btn-outline btn-sm"><i class="bi bi-people"></i> Students</a>
+    <a href="{{ url_for('university.applications') }}" class="btn btn-primary btn-sm"><i class="bi bi-collection"></i> Applications</a>
+  </div>
+</div>
+
+<!-- Status breakdown + Recent applications -->
+<div class="dash-grid">
+
+  <!-- Status breakdown -->
+  <div class="status-card">
+    <div class="status-card-title"><i class="bi bi-bar-chart-fill"></i> By Status</div>
+    {% set sc = {'New':'#16a34a','Under Review':'#2563eb','Interview':'#7c3aed','Offer':'#d97706','Hired':'#198754','Rejected':'#dc2626','Future Consideration':'#64748b'} %}
+    {% set max_cnt = [internship_apps, 1] | max %}
+    {% for s in ALL_STATUSES %}
+    {% set cnt = status_counts.get(s, 0) %}
+    {% if cnt > 0 %}
+    <div class="status-row">
+      <div class="status-row-top">
+        <span class="status-label">{{ s }}</span>
+        <span class="status-val">{{ cnt }}</span>
+      </div>
+      <div class="mini-bar"><div class="mini-bar-fill" style="width:{{ (cnt * 100 // max_cnt) }}%;background:{{ sc.get(s,'#64748b') }}"></div></div>
+    </div>
+    {% endif %}
+    {% endfor %}
+    {% if internship_apps == 0 %}
+    <p style="font-size:13px;color:var(--text3);text-align:center;padding:20px 0"><i class="bi bi-inbox" style="font-size:24px;display:block;margin-bottom:6px"></i>No applications yet.</p>
+    {% endif %}
+  </div>
+
+  <!-- Recent applications — desktop table + mobile cards -->
+  <div class="table-card">
+    <div class="table-head">
+      <div class="table-head-title"><i class="bi bi-clock-history" style="color:var(--text3)"></i> Recent Internship Applications</div>
+      <a href="{{ url_for('university.applications') }}" class="btn btn-outline btn-sm">View All <i class="bi bi-arrow-right"></i></a>
+    </div>
+
+    <!-- Desktop table -->
+    <div class="table-responsive ra-table-wrap">
+      <table class="tbl">
+        <thead>
+          <tr><th>Student</th><th>Position</th><th>Company</th><th>Applied</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          {% for app in recent_apps %}
+          <tr>
+            <td data-label="Student" style="font-weight:600">{{ app.applicant.full_name }}</td>
+            <td data-label="Position" style="font-size:13px">{{ app.position.title }}</td>
+            <td data-label="Company" style="font-size:12px;color:var(--text3)">{{ app.position.company.name if app.position.company else '—' }}</td>
+            <td data-label="Applied" style="font-size:12px;color:var(--text3);white-space:nowrap">{{ (app.applied_at | localdt).strftime('%b %d, %Y') }}</td>
+            <td data-label="Status"><span class="badge badge-{{ app.status.lower().replace(' ','') }}">{{ app.status }}</span></td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5"><div class="empty-state"><i class="bi bi-inbox"></i><p>No applications yet.</p></div></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Mobile cards -->
+    <div class="ra-cards" style="padding:12px">
+      {% for app in recent_apps %}
+      <div class="ra-card">
+        <div class="ra-card-top">
+          <div>
+            <div class="ra-card-name">{{ app.applicant.full_name }}</div>
+            <div class="ra-card-sub"><i class="bi bi-briefcase"></i> {{ app.position.title }}{% if app.position.company %} · {{ app.position.company.name }}{% endif %}</div>
+          </div>
+          <span class="badge badge-{{ app.status.lower().replace(' ','') }}" style="flex-shrink:0">{{ app.status }}</span>
+        </div>
+        <div style="font-size:11px;color:var(--text3)"><i class="bi bi-calendar3"></i> {{ (app.applied_at | localdt).strftime('%b %d, %Y') }}</div>
+      </div>
+      {% else %}
+      <div class="empty-state"><i class="bi bi-inbox"></i><p>No applications yet.</p></div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+{% endif %}
+{% endblock %}

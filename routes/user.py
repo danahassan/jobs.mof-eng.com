@@ -5,10 +5,10 @@ from flask import (Blueprint, render_template, redirect, url_for,
 from flask_login import login_required, current_user
 from sqlalchemy import or_, and_, func
 from models import (db, Position, Application, ApplicationHistory, Interview,
-                    SavedJob, CompanyFollow, Message, User, ROLE_ADMIN,
-                    SOURCES, STATUS_NEW, STATUS_REVIEW, STATUS_INTERVIEW,
+                    SavedJob, CompanyFollow, Message, User, CompanyMember, ROLE_ADMIN,
+                    SOURCES, SALARY_RANGES, STATUS_NEW, STATUS_REVIEW, STATUS_INTERVIEW,
                     STATUS_OFFER, STATUS_HIRED, ALL_STATUSES)
-from helpers import save_cv, allowed_file, send_email, push_notification
+from helpers import save_cv, allowed_file, send_email, push_notification, log_audit
 from datetime import datetime
 
 user_bp = Blueprint('user', __name__)
@@ -117,24 +117,42 @@ def apply(pos_id):
         expected_salary = request.form.get('expected_salary', '').strip()
         cv_file         = request.files.get('cv_file')
 
+        # Internship-specific
+        internship_duration      = request.form.get('internship_duration', '').strip() or None
+        internship_start_date_s  = request.form.get('internship_start_date', '').strip()
+        academic_credit_required = bool(request.form.get('academic_credit_required'))
+        internship_start_date = None
+        if internship_start_date_s:
+            try:
+                from datetime import date as _date
+                internship_start_date = _date.fromisoformat(internship_start_date_s)
+            except ValueError:
+                pass
+
         cv_stored = cv_original = None
         if cv_file and cv_file.filename:
             if not allowed_file(cv_file.filename):
                 flash('CV must be PDF, DOC, or DOCX.', 'danger')
-                return render_template('user/apply.html', pos=pos, SOURCES=SOURCES)
+                return render_template('user/apply.html', pos=pos, SOURCES=SOURCES,
+                                       SALARY_RANGES=SALARY_RANGES)
             cv_stored, cv_original = save_cv(cv_file)
 
         application = Application(
-            applicant_id    = current_user.id,
-            position_id     = pos_id,
-            cover_letter    = cover_letter,
-            source          = source,
-            expected_salary = expected_salary or None,
-            cv_filename     = cv_stored,
-            cv_original     = cv_original,
-            status          = STATUS_NEW,
+            applicant_id             = current_user.id,
+            position_id              = pos_id,
+            cover_letter             = cover_letter,
+            source                   = source,
+            expected_salary          = expected_salary or None,
+            cv_filename              = cv_stored,
+            cv_original              = cv_original,
+            status                   = STATUS_NEW,
+            internship_duration      = internship_duration,
+            internship_start_date    = internship_start_date,
+            academic_credit_required = academic_credit_required,
         )
         db.session.add(application)
+        log_audit('user.apply', f'{current_user.full_name} → {pos.title}',
+                  user_id=current_user.id)
         db.session.commit()
 
         # In-app notification for admin(s)
@@ -160,13 +178,17 @@ def apply(pos_id):
         except Exception as e:
             current_app.logger.warning(f'Applicant confirmation email failed: {e}')
 
-        # 2. Notification email to all admins + supervisors with CV attachment
+        # 2. Notification email to supervisors managing this company only
         site_url = current_app.config['SITE_URL']
         review_url = site_url + url_for('admin.application_detail', app_id=application.id)
-        staff_recipients = list(admins)
-        # Also include active supervisors
-        supervisors = User.query.filter_by(role=ROLE_SUPERVISOR, is_active=True).all()
-        staff_recipients.extend(supervisors)
+        if pos.company_id:
+            manager_ids = [m.user_id for m in CompanyMember.query.filter_by(
+                company_id=pos.company_id, role='manager').all()]
+            supervisors = User.query.filter(
+                User.id.in_(manager_ids), User.is_active == True).all() if manager_ids else []
+        else:
+            supervisors = []
+        staff_recipients = supervisors
         for staff in staff_recipients:
             staff_review_url = review_url
             if staff.role == ROLE_SUPERVISOR:
@@ -187,7 +209,7 @@ def apply(pos_id):
         flash(f'Your application for "{pos.title}" has been submitted!', 'success')
         return redirect(url_for('user.my_applications'))
 
-    return render_template('user/apply.html', pos=pos, SOURCES=SOURCES)
+    return render_template('user/apply.html', pos=pos, SOURCES=SOURCES, SALARY_RANGES=SALARY_RANGES)
 
 
 @user_bp.route('/save/<int:pos_id>', methods=['POST'])
@@ -197,9 +219,11 @@ def save_job(pos_id):
     existing = SavedJob.query.filter_by(user_id=current_user.id, position_id=pos_id).first()
     if existing:
         db.session.delete(existing)
+        log_audit('user.unsave_job', pos.title, user_id=current_user.id)
         db.session.commit()
         return jsonify({'saved': False})
     db.session.add(SavedJob(user_id=current_user.id, position_id=pos_id))
+    log_audit('user.save_job', pos.title, user_id=current_user.id)
     db.session.commit()
     return jsonify({'saved': True})
 

@@ -119,7 +119,7 @@
         <div class="app-hero-meta">
           <div class="app-hero-meta-item"><i class="bi bi-briefcase-fill"></i> <strong>{{ app.position.title }}</strong></div>
           {% if app.position.company %}<div class="app-hero-meta-item"><i class="bi bi-building"></i> <strong>{{ app.position.company.name }}</strong></div>{% endif %}
-          <div class="app-hero-meta-item"><i class="bi bi-calendar3"></i> Applied <strong>{{ app.applied_at.strftime('%b %d, %Y') }}</strong></div>
+          <div class="app-hero-meta-item"><i class="bi bi-calendar3"></i> Applied <strong>{{ (app.applied_at | localdt).strftime('%b %d, %Y') }}</strong></div>
           <div class="app-hero-meta-item"><i class="bi bi-broadcast"></i> via <strong>{{ app.source }}</strong></div>
           {% if app.assigned_to %}<div class="app-hero-meta-item"><i class="bi bi-person-badge-fill"></i> <strong>{{ app.assigned_to.full_name }}</strong></div>{% endif %}
         </div>
@@ -239,7 +239,7 @@
       {% for iv in interviews %}
       <div style="background:#f8fafb;border-radius:9px;padding:13px 16px;margin-bottom:8px;border:1px solid var(--border)">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
-          <div style="font-weight:600;font-size:13px"><i class="bi bi-calendar-event" style="color:var(--green)"></i> {{ iv.scheduled_at.strftime('%a, %b %d, %Y — %I:%M %p') }}</div>
+          <div style="font-weight:600;font-size:13px"><i class="bi bi-calendar-event" style="color:var(--green)"></i> {{ (iv.scheduled_at | localdt).strftime('%a, %b %d, %Y — %I:%M %p') }}</div>
           {% if iv.result %}<span class="badge badge-{{ 'active' if iv.result == 'Pass' else 'rejected' }}">{{ iv.result }}</span>{% endif %}
         </div>
         {% if iv.location %}<div class="text-sm text-muted" style="margin-top:4px"><i class="bi bi-geo-alt"></i> {{ iv.location }}</div>{% endif %}
@@ -271,7 +271,7 @@
             {% if h.note and h.changed_by and h.changed_by.role == 'admin' %}<div class="text-sm" style="color:var(--text2);margin-top:3px;font-style:italic">"{{ h.note }}"</div>{% endif %}
           </div>
           <div class="tl-date" style="display:flex;align-items:center;gap:8px">
-            <span>{{ h.created_at.strftime('%b %d, %Y %H:%M') }} · {{ h.changed_by.full_name if h.changed_by else 'System' }}</span>
+            <span>{{ (h.created_at | localdt).strftime('%b %d, %Y %H:%M') }} · {{ h.changed_by.full_name if h.changed_by else 'System' }}</span>
             <form method="POST" action="{{ url_for('admin.history_delete', app_id=app.id, history_id=h.id) }}"
                   style="margin:0" onsubmit="return confirm('Delete this timeline entry?')">
               <button type="submit" style="background:none;border:none;padding:0;cursor:pointer;color:#dc2626;opacity:.5;line-height:1" title="Delete entry">
@@ -363,7 +363,7 @@
         {% for msg in thread_messages %}
         <div class="chat-bubble {{ 'bubble-out' if msg.sender_id == current_user.id else 'bubble-in' }}">
           {{ msg.body }}
-          <div class="chat-meta">{{ 'You' if msg.sender_id == current_user.id else msg.sender.full_name.split()[0] }} · {{ msg.created_at.strftime('%b %d, %H:%M') }}</div>
+          <div class="chat-meta">{{ 'You' if msg.sender_id == current_user.id else msg.sender.full_name.split()[0] }} · {{ (msg.created_at | localdt).strftime('%b %d, %H:%M') }}</div>
         </div>
         {% endfor %}
       </div>
@@ -402,7 +402,7 @@
         {% set is_admin_msg = msg.sender.role == 'admin' %}
         <div class="chat-bubble {{ 'bubble-out' if is_admin_msg else 'bubble-in' }}">
           {{ msg.body }}
-          <div class="chat-meta">{{ msg.sender.full_name.split()[0] }} · {{ msg.created_at.strftime('%b %d, %H:%M') }}</div>
+          <div class="chat-meta">{{ msg.sender.full_name.split()[0] }} · {{ (msg.created_at | localdt).strftime('%b %d, %H:%M') }}</div>
         </div>
         {% endfor %}
       </div>
