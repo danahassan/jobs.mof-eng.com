@@ -1,73 +1,123 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta name="viewport" content="width=device-width,initial-scale=1"><meta charset="UTF-8"><style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Internship Request Submitted &#8212; MOF Jobs</title>
+<style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
-body{font-family:'Inter',Arial,sans-serif;background:#f4f6f8;margin:0;padding:24px}
-.wrap{max-width:560px;margin:0 auto;background:#fff;border-radius:10px;overflow:hidden;border:1px solid #e0e0e0}
-.header{background:#1a2332;padding:24px 28px}
-.header-name{color:#fff;font-size:18px;font-weight:600}
-.header-sub{color:rgba(255,255,255,0.5);font-size:13px;margin-top:4px}
-.body{padding:28px}
-.highlight{background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:16px;margin:16px 0}
-.detail-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0;font-size:13px}
+body{margin:0;padding:0;background:#f0f2f5;font-family:'Inter','Segoe UI',Arial,sans-serif;font-size:14px;color:#1a2332}
+.wrap{max-width:580px;margin:32px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.09)}
+.header{background:linear-gradient(135deg,#1a2332 0%,#155d3d 100%);padding:26px 32px}
+.logo-text{color:#fff;font-size:17px;font-weight:700;letter-spacing:-.3px}
+.logo-sub{color:rgba(255,255,255,.45);font-size:11px;margin-top:3px}
+.body{padding:28px 32px}
+p{color:#4a5a6a;line-height:1.65;margin:0 0 14px}
+.status-badge{display:inline-flex;align-items:center;gap:8px;background:#fff8e6;border:1px solid #f5d97a;color:#92650a;border-radius:8px;padding:10px 14px;font-size:13px;font-weight:600;margin:0 0 20px}
+.summary-card{background:#f8fbf9;border:1.5px solid #d1ead9;border-radius:10px;overflow:hidden;margin:0 0 22px}
+.summary-head{background:#e8f5ee;padding:10px 16px;font-size:11px;font-weight:700;color:#198754;text-transform:uppercase;letter-spacing:.6px}
+.detail-row{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid #edf5ee;font-size:13px}
 .detail-row:last-child{border-bottom:none}
-.detail-lbl{color:#8a9aaa}
-.detail-val{font-weight:600;color:#1a2332}
-.steps{counter-reset:step;margin:16px 0;padding:0;list-style:none}
-.steps li{counter-increment:step;display:flex;align-items:flex-start;gap:12px;margin-bottom:10px;font-size:13px;color:#3a4a5a}
-.steps li::before{content:counter(step);min-width:22px;height:22px;background:#ea580c;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px}
-.cta{display:inline-block;margin-top:16px;background:#198754;color:#fff;text-decoration:none;padding:11px 22px;border-radius:8px;font-size:13px;font-weight:600}
-.footer{background:#f8f9fa;padding:16px 28px;font-size:12px;color:#8a9aaa;border-top:1px solid #e0e0e0;text-align:center}
-
-@media (max-width: 600px) {
-  body { padding: 0 !important; }
-  .wrap { width: 100% !important; max-width: 100% !important; margin: 0 !important; border-radius: 0 !important; border: none !important; box-shadow: none !important; }
-  .header { padding: 20px 24px !important; }
-  .body { padding: 20px 24px !important; }
-  .footer { padding: 20px 24px !important; }
-  .cta { display: block !important; text-align: center !important; }
+.detail-lbl{color:#6b7a8d}
+.detail-val{font-weight:600;color:#1a2332;text-align:right;max-width:60%}
+.steps-title{font-size:13px;font-weight:700;color:#1a2332;margin:0 0 12px}
+.step-list{margin:0;padding:0;list-style:none}
+.step-item{display:flex;align-items:flex-start;gap:12px;margin-bottom:12px;font-size:13px;color:#3a4a5a;line-height:1.5}
+.step-num{min-width:24px;height:24px;background:#198754;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px}
+.step-num.pending{background:#f59e0b}
+.btn-green{display:inline-block;background:#198754;color:#fff!important;padding:12px 26px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px;margin-top:6px}
+.footer{background:#f8fafb;padding:16px 32px;font-size:11px;color:#9aabb8;border-top:1px solid #e4e8ed;line-height:1.6;text-align:center}
+.footer a{color:#9aabb8;text-decoration:underline}
+@media(max-width:600px){
+  .wrap{margin:0!important;border-radius:0!important;box-shadow:none!important}
+  .header,.body,.footer{padding:20px!important}
+  .btn-green{display:block!important;text-align:center!important}
+  .detail-val{max-width:55%}
 }
-</style></head>
+</style>
+</head>
 <body>
 <div class="wrap">
   <div class="header">
-    <div class="header-name">MOF Engineering - Careers</div>
-    <div class="header-sub">Managing Of Future Engineering Company · Slemani, Iraq</div>
+    <div class="logo-text">MOF Engineering &#8212; Careers</div>
+    <div class="logo-sub">Managing Of Future Engineering &middot; jobs.mof-eng.com</div>
   </div>
-  <div class="body">
-    <p style="font-size:22px;margin:0 0 4px">🎓</p>
-    <p style="font-size:17px;font-weight:700;color:#1a2332;margin:0 0 8px">University Approval Needed, {{ user.full_name.split()[0] }}!</p>
-    <p style="font-size:13px;color:#5a6a7a">Dear {{ user.full_name }},</p>
-    <p style="font-size:13px;color:#3a4a5a;margin-top:8px">
-      Your internship request was submitted successfully and is now waiting for your university coordinator to approve it.
-      Once approved, it will be forwarded to the company hiring team.
-    </p>
 
-    <div class="highlight">
-      <div style="font-size:12px;color:#5a6a7a;margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.5px">Request Summary</div>
-      <div class="detail-row"><span class="detail-lbl">Position</span><span class="detail-val">{{ pos.title }}</span></div>
-      <div class="detail-row"><span class="detail-lbl">Application #</span><span class="detail-val">#{{ app.id }}</span></div>
-      <div class="detail-row"><span class="detail-lbl">Submitted</span><span class="detail-val">{{ (app.applied_at | localdt).strftime('%B %d, %Y') }}</span></div>
-      <div class="detail-row"><span class="detail-lbl">Status</span><span class="detail-val" style="color:#c2410c">Pending University Approval</span></div>
+  <div class="body">
+    <p style="font-size:16px;font-weight:700;color:#1a2332;margin:0 0 6px">&#127891; Internship Request Submitted, {{ user.full_name.split()[0] }}!</p>
+    <p>Your internship application has been submitted successfully and is now awaiting review by your university coordinator. Once approved, it will be forwarded directly to the company&#39;s hiring team.</p>
+
+    <div class="status-badge">
+      &#9203; Status: <strong>Pending University Approval</strong>
     </div>
 
-    <div style="font-size:13px;font-weight:700;color:#1a2332;margin:20px 0 8px">What happens next?</div>
-    <ol class="steps">
-      <li>Your university coordinator reviews your request details.</li>
-      <li>After approval, MOF company staff can review your application.</li>
-      <li>You can track every status change in your dashboard.</li>
-    </ol>
+    <div class="summary-card">
+      <div class="summary-head">Application Summary</div>
+      <div class="detail-row">
+        <span class="detail-lbl">Position</span>
+        <span class="detail-val">{{ pos.title }}</span>
+      </div>
+      {% if pos.company %}
+      <div class="detail-row">
+        <span class="detail-lbl">Company</span>
+        <span class="detail-val">{{ pos.company.name }}</span>
+      </div>
+      {% endif %}
+      {% if pos.location %}
+      <div class="detail-row">
+        <span class="detail-lbl">Location</span>
+        <span class="detail-val">{{ pos.location }}</span>
+      </div>
+      {% endif %}
+      <div class="detail-row">
+        <span class="detail-lbl">Application #</span>
+        <span class="detail-val">#{{ app.id }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-lbl">Submitted</span>
+        <span class="detail-val">{{ (app.applied_at | localdt).strftime('%B %d, %Y') }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-lbl">Status</span>
+        <span class="detail-val" style="color:#d97706;font-weight:700">&#9203; Pending University Approval</span>
+      </div>
+    </div>
 
-    <a href="https://jobs.mof-eng.com/user/my-applications" class="cta">Track My Application -></a>
+    <div class="steps-title">What happens next?</div>
+    <ul class="step-list">
+      <li class="step-item">
+        <span class="step-num pending">1</span>
+        <span>Your university coordinator reviews your internship request and confirms you meet the requirements.</span>
+      </li>
+      <li class="step-item">
+        <span class="step-num">2</span>
+        <span>Once approved, your application is forwarded to the company&#39;s hiring team for evaluation.</span>
+      </li>
+      <li class="step-item">
+        <span class="step-num">3</span>
+        <span>You&#39;ll be notified by email at every stage &#8212; interview invitation, offer, or final decision.</span>
+      </li>
+      <li class="step-item">
+        <span class="step-num">4</span>
+        <span>You can track your application status at any time from your student dashboard.</span>
+      </li>
+    </ul>
+
+    <a href="{{ site_url }}/user/my-applications" class="btn-green">Track My Application &rarr;</a>
+
+    <p style="margin-top:24px;font-size:13px">
+      Best regards,<br>
+      <strong style="color:#1a2332">MOF Engineering &#8212; Internship Team</strong><br>
+      <span style="color:#9aabb8;font-size:12px">jobs.mof-eng.com</span>
+    </p>
   </div>
+
   <div class="footer">
     <img src="https://mof-eng.com/wp-content/uploads/2025/05/cropped-MOF-LOGO-transparent--100x46.png"
-         alt="MOF Engineering" width="72" style="display:block;margin:0 auto 10px;filter:brightness(0);opacity:.55"
+         alt="MOF Engineering" width="64" style="display:block;margin:0 auto 8px;filter:brightness(0);opacity:.4"
          onerror="this.style.display='none'">
-    This email was sent to {{ user.email }} because you submitted an internship request on MOF Jobs.<br>
-    MOF Engineering Company · Slemani, Iraq · <a href="https://mof-eng.com" style="color:#198754">mof-eng.com</a>
+    This email was sent to {{ user.email }} because you submitted an internship application on MOF Jobs.<br>
+    MOF Engineering Co. &middot; Slemani, Iraq &middot; <a href="https://mof-eng.com">mof-eng.com</a>
   </div>
 </div>
 </body>

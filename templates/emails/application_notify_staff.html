@@ -38,14 +38,29 @@ body{font-family:'Inter',Arial,sans-serif;background:#f4f6f8;margin:0;padding:24
 <body>
 <div class="wrap">
   <div class="header">
-    <div class="header-name">New Application Received</div>
-    <div class="header-badge">Application #{{ app.id }}</div>
+    <div class="header-name">
+      {% if for_coordinator %}Internship Approval Required
+      {% elif coordinator_approved %}Approved Internship Application
+      {% elif pos.type == 'Internship' %}New Internship Application
+      {% else %}New Application Received{% endif %}
+    </div>
+    <div class="header-badge">
+      {% if pos.type == 'Internship' %}&#127891; Internship{% else %}Application{% endif %} #{{ app.id }}
+    </div>
   </div>
   <div class="body">
     <p>Hi <strong>{{ recipient_name }}</strong>,</p>
-    <p style="margin-top:8px;color:#3a4a5a;font-size:14px">
-      A new application has been submitted for <strong>{{ pos.title }}</strong>. Please review the details below.
-    </p>
+    {% if for_coordinator %}
+    <p style="margin-top:8px;color:#3a4a5a;font-size:14px">A student has submitted an internship application that <strong>requires your review and approval</strong> before it can be forwarded to the company hiring team.</p>
+    <div style="background:#fff8e6;border:1px solid #f5d97a;border-radius:8px;padding:12px 16px;font-size:13px;color:#92650a;margin:0 0 16px;line-height:1.5">&#9203; <strong>Action Required:</strong> Please review this application in the University Portal and approve or decline it. Applications only reach the company after your approval.</div>
+    {% elif coordinator_approved %}
+    <p style="margin-top:8px;color:#3a4a5a;font-size:14px">An internship application has been <strong>approved by the university coordinator</strong> and is now ready for your review. Please evaluate the student&#39;s profile and take action.</p>
+    <div style="background:#e8f5ee;border:1px solid #c6e6d4;border-radius:8px;padding:12px 16px;font-size:13px;color:#1a5c38;margin:0 0 16px;line-height:1.5">&#10003; <strong>University Approved:</strong> The student&#39;s coordinator has reviewed and confirmed this application.</div>
+    {% elif pos.type == 'Internship' %}
+    <p style="margin-top:8px;color:#3a4a5a;font-size:14px">A new internship application has been submitted for <strong>{{ pos.title }}</strong>. Please review the details below.</p>
+    {% else %}
+    <p style="margin-top:8px;color:#3a4a5a;font-size:14px">A new application has been submitted for <strong>{{ pos.title }}</strong>. Please review the details below.</p>
+    {% endif %}
 
     <div class="section-title">Position Details</div>
     <div class="info-grid">
@@ -77,7 +92,11 @@ body{font-family:'Inter',Arial,sans-serif;background:#f4f6f8;margin:0;padding:24
     </div>
     {% endif %}
 
-    <a href="{{ review_url }}" class="cta">Review Application →</a>
+    <a href="{{ review_url }}" class="cta">
+      {% if for_coordinator %}Review &amp; Approve Application &rarr;
+      {% elif coordinator_approved %}Review Approved Application &rarr;
+      {% else %}Review Application &rarr;{% endif %}
+    </a>
 
     <p style="margin-top:24px;font-size:13px;color:#5a6a7a">
       Best regards,<br>

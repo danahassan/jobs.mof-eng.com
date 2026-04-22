@@ -229,6 +229,7 @@ def apply(pos_id):
                         pos=pos,
                         recipient_name=coord.full_name.split()[0],
                         review_url=site_url + url_for('university.application_detail', app_id=application.id),
+                        for_coordinator=True,
                     )
                     send_email(
                         coord.email,
@@ -242,7 +243,7 @@ def apply(pos_id):
 
             try:
                 html = render_template('emails/application_pending_university.html',
-                                       app=application, user=current_user, pos=pos)
+                                       app=application, user=current_user, pos=pos, site_url=site_url)
                 send_email(current_user.email,
                            f'Internship request submitted for university approval — {pos.title}', html)
             except Exception as e:
@@ -263,7 +264,7 @@ def apply(pos_id):
         # 1. Confirmation email to applicant
         try:
             html = render_template('emails/application_received.html',
-                                   app=application, user=current_user, pos=pos)
+                                   app=application, user=current_user, pos=pos, site_url=site_url)
             send_email(current_user.email,
                        f'Application received — {pos.title}', html)
         except Exception as e:

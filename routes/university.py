@@ -174,7 +174,7 @@ def application_approve(app_id):
     # Notify applicant
     try:
         html = render_template('emails/application_received.html',
-                               app=app, user=app.applicant, pos=app.position)
+                               app=app, user=app.applicant, pos=app.position, site_url=site_url)
         send_email(app.applicant.email, f'Application forwarded to company review - {app.position.title}', html)
     except Exception as e:
         current_app.logger.warning(f'Applicant approval email failed: {e}')
@@ -204,7 +204,8 @@ def application_approve(app_id):
             html = render_template('emails/application_notify_staff.html',
                                    app=app, pos=app.position,
                                    recipient_name=staff.full_name.split()[0],
-                                   review_url=review_url)
+                                   review_url=review_url,
+                                   coordinator_approved=True)
             send_email(staff.email,
                        f'Approved Internship Application: {app.applicant.full_name} -> {app.position.title}',
                        html)

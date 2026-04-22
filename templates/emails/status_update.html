@@ -1,81 +1,159 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta name="viewport" content="width=device-width,initial-scale=1"><meta charset="UTF-8"><style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Application Update - MOF Jobs</title>
+<style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
-body{font-family:'Inter',Arial,sans-serif;background:#f4f6f8;margin:0;padding:24px}
-.wrap{max-width:560px;margin:0 auto;background:#fff;border-radius:10px;overflow:hidden;border:1px solid #e0e0e0}
-.header{background:#1a2332;padding:24px 28px}
-.header-name{color:#fff;font-size:18px;font-weight:600}
-.body{padding:28px}
-.status-box{border-radius:8px;padding:16px;margin:16px 0;text-align:center}
-.footer{background:#f8f9fa;padding:16px 28px;font-size:12px;color:#8a9aaa;border-top:1px solid #e0e0e0}
-
-  @media (max-width: 600px) {
-    body { padding: 0 !important; }
-    .wrap, .wrapper { width: 100% !important; max-width: 100% !important; margin: 0 !important; border-radius: 0 !important; border: none !important; box-shadow: none !important; }
-    .header { padding: 20px 24px !important; }
-    .body { padding: 20px 24px !important; }
-    .footer { padding: 20px 24px !important; }
-    .info-grid { grid-template-columns: 1fr !important; }
-    .info-cell { border-right: none !important; border-bottom: 1px solid #e8ecf0 !important; }
-    .info-cell:last-child { border-bottom: none !important; }
-    .hero-banner { padding: 16px 20px !important; }
-    .cta, .cta-btn { display: block !important; text-align: center !important; }
-  }
-</style></head>
+body{margin:0;padding:0;background:#f0f2f5;font-family:'Inter','Segoe UI',Arial,sans-serif;font-size:14px;color:#1a2332}
+.wrap{max-width:580px;margin:32px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.09)}
+.header{background:linear-gradient(135deg,#1a2332 0%,#155d3d 100%);padding:26px 32px}
+.logo-text{color:#fff;font-size:17px;font-weight:700;letter-spacing:-.3px}
+.logo-sub{color:rgba(255,255,255,.45);font-size:11px;margin-top:3px}
+.body{padding:28px 32px}
+p{color:#4a5a6a;line-height:1.65;margin:0 0 14px}
+.status-box{border-radius:10px;padding:18px 20px;margin:16px 0;text-align:center}
+.status-emoji{font-size:28px;margin-bottom:8px}
+.status-heading{font-size:16px;font-weight:700;margin:0 0 6px}
+.status-sub{font-size:13px;opacity:.85;line-height:1.5}
+.app-summary{background:#f8fbf9;border:1.5px solid #d1ead9;border-radius:10px;overflow:hidden;margin:20px 0}
+.summary-head{background:#e8f5ee;padding:9px 16px;font-size:11px;font-weight:700;color:#198754;text-transform:uppercase;letter-spacing:.6px}
+.detail-row{display:flex;justify-content:space-between;align-items:center;padding:9px 16px;border-bottom:1px solid #edf5ee;font-size:13px}
+.detail-row:last-child{border-bottom:none}
+.detail-lbl{color:#6b7a8d}
+.detail-val{font-weight:600;color:#1a2332;text-align:right;max-width:60%}
+.btn-green{display:inline-block;background:#198754;color:#fff!important;padding:12px 26px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px;margin-top:4px}
+.footer{background:#f8fafb;padding:16px 32px;font-size:11px;color:#9aabb8;border-top:1px solid #e4e8ed;line-height:1.6;text-align:center}
+.footer a{color:#9aabb8;text-decoration:underline}
+@media(max-width:600px){
+  .wrap{margin:0!important;border-radius:0!important;box-shadow:none!important}
+  .header,.body,.footer{padding:20px!important}
+  .btn-green{display:block!important;text-align:center!important}
+  .detail-val{max-width:55%}
+}
+</style>
+</head>
 <body>
 <div class="wrap">
   <div class="header">
-    <div class="header-name">MOF Engineering — Application Update</div>
+    <div class="logo-text">MOF Engineering - Careers</div>
+    <div class="logo-sub">Managing Of Future Engineering &middot; jobs.mof-eng.com</div>
   </div>
-  <div class="body">
-    <p>Dear <strong>{{ app.applicant.full_name }}</strong>,</p>
-    <p style="margin-top:12px">There has been an update to your application for <strong>{{ app.position.title }}</strong>.</p>
 
-    {% if app.status == 'Interview' %}
-    <div class="status-box" style="background:#e8eaf6">
-      <div style="font-size:24px;margin-bottom:8px">📅</div>
-      <div style="font-size:16px;font-weight:600;color:#3949ab">You've been invited for an interview</div>
-      <div style="font-size:13px;color:#5a6a7a;margin-top:6px">Our team will contact you shortly with the details.</div>
+  <div class="body">
+    <p style="font-size:15px;font-weight:600;color:#1a2332;margin:0 0 6px">Hi {{ app.applicant.full_name.split()[0] }},</p>
+    <p>There is an update to your {% if app.position.type == 'Internship' %}internship {% endif %}application for <strong>{{ app.position.title }}</strong>{% if app.position.company %} at <strong>{{ app.position.company.name }}</strong>{% endif %}.</p>
+
+    {% if app.status == 'Pending University Approval' %}
+    <div class="status-box" style="background:#fff8e6;border:1px solid #f5d97a">
+      <div class="status-emoji">&#9203;</div>
+      <div class="status-heading" style="color:#92650a">Awaiting University Coordinator Approval</div>
+      <div class="status-sub" style="color:#7a5500">Your application is under review by your university coordinator. Once approved, it will be forwarded to the company hiring team.</div>
     </div>
+
+    {% elif app.status == 'New' %}
+    <div class="status-box" style="background:#f0f4ff;border:1px solid #c7d5f5">
+      <div class="status-emoji">&#128338;</div>
+      <div class="status-heading" style="color:#2445a0">Application Queued for Review</div>
+      <div class="status-sub" style="color:#3a4a6a">Your application has been received and is in the review queue. The hiring team will evaluate it shortly.</div>
+    </div>
+
+    {% elif app.status == 'Under Review' %}
+    <div class="status-box" style="background:#f0f4ff;border:1px solid #c7d5f5">
+      <div class="status-emoji">&#128269;</div>
+      <div class="status-heading" style="color:#2445a0">Your Application is Being Reviewed</div>
+      <div class="status-sub" style="color:#3a4a6a">The hiring team is currently evaluating your profile. We will notify you of any further updates.</div>
+    </div>
+
+    {% elif app.status == 'Interview' %}
+    <div class="status-box" style="background:#e8f0ff;border:1px solid #bfcef7">
+      <div class="status-emoji">&#128197;</div>
+      <div class="status-heading" style="color:#2445a0">You have Been Invited for an Interview!</div>
+      <div class="status-sub" style="color:#3a4a6a">Congratulations! The hiring team would like to meet you. Keep an eye on your email and phone - someone will reach out shortly with interview details.</div>
+    </div>
+
     {% elif app.status == 'Offer' %}
-    <div class="status-box" style="background:#fff3cd">
-      <div style="font-size:24px;margin-bottom:8px">🎉</div>
-      <div style="font-size:16px;font-weight:600;color:#7a4800">Congratulations — an offer is on its way</div>
-      <div style="font-size:13px;color:#5a6a7a;margin-top:6px">Please expect to hear from us with formal offer details.</div>
+    <div class="status-box" style="background:#fffbeb;border:1px solid #fde68a">
+      <div class="status-emoji">&#127881;</div>
+      <div class="status-heading" style="color:#7a4800">Congratulations - An Offer Is on Its Way!</div>
+      <div class="status-sub" style="color:#7a5200">Excellent news! The company is preparing a formal offer for you. Expect to be contacted soon with the full details.</div>
     </div>
+
     {% elif app.status == 'Hired' %}
-    <div class="status-box" style="background:#e8f5ee">
-      <div style="font-size:24px;margin-bottom:8px">✅</div>
-      <div style="font-size:16px;font-weight:600;color:#145f3b">Welcome to MOF Engineering!</div>
-      <div style="font-size:13px;color:#5a6a7a;margin-top:6px">HR will contact you with onboarding information soon.</div>
+    <div class="status-box" style="background:#e8f5ee;border:1px solid #c6e6d4">
+      <div class="status-emoji">&#9989;</div>
+      <div class="status-heading" style="color:#145f3b">
+        {% if app.position.type == 'Internship' %}Welcome to the Internship Program!{% else %}Welcome to MOF Engineering!{% endif %}
+      </div>
+      <div class="status-sub" style="color:#1a5c38">
+        {% if app.position.type == 'Internship' %}Your internship placement has been confirmed. The company team will contact you with onboarding details and your start date.{% else %}You have been officially hired! HR will contact you soon with onboarding details and your start date.{% endif %}
+      </div>
     </div>
+
     {% elif app.status == 'Rejected' %}
-    <div class="status-box" style="background:#fce4ec">
-      <div style="font-size:16px;font-weight:600;color:#c62828">Application not successful</div>
-      <div style="font-size:13px;color:#5a6a7a;margin-top:6px">Thank you for your interest. We encourage you to apply for future openings.</div>
+    <div class="status-box" style="background:#fef2f2;border:1px solid #fecaca">
+      <div class="status-emoji">&#128533;</div>
+      <div class="status-heading" style="color:#b91c1c">Application Unsuccessful</div>
+      <div class="status-sub" style="color:#7f1d1d">Thank you for your interest. Unfortunately we are unable to move forward with your application at this time. We encourage you to apply for future opportunities.</div>
     </div>
+
+    {% elif app.status == 'Future Consideration' %}
+    <div class="status-box" style="background:#f5f3ff;border:1px solid #ddd6fe">
+      <div class="status-emoji">&#128197;</div>
+      <div class="status-heading" style="color:#4c1d95">Kept for Future Consideration</div>
+      <div class="status-sub" style="color:#5b21b6">Your application was strong, and we would like to keep your profile for upcoming opportunities. We will reach out when a suitable role opens up.</div>
+    </div>
+
     {% else %}
-    <div class="status-box" style="background:#e3f2fd">
-      <div style="font-size:16px;font-weight:600;color:#1565c0">Status: {{ app.status }}</div>
-      <div style="font-size:13px;color:#5a6a7a;margin-top:6px">Your application is being processed.</div>
+    <div class="status-box" style="background:#f0f4ff;border:1px solid #c7d5f5">
+      <div class="status-emoji">&#128338;</div>
+      <div class="status-heading" style="color:#1a2332">Status: {{ app.status }}</div>
+      <div class="status-sub" style="color:#4a5a6a">Your application is being processed. We will keep you updated at every stage.</div>
     </div>
     {% endif %}
 
-    <p style="font-size:13px;color:#5a6a7a;margin-top:16px">Application #{{ app.id }} · {{ app.position.title }}</p>
-    <p style="margin-top:24px;font-size:13px">
+    <div class="app-summary">
+      <div class="summary-head">Application Details</div>
+      <div class="detail-row">
+        <span class="detail-lbl">Position</span>
+        <span class="detail-val">{{ app.position.title }}</span>
+      </div>
+      {% if app.position.company %}
+      <div class="detail-row">
+        <span class="detail-lbl">Company</span>
+        <span class="detail-val">{{ app.position.company.name }}</span>
+      </div>
+      {% endif %}
+      <div class="detail-row">
+        <span class="detail-lbl">Type</span>
+        <span class="detail-val">{{ app.position.type }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-lbl">Application #</span>
+        <span class="detail-val">#{{ app.id }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-lbl">Status</span>
+        <span class="detail-val">{{ app.status }}</span>
+      </div>
+    </div>
+
+    <a href="{{ site_url }}/user/my-applications" class="btn-green">Track My Application &rarr;</a>
+
+    <p style="margin-top:22px;font-size:13px">
       Best regards,<br>
-      <strong>MOF Engineering — HR Team</strong>
+      <strong style="color:#1a2332">MOF Engineering - {% if app.position.type == 'Internship' %}Internship Team{% else %}Talent Acquisition Team{% endif %}</strong><br>
+      <span style="color:#9aabb8;font-size:12px">jobs.mof-eng.com</span>
     </p>
   </div>
-  <div class="footer" style="text-align:center">
+
+  <div class="footer">
     <img src="https://mof-eng.com/wp-content/uploads/2025/05/cropped-MOF-LOGO-transparent--100x46.png"
-         alt="MOF Engineering" width="72" style="display:block;margin:0 auto 10px;filter:brightness(0);opacity:.55"
+         alt="MOF Engineering" width="64" style="display:block;margin:0 auto 8px;filter:brightness(0);opacity:.4"
          onerror="this.style.display='none'">
-    This is an automated message. Please do not reply.<br>
-    MOF Engineering Company · Slemani, Iraq · <a href="https://mof-eng.com" style="color:#198754">mof-eng.com</a>
+    This is an automated update for application #{{ app.id }}. Please do not reply to this email.<br>
+    MOF Engineering Co. &middot; Slemani, Iraq &middot; <a href="https://mof-eng.com">mof-eng.com</a>
   </div>
 </div>
 </body>

@@ -468,7 +468,8 @@ def position_delete(pos_id):
 def _send_status_email(application):
     """Send applicant a status update email when supervisor changes status."""
     try:
-        html = render_template('emails/status_update.html', app=application)
+        site_url = current_app.config.get('SITE_URL', 'https://jobs.mof-eng.com')
+        html = render_template('emails/status_update.html', app=application, site_url=site_url)
         send_email(application.applicant.email,
                    f'Your application update — {application.position.title}',
                    html)
