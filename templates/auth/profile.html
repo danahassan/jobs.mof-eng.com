@@ -38,6 +38,8 @@
 .ap-row-value{font-size:13px;color:var(--text);font-weight:600;text-align:right}
 .ap-pills{display:flex;flex-wrap:wrap;gap:8px}
 .ap-pill{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;background:#f3f6f8;border:1px solid var(--border);font-size:12px;font-weight:600;color:var(--text)}
+.ap-mini-list{display:flex;flex-wrap:wrap;gap:8px}
+.ap-mini-chip{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;background:#f7faf8;border:1px solid var(--border);font-size:12px;color:var(--text2)}
 .ap-pill-level{padding:2px 7px;border-radius:999px;font-size:10px;font-weight:700}
 .lvl-beginner{background:#fef3c7;color:#92400e}
 .lvl-intermediate{background:#dbeafe;color:#1d4ed8}
@@ -230,6 +232,27 @@
         <div class="ap-row"><span class="ap-row-label">Joined</span><span class="ap-row-value">{{ current_user.created_at.strftime('%B %d, %Y') }}</span></div>
         <div class="ap-row"><span class="ap-row-label">Last Login</span><span class="ap-row-value">{{ (current_user.last_login | localdt).strftime('%b %d, %Y %H:%M') if current_user.last_login else 'First session' }}</span></div>
       </div>
+
+      {% if current_user.role == 'student' %}
+      <div class="ap-card">
+        <div class="ap-card-title"><i class="bi bi-mortarboard-fill"></i> University & Classmates</div>
+        <div class="ap-row"><span class="ap-row-label">University</span><span class="ap-row-value">{{ student_university.name if student_university else (current_user.university_name or 'Not linked') }}</span></div>
+        <div class="ap-row"><span class="ap-row-label">Major</span><span class="ap-row-value">{{ current_user.university_major or 'Not set' }}</span></div>
+        <div class="ap-row"><span class="ap-row-label">Classmates</span><span class="ap-row-value">{{ classmates_count }}</span></div>
+        {% if student_classmates %}
+          <div style="margin-top:10px">
+            <div class="ap-row-label" style="margin-bottom:8px">Classmates at your university</div>
+            <div class="ap-mini-list">
+              {% for cm in student_classmates %}
+                <span class="ap-mini-chip">{{ cm.full_name }}</span>
+              {% endfor %}
+            </div>
+          </div>
+        {% elif student_university %}
+          <div class="ap-empty" style="margin-top:10px">No classmates found yet.</div>
+        {% endif %}
+      </div>
+      {% endif %}
 
       <div class="ap-card">
         <div class="ap-card-title"><i class="bi bi-translate"></i> Languages and Certifications</div>

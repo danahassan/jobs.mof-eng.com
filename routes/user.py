@@ -6,6 +6,7 @@ from flask_login import login_required, current_user
 from sqlalchemy import or_, and_, func
 from models import (db, Position, Application, ApplicationHistory, Interview,
                     SavedJob, CompanyFollow, Message, User, CompanyMember, ROLE_ADMIN,
+                    ROLE_STUDENT,
                     SOURCES, SALARY_RANGES, STATUS_NEW, STATUS_REVIEW, STATUS_INTERVIEW,
                     STATUS_OFFER, STATUS_HIRED, ALL_STATUSES)
 from helpers import save_cv, allowed_file, send_email, push_notification, log_audit
@@ -37,13 +38,17 @@ def browse():
     search  = request.args.get('q', '').strip()
     jtype   = request.args.get('type', '')
     remote  = request.args.get('remote', '')
+    student_internships_only = current_user.is_authenticated and current_user.role == ROLE_STUDENT
 
     now = datetime.utcnow()
     q = Position.query.filter_by(is_active=True).filter(
         or_(Position.closes_at.is_(None), Position.closes_at >= now))
+    if student_internships_only:
+        q = q.filter_by(type='Internship')
+        jtype = 'Internship'
     if dept:
         q = q.filter_by(department=dept)
-    if jtype:
+    if jtype and not student_internships_only:
         q = q.filter_by(type=jtype)
     if remote == '1':
         q = q.filter_by(is_remote=True)
@@ -51,9 +56,12 @@ def browse():
         q = q.filter(Position.title.ilike(f'%{search}%'))
 
     positions = q.order_by(Position.created_at.desc()).all()
-    depts     = db.session.query(Position.department).filter_by(is_active=True).distinct().all()
+    depts_q = db.session.query(Position.department).filter_by(is_active=True)
+    if student_internships_only:
+        depts_q = depts_q.filter_by(type='Internship')
+    depts     = depts_q.distinct().all()
     depts     = [d[0] for d in depts if d[0]]
-    types     = ['Full-time', 'Part-time', 'Contract', 'Internship']
+    types     = ['Internship'] if student_internships_only else ['Full-time', 'Part-time', 'Contract', 'Internship']
 
     saved_ids = set()
     if current_user.is_authenticated:
@@ -61,20 +69,37 @@ def browse():
                      SavedJob.query.filter_by(user_id=current_user.id).all()}
 
     # KPI metrics
-    kpi_total  = Position.query.filter_by(is_active=True).count()
-    kpi_remote = Position.query.filter_by(is_active=True, is_remote=True).count()
-    kpi_depts  = db.session.query(func.count(func.distinct(Position.department))).filter(
-                     Position.is_active == True, Position.department.isnot(None)).scalar() or 0
-    kpi_types  = db.session.query(func.count(func.distinct(Position.type))).filter(
-                     Position.is_active == True).scalar() or 0
-    kpi_apps   = Application.query.join(Position).filter(Position.is_active == True).count()
+    kpi_base = Position.query.filter_by(is_active=True)
+    if student_internships_only:
+        kpi_base = kpi_base.filter_by(type='Internship')
+    kpi_total  = kpi_base.count()
+    kpi_remote = kpi_base.filter_by(is_remote=True).count()
+
+    kpi_depts_q = db.session.query(func.count(func.distinct(Position.department))).filter(
+        Position.is_active == True,
+        Position.department.isnot(None),
+    )
+    if student_internships_only:
+        kpi_depts_q = kpi_depts_q.filter(Position.type == 'Internship')
+    kpi_depts = kpi_depts_q.scalar() or 0
+
+    kpi_types = 1 if student_internships_only else (
+        db.session.query(func.count(func.distinct(Position.type))).filter(
+            Position.is_active == True).scalar() or 0
+    )
+
+    kpi_apps_q = Application.query.join(Position).filter(Position.is_active == True)
+    if student_internships_only:
+        kpi_apps_q = kpi_apps_q.filter(Position.type == 'Internship')
+    kpi_apps = kpi_apps_q.count()
 
     return render_template('user/browse.html',
         positions=positions, depts=depts, types=types,
         dept_f=dept, type_f=jtype, remote_f=remote,
         search=search, saved_ids=saved_ids,
         kpi_total=kpi_total, kpi_remote=kpi_remote, kpi_depts=kpi_depts,
-        kpi_types=kpi_types, kpi_apps=kpi_apps)
+        kpi_types=kpi_types, kpi_apps=kpi_apps,
+        student_internships_only=student_internships_only)
 
 
 @user_bp.route('/positions/<int:pos_id>')

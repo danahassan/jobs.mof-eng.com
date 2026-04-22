@@ -492,8 +492,10 @@ html.dark select.form-control option{background:#1e293b}
       <a href="{{ url_for('auth.logout') }}" class="sidebar-logout-btn" onclick="closeSidebar()" aria-label="Logout" title="Logout"><i class="bi bi-box-arrow-right"></i></a>
     </div>
     <nav class="sidebar-nav">
+      {% if current_user.role != ROLE_STUDENT %}
       <a href="{{ url_for('auth.profile') }}" class="nav-item {% if request.blueprint == 'auth' and request.endpoint == 'auth.profile' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-person-circle"></i> My Profile</a>
       <div style="height:1px;background:rgba(255,255,255,0.07);margin:4px 0 6px"></div>
+      {% endif %}
       {% if current_user.role == 'admin' %}
         <div class="nav-section">Main</div>
         <a href="{{ url_for('admin.dashboard') }}" class="nav-item {% if request.endpoint == 'admin.dashboard' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
