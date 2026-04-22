@@ -12,7 +12,7 @@ from models import (db, User, Position, Application, ApplicationHistory,
                     UserLanguage, UserCertification,
                     Message, SupervisorRequest, University, UniversityMember, UniversityRequest,
                     ROLE_ADMIN, ROLE_SUPERVISOR, ROLE_USER, ROLE_STUDENT, ROLE_UNIVERSITY_COORD,
-                    LANG_LEVELS, ALL_STATUSES, SOURCES, STATUS_NEW)
+                    LANG_LEVELS, ALL_STATUSES, SOURCES, STATUS_NEW, STATUS_UNIV_PENDING)
 from sqlalchemy import or_, and_
 from helpers import (admin_required, log_history, save_cv, allowed_file,
                      send_email, save_company_image, push_notification, log_audit,
@@ -495,8 +495,9 @@ def application_detail(app_id):
 
     db.session.commit()
 
+    available_statuses = ALL_STATUSES if (app.position and app.position.type == 'Internship') else [s for s in ALL_STATUSES if s != STATUS_UNIV_PENDING]
     return render_template('admin/application_detail.html',
-        app=app, supervisors=supervisors, ALL_STATUSES=ALL_STATUSES,
+        app=app, supervisors=supervisors, ALL_STATUSES=available_statuses,
         history=history, interviews=interviews,
         skills=skills, experiences=experiences, educations=educations,
         languages=languages, certifications=certifications,

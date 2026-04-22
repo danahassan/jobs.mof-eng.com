@@ -9,7 +9,7 @@ from models import (db, User, Company, CompanyMember, CompanyFollow, Position,
                     Application, ApplicationHistory, Interview, Notification,
                     UniversityMember,
                     ROLE_EMPLOYER, ROLE_ADMIN, ROLE_STUDENT, ROLE_UNIVERSITY_COORD, ROLE_USER,
-                    ALL_STATUSES, EXPERIENCE_LEVELS, JOB_TYPES, COMPANY_SIZES)
+                    ALL_STATUSES, STATUS_UNIV_PENDING, EXPERIENCE_LEVELS, JOB_TYPES, COMPANY_SIZES)
 from helpers import (admin_required, log_history, save_cv, allowed_file,
                      send_email, push_notification)
 
@@ -227,8 +227,9 @@ def applicant_detail(app_id):
     app = _get_employer_application(app_id)
     history = app.history.order_by(ApplicationHistory.created_at.desc()).all()
     interviews = app.interviews.order_by(Interview.scheduled_at.asc()).all()
+    available_statuses = ALL_STATUSES if (app.position and app.position.type == 'Internship') else [s for s in ALL_STATUSES if s != STATUS_UNIV_PENDING]
     return render_template('employer/applicant_detail.html',
-        app=app, history=history, interviews=interviews, statuses=ALL_STATUSES)
+        app=app, history=history, interviews=interviews, statuses=available_statuses)
 
 
 @employer_bp.route('/applicants/<int:app_id>/stage', methods=['POST'])

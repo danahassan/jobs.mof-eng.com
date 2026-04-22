@@ -5,7 +5,7 @@ from models import (db, Application, ApplicationHistory, Position, User, Message
                     Company, CompanyMember, CompanyFollow, CompanyPhoto,
                     UniversityMember,
                     UserSkill, UserExperience, UserEducation,
-                    ALL_STATUSES, ROLE_SUPERVISOR, ROLE_ADMIN, ROLE_STUDENT)
+                    ALL_STATUSES, STATUS_UNIV_PENDING, ROLE_SUPERVISOR, ROLE_ADMIN, ROLE_STUDENT)
 from helpers import supervisor_or_admin_required, log_history, save_company_image, push_notification, send_email, log_audit
 from flask_login import current_user
 
@@ -316,8 +316,9 @@ def application_detail(app_id):
 
     db.session.commit()
 
+    available_statuses = ALL_STATUSES if (app.position and app.position.type == 'Internship') else [s for s in ALL_STATUSES if s != STATUS_UNIV_PENDING]
     return render_template('supervisor/application_detail.html',
-        app=app, ALL_STATUSES=ALL_STATUSES, history=history, interviews=interviews,
+        app=app, ALL_STATUSES=available_statuses, history=history, interviews=interviews,
         skills=skills, experiences=experiences, educations=educations,
         # Removed languages and certifications (rollback)
         thread_messages=thread_messages,
