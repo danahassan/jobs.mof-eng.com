@@ -244,7 +244,7 @@
             <div class="ap-row-label" style="margin-bottom:8px">Classmates at your university</div>
             <div class="ap-mini-list">
               {% for cm in student_classmates %}
-                <span class="ap-mini-chip">{{ cm.full_name }}</span>
+                <a href="{{ url_for('profile.classmate_view', user_id=cm.id) }}" class="ap-mini-chip" style="text-decoration:none">{{ cm.full_name }}</a>
               {% endfor %}
             </div>
           </div>

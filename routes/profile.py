@@ -13,7 +13,8 @@ from werkzeug.utils import secure_filename
 
 from models import (db, User, UserSkill, UserExperience, UserEducation,
                     UserLanguage, UserCertification, UserPortfolioItem,
-                    JobAlert, CompanyFollow, LANG_LEVELS, JOB_TYPES)
+                    JobAlert, CompanyFollow, LANG_LEVELS, JOB_TYPES,
+                    ROLE_STUDENT, ROLE_ADMIN)
 
 profile_bp = Blueprint('profile', __name__)
 
@@ -46,6 +47,24 @@ def view():
     if tab and tab not in {'info', 'skills', 'experience', 'security', 'languages', 'certs', 'portfolio'}:
         args['tab'] = 'info'
     return redirect(url_for('auth.profile', **args))
+
+
+@profile_bp.route('/user/<int:user_id>')
+@login_required
+def classmate_view(user_id):
+    target = db.get_or_404(User, user_id)
+    if not target.is_active:
+        abort(404)
+
+    # Students can only view classmates from the same university.
+    if current_user.role == ROLE_STUDENT:
+        if not current_user.university_id or target.role != ROLE_STUDENT or target.university_id != current_user.university_id:
+            abort(403)
+    # Non-admin non-student users should not access this page.
+    elif current_user.role != ROLE_ADMIN:
+        abort(403)
+
+    return render_template('profile/classmate_view.html', classmate=target)
 
 
 # â”€â”€â”€ Photo Upload â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
