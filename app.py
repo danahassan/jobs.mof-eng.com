@@ -1,4 +1,4 @@
-﻿import os
+import os
 from datetime import datetime
 
 from flask import (Flask, render_template, redirect, url_for, flash,
@@ -154,6 +154,15 @@ def create_app(config_name=None):
             managed_companies=managed_companies,
             SALARY_RANGES=SALARY_RANGES,
         )
+
+    @app.template_filter('iraq_time')
+    def iraq_time_filter(dt):
+        if not dt:
+            return ""
+        from datetime import timedelta
+        # Iraq time is UTC+3 (no DST)
+        iraq_dt = dt + timedelta(hours=3)
+        return iraq_dt.strftime('%b %d, %Y %I:%M %p')
 
     # Create DB tables and seed admin on first run
     with app.app_context():
