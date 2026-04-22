@@ -334,6 +334,7 @@ def applications_export():
         # ── Application submission info ──────────────────────────────────
         'App ID', 'Applied At', 'Updated At', 'Status', 'Source',
         'Position', 'Department', 'Position Type', 'Company',
+        'Expected Salary',
         'Assigned To',
         'Cover Letter', 'CV Filename (Original)',
         'Internal Notes',
@@ -404,6 +405,7 @@ def applications_export():
             a.position.department or '',
             a.position.type,
             a.position.company.name if a.position.company else '',
+            a.expected_salary or '',
             a.assigned_to.full_name if a.assigned_to else '',
             a.cover_letter or '',
             a.cv_original or '',
