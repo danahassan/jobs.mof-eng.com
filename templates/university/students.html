@@ -55,7 +55,7 @@
 <form method="GET" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
   <div style="position:relative;flex:1;min-width:200px">
     <i class="bi bi-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:13px"></i>
-    <input type="text" name="q" class="form-control" placeholder="Search by name, email or major…"
+    <input type="text" name="q" class="form-control" placeholder="Search by name, email, major or class…"
            value="{{ search }}" style="padding-left:32px">
   </div>
   <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-funnel"></i> Search</button>
@@ -67,7 +67,7 @@
   <div class="table-responsive">
     <table class="tbl">
       <thead>
-        <tr><th>Name</th><th>Email</th><th>Major</th><th>GPA</th><th>Grad Year</th><th>Student ID</th><th></th></tr>
+        <tr><th>Name</th><th>Email</th><th>Department</th><th>Class</th><th>Major</th><th>GPA</th><th>Grad Year</th><th>Student ID</th><th></th></tr>
       </thead>
       <tbody>
         {% for s in students.items %}
@@ -82,6 +82,8 @@
             </div>
           </td>
           <td data-label="Email" style="font-size:13px">{{ s.email }}</td>
+          <td data-label="Department" style="font-size:13px;color:var(--text3)">{{ s.university_department.name if s.university_department else '—' }}</td>
+          <td data-label="Class" style="font-size:13px;color:var(--text3)">{{ s.university_class or '—' }}</td>
           <td data-label="Major" style="font-size:13px;color:var(--text3)">{{ s.university_major or '—' }}</td>
           <td data-label="GPA">
             {% if s.student_gpa %}
@@ -106,7 +108,7 @@
           </td>
         </tr>
         {% else %}
-        <tr><td colspan="7"><div class="empty-state">
+        <tr><td colspan="9"><div class="empty-state">
           <i class="bi bi-people"></i>
           <p>No students found. <a href="{{ url_for('university.student_add') }}">Add a student →</a></p>
         </div></td></tr>
@@ -142,6 +144,8 @@
       </div>
     </div>
     <div class="st-meta">
+      {% if s.university_department %}<span style="background:#eff6ff;color:#2563eb;padding:2px 8px;border-radius:10px"><i class="bi bi-diagram-3"></i> {{ s.university_department.name }}</span>{% endif %}
+      {% if s.university_class %}<span style="background:#fff7ed;color:#c2410c;padding:2px 8px;border-radius:10px"><i class="bi bi-collection"></i> Class {{ s.university_class }}</span>{% endif %}
       {% if s.university_major %}<span style="background:var(--green-light);color:var(--green);padding:2px 8px;border-radius:10px"><i class="bi bi-book"></i> {{ s.university_major }}</span>{% endif %}
       {% if s.student_gpa %}<span style="background:#f0fdf4;color:#198754;padding:2px 8px;border-radius:10px"><i class="bi bi-award"></i> GPA {{ s.student_gpa }}</span>{% endif %}
       {% if s.graduation_year %}<span><i class="bi bi-calendar3"></i> Class of {{ s.graduation_year }}</span>{% endif %}

@@ -10,7 +10,7 @@ from models import (db, User, Position, Application, ApplicationHistory,
                     Interview, AuditLog, Company, CompanyMember, CompanyFollow,
                     UserSkill, UserExperience, UserEducation,
                     UserLanguage, UserCertification,
-                    Message, SupervisorRequest, University, UniversityMember, UniversityRequest,
+                    Message, SupervisorRequest, University, UniversityDepartment, UniversityMember, UniversityRequest,
                     ROLE_ADMIN, ROLE_SUPERVISOR, ROLE_USER, ROLE_STUDENT, ROLE_UNIVERSITY_COORD,
                     LANG_LEVELS, ALL_STATUSES, SOURCES, STATUS_NEW, STATUS_UNIV_PENDING)
 from sqlalchemy import or_, and_
@@ -1849,28 +1849,32 @@ def universities():
 @admin_bp.route('/universities/<int:univ_id>')
 @admin_required
 def university_detail(univ_id):
-    univ   = db.get_or_404(University, univ_id)
+    univ = db.get_or_404(University, univ_id)
+    departments = (UniversityDepartment.query
+                   .filter_by(university_id=univ_id)
+                   .order_by(UniversityDepartment.college.asc(), UniversityDepartment.name.asc())
+                   .all())
     coords = (UniversityMember.query
               .filter_by(university_id=univ_id)
               .all())
-    students  = User.query.filter_by(university_id=univ_id, role=ROLE_STUDENT).all()
+    students = User.query.filter_by(university_id=univ_id, role=ROLE_STUDENT).all()
     available_coords = User.query.filter_by(role=ROLE_UNIVERSITY_COORD, is_active=True).all()
     assigned_ids = {m.user_id for m in coords}
     available_coords = [c for c in available_coords if c.id not in assigned_ids]
 
-    # Internship applications for this university's students
-    student_ids = [s.id for s in students]
-    from sqlalchemy import func as _func
     internship_count = 0
+    student_ids = [s.id for s in students]
     if student_ids:
         internship_count = (Application.query
             .join(Application.position)
-            .filter(Application.applicant_id.in_(student_ids),
-                    Position.type == 'Internship')
+            .filter(Application.applicant_id.in_(student_ids), Position.type == 'Internship')
             .count())
 
     return render_template('admin/university_detail.html',
-        univ=univ, coords=coords, students=students,
+        univ=univ,
+        departments=departments,
+        coords=coords,
+        students=students,
         available_coords=available_coords,
         internship_count=internship_count)
 
@@ -1906,7 +1910,12 @@ def university_delete(univ_id):
     univ = db.get_or_404(University, univ_id)
     name = univ.name
     # Unlink students
-    User.query.filter_by(university_id=univ_id).update({'university_id': None})
+    User.query.filter_by(university_id=univ_id).update({
+        'university_id': None,
+        'university_department_id': None,
+        'university_class': None,
+        'university_name': None,
+    })
     db.session.delete(univ)
     _audit('university.delete', name)
     db.session.commit()
@@ -1947,20 +1956,84 @@ def university_new():
     return render_template('admin/university_form.html', univ=None)
 
 
+@admin_bp.route('/universities/<int:univ_id>/departments/add', methods=['POST'])
+@admin_required
+def university_department_add(univ_id):
+    univ = db.get_or_404(University, univ_id)
+    name = request.form.get('name', '').strip()
+    college = request.form.get('college', '').strip() or None
+    if not name:
+        flash('Department name is required.', 'danger')
+        return redirect(url_for('admin.university_detail', univ_id=univ_id))
+
+    exists = UniversityDepartment.query.filter_by(university_id=univ_id, name=name).first()
+    if exists:
+        flash('This department already exists for the university.', 'warning')
+        return redirect(url_for('admin.university_detail', univ_id=univ_id))
+
+    db.session.add(UniversityDepartment(
+        university_id=univ_id,
+        name=name,
+        college=college,
+        is_active=True,
+    ))
+    _audit('university.department_add', f'{univ.name}: {name}')
+    db.session.commit()
+    flash('Department added.', 'success')
+    return redirect(url_for('admin.university_detail', univ_id=univ_id))
+
+
+@admin_bp.route('/universities/<int:univ_id>/departments/<int:dept_id>/delete', methods=['POST'])
+@admin_required
+def university_department_delete(univ_id, dept_id):
+    univ = db.get_or_404(University, univ_id)
+    dept = UniversityDepartment.query.filter_by(id=dept_id, university_id=univ_id).first_or_404()
+
+    assigned_coords = UniversityMember.query.filter_by(university_id=univ_id, department_id=dept_id).count()
+    assigned_students = User.query.filter_by(university_id=univ_id, university_department_id=dept_id, role=ROLE_STUDENT).count()
+    if assigned_coords or assigned_students:
+        flash('Cannot delete department while coordinators or students are assigned to it.', 'warning')
+        return redirect(url_for('admin.university_detail', univ_id=univ_id))
+
+    db.session.delete(dept)
+    _audit('university.department_delete', f'{univ.name}: {dept.name}')
+    db.session.commit()
+    flash('Department deleted.', 'success')
+    return redirect(url_for('admin.university_detail', univ_id=univ_id))
+
+
 @admin_bp.route('/universities/<int:univ_id>/coordinators/add', methods=['POST'])
 @admin_required
 def university_coordinator_add(univ_id):
-    univ    = db.get_or_404(University, univ_id)
+    univ = db.get_or_404(University, univ_id)
     user_id = request.form.get('user_id', type=int)
+    department_id = request.form.get('department_id', type=int)
+    class_scope = request.form.get('class_scope', '').strip() or None
+
     if not user_id:
         flash('Select a coordinator.', 'danger')
         return redirect(url_for('admin.university_detail', univ_id=univ_id))
+
+    if department_id:
+        dept = UniversityDepartment.query.filter_by(id=department_id, university_id=univ_id).first()
+        if not dept:
+            flash('Invalid department selected.', 'danger')
+            return redirect(url_for('admin.university_detail', univ_id=univ_id))
+
     coord = db.get_or_404(User, user_id)
-    existing = UniversityMember.query.filter_by(
-        university_id=univ_id, user_id=user_id).first()
-    if not existing:
+    existing = UniversityMember.query.filter_by(university_id=univ_id, user_id=user_id).first()
+    if existing:
+        existing.department_id = department_id
+        existing.class_scope = class_scope
+    else:
         db.session.add(UniversityMember(
-            university_id=univ_id, user_id=user_id, role='coordinator'))
+            university_id=univ_id,
+            user_id=user_id,
+            role='coordinator',
+            department_id=department_id,
+            class_scope=class_scope,
+        ))
+
     coord.university_id = univ_id
     _audit('university.coordinator_add', f'{coord.full_name} → {univ.name}')
     db.session.commit()
@@ -1968,14 +2041,45 @@ def university_coordinator_add(univ_id):
     return redirect(url_for('admin.university_detail', univ_id=univ_id))
 
 
+@admin_bp.route('/universities/<int:univ_id>/coordinators/<int:user_id>/scope', methods=['POST'])
+@admin_required
+def university_coordinator_scope_update(univ_id, user_id):
+    univ = db.get_or_404(University, univ_id)
+    member = UniversityMember.query.filter_by(university_id=univ_id, user_id=user_id).first_or_404()
+    department_id = request.form.get('department_id', type=int)
+    class_scope = request.form.get('class_scope', '').strip() or None
+
+    if department_id:
+        dept = UniversityDepartment.query.filter_by(id=department_id, university_id=univ_id).first()
+        if not dept:
+            flash('Invalid department selected.', 'danger')
+            return redirect(url_for('admin.university_detail', univ_id=univ_id))
+
+    member.department_id = department_id
+    member.class_scope = class_scope
+    _audit('university.coordinator_scope_update', f'user#{user_id} @ {univ.name}')
+    db.session.commit()
+    flash('Coordinator scope updated.', 'success')
+    return redirect(url_for('admin.university_detail', univ_id=univ_id))
+
+
 @admin_bp.route('/universities/<int:univ_id>/coordinators/<int:user_id>/remove',
                 methods=['POST'])
 @admin_required
 def university_coordinator_remove(univ_id, user_id):
-    univ   = db.get_or_404(University, univ_id)
+    univ = db.get_or_404(University, univ_id)
     member = UniversityMember.query.filter_by(
         university_id=univ_id, user_id=user_id).first_or_404()
     db.session.delete(member)
+
+    remaining = UniversityMember.query.filter_by(user_id=user_id).count()
+    if remaining == 0:
+        user = User.query.get(user_id)
+        if user:
+            user.university_id = None
+            user.university_department_id = None
+            user.university_class = None
+
     _audit('university.coordinator_remove', f'user#{user_id} ← {univ.name}')
     db.session.commit()
     flash('Coordinator removed.', 'success')

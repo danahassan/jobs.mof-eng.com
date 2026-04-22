@@ -4,7 +4,7 @@ from flask import (Blueprint, render_template, redirect, url_for,
                    flash, request, current_app, abort, jsonify, send_file)
 from flask_login import current_user
 from sqlalchemy import or_, false as sql_false
-from models import (db, User, Application, Position, University, UniversityMember,
+from models import (db, User, Application, Position, University, UniversityDepartment, UniversityMember,
                     ApplicationHistory, CompanyMember,
                     ROLE_STUDENT, ROLE_UNIVERSITY_COORD, ROLE_ADMIN,
                     ALL_STATUSES, STATUS_UNIV_PENDING, STATUS_NEW, STATUS_REVIEW, STATUS_INTERVIEW,
@@ -14,13 +14,18 @@ from helpers import university_coordinator_required, log_audit, send_email, push
 university_bp = Blueprint('university', __name__)
 
 
-def _my_university():
-    """Return the University this coordinator belongs to, or None."""
+def _my_membership():
     if current_user.role == ROLE_ADMIN:
         return None
-    member = (UniversityMember.query
-              .filter_by(user_id=current_user.id)
-              .first())
+    q = UniversityMember.query.filter_by(user_id=current_user.id)
+    if current_user.university_id:
+        q = q.filter_by(university_id=current_user.university_id)
+    return q.first()
+
+
+def _my_university():
+    """Return the University this coordinator belongs to, or None."""
+    member = _my_membership()
     return member.university if member else None
 
 
@@ -34,7 +39,8 @@ def dashboard():
                                total_students=0, internship_apps=0,
                                active_apps=0, hired_count=0, recent_apps=[])
 
-    student_ids = _student_ids(univ)
+    membership = _my_membership()
+    student_ids = _student_ids(univ, membership)
     total_students  = len(student_ids)
     internship_q    = _internship_apps(student_ids)
     internship_apps = internship_q.count()
@@ -68,19 +74,22 @@ def students():
         flash('You are not linked to any university.', 'warning')
         return redirect(url_for('university.dashboard'))
 
-    page   = request.args.get('page', 1, type=int)
+    page = request.args.get('page', 1, type=int)
     search = request.args.get('q', '').strip()
 
-    if univ:
-        q = User.query.filter_by(university_id=univ.id, role=ROLE_STUDENT)
+    membership = _my_membership()
+    scoped_ids = _student_ids(univ, membership)
+    if scoped_ids:
+        q = User.query.filter(User.id.in_(scoped_ids), User.role == ROLE_STUDENT)
     else:
-        q = User.query.filter_by(role=ROLE_STUDENT)
+        q = User.query.filter(sql_false())
 
     if search:
         q = q.filter(or_(
             User.full_name.ilike(f'%{search}%'),
             User.email.ilike(f'%{search}%'),
             User.university_major.ilike(f'%{search}%'),
+            User.university_class.ilike(f'%{search}%'),
         ))
 
     students_page = q.order_by(User.created_at.desc()).paginate(
@@ -102,7 +111,8 @@ def applications():
     search   = request.args.get('q', '').strip()
     status_f = request.args.get('status', '').strip()
 
-    student_ids = _student_ids(univ)
+    membership = _my_membership()
+    student_ids = _student_ids(univ, membership)
     q = _internship_apps(student_ids)
 
     if search:
@@ -136,8 +146,9 @@ def applications():
 def application_detail(app_id):
     app = Application.query.get_or_404(app_id)
     univ = _my_university()
+    membership = _my_membership()
     if univ:
-        sids = _student_ids(univ)
+        sids = _student_ids(univ, membership)
         if app.applicant_id not in sids:
             abort(403)
     if app.position.type != 'Internship':
@@ -152,7 +163,8 @@ def application_approve(app_id):
     univ = _my_university()
     if not univ:
         abort(403)
-    if app.applicant.university_id != univ.id or app.position.type != 'Internship':
+    scoped_student_ids = _student_ids(univ, _my_membership())
+    if app.applicant_id not in scoped_student_ids or app.position.type != 'Internship':
         abort(403)
     if app.status != STATUS_UNIV_PENDING:
         flash('This application is not waiting for university approval.', 'warning')
@@ -222,28 +234,47 @@ def application_approve(app_id):
 @university_coordinator_required
 def student_add():
     univ = _my_university()
+    membership = _my_membership()
     if not univ:
         flash('You are not linked to any university.', 'warning')
         return redirect(url_for('university.dashboard'))
+
+    departments = UniversityDepartment.query.filter_by(university_id=univ.id, is_active=True).order_by(UniversityDepartment.name.asc()).all()
 
     if request.method == 'POST':
         email = request.form.get('email', '').strip().lower()
         if not email:
             flash('Email is required.', 'danger')
-            return render_template('university/student_form.html', univ=univ, student=None)
+            return render_template('university/student_form.html', univ=univ, student=None, departments=departments, scope_membership=membership)
+
+        dept_id = request.form.get('university_department_id', type=int)
+        class_scope = request.form.get('university_class', '').strip() or None
+
+        if membership and membership.department_id:
+            dept_id = membership.department_id
+        if membership and membership.class_scope:
+            class_scope = membership.class_scope
+
+        if dept_id:
+            dept = UniversityDepartment.query.filter_by(id=dept_id, university_id=univ.id).first()
+            if not dept:
+                flash('Invalid department selected.', 'danger')
+                return render_template('university/student_form.html', univ=univ, student=None, departments=departments, scope_membership=membership)
 
         # Check if email exists — link existing user or create new one
         existing = User.query.filter_by(email=email).first()
         if existing:
             if existing.role != ROLE_STUDENT:
                 flash(f'A non-student account already exists for {email}.', 'danger')
-                return render_template('university/student_form.html', univ=univ, student=None)
-            existing.university_id   = univ.id
+                return render_template('university/student_form.html', univ=univ, student=None, departments=departments, scope_membership=membership)
+            existing.university_id = univ.id
             existing.university_name = univ.name
+            existing.university_department_id = dept_id
+            existing.university_class = class_scope
             existing.university_major = request.form.get('university_major', '').strip() or existing.university_major
-            existing.student_gpa      = request.form.get('student_gpa', '').strip() or existing.student_gpa
-            existing.graduation_year  = _parse_int(request.form.get('graduation_year', '')) or existing.graduation_year
-            existing.student_id_number= request.form.get('student_id_number', '').strip() or existing.student_id_number
+            existing.student_gpa = request.form.get('student_gpa', '').strip() or existing.student_gpa
+            existing.graduation_year = _parse_int(request.form.get('graduation_year', '')) or existing.graduation_year
+            existing.student_id_number = request.form.get('student_id_number', '').strip() or existing.student_id_number
             log_audit('university.student_link', f'{existing.full_name} → {univ.name}', user_id=current_user.id)
             db.session.commit()
             flash(f'Existing student {existing.full_name} linked to {univ.name}.', 'success')
@@ -252,28 +283,29 @@ def student_add():
         full_name = request.form.get('full_name', '').strip()
         if not full_name:
             flash('Full name is required.', 'danger')
-            return render_template('university/student_form.html', univ=univ, student=None)
+            return render_template('university/student_form.html', univ=univ, student=None, departments=departments, scope_membership=membership)
 
         temp_pw = secrets.token_urlsafe(10)
         student = User(
-            full_name         = full_name,
-            email             = email,
-            phone             = request.form.get('phone', '').strip() or None,
-            role              = ROLE_STUDENT,
-            is_active         = True,
-            university_id     = univ.id,
-            university_name   = univ.name,
-            university_major  = request.form.get('university_major', '').strip() or None,
-            student_gpa       = request.form.get('student_gpa', '').strip() or None,
-            graduation_year   = _parse_int(request.form.get('graduation_year', '')),
-            student_id_number = request.form.get('student_id_number', '').strip() or None,
+            full_name=full_name,
+            email=email,
+            phone=request.form.get('phone', '').strip() or None,
+            role=ROLE_STUDENT,
+            is_active=True,
+            university_id=univ.id,
+            university_name=univ.name,
+            university_department_id=dept_id,
+            university_class=class_scope,
+            university_major=request.form.get('university_major', '').strip() or None,
+            student_gpa=request.form.get('student_gpa', '').strip() or None,
+            graduation_year=_parse_int(request.form.get('graduation_year', '')),
+            student_id_number=request.form.get('student_id_number', '').strip() or None,
         )
         student.set_password(temp_pw)
         db.session.add(student)
         log_audit('university.student_add', f'{full_name} → {univ.name}', user_id=current_user.id)
         db.session.commit()
 
-        # Send welcome email with temp password
         try:
             html = render_template('emails/welcome_student.html',
                                    student=student, univ=univ, temp_password=temp_pw)
@@ -284,39 +316,57 @@ def student_add():
         flash(f'Student {full_name} added successfully.', 'success')
         return redirect(url_for('university.students'))
 
-    return render_template('university/student_form.html', univ=univ, student=None)
+    return render_template('university/student_form.html', univ=univ, student=None, departments=departments, scope_membership=membership)
 
 
 @university_bp.route('/students/<int:student_id>/edit', methods=['GET', 'POST'])
 @university_coordinator_required
 def student_edit(student_id):
-    univ    = _my_university()
+    univ = _my_university()
+    membership = _my_membership()
     student = db.get_or_404(User, student_id)
-    if univ and student.university_id != univ.id:
+    departments = UniversityDepartment.query.filter_by(university_id=univ.id, is_active=True).order_by(UniversityDepartment.name.asc()).all() if univ else []
+
+    scoped_student_ids = _student_ids(univ, membership)
+    if univ and student.id not in scoped_student_ids:
         abort(403)
 
     if request.method == 'POST':
-        student.full_name         = request.form.get('full_name', student.full_name).strip()
+        student.full_name = request.form.get('full_name', student.full_name).strip()
         new_email = request.form.get('email', '').strip().lower()
         if new_email and new_email != student.email:
-            # Check email not already taken by another account
             clash = User.query.filter(User.email == new_email, User.id != student.id).first()
             if clash:
                 flash('That email address is already in use by another account.', 'danger')
-                return render_template('university/student_form.html', univ=univ, student=student)
+                return render_template('university/student_form.html', univ=univ, student=student, departments=departments, scope_membership=membership)
             student.email = new_email
-        student.phone             = request.form.get('phone', '').strip() or None
-        student.headline          = request.form.get('headline', '').strip() or None
-        student.bio               = request.form.get('bio', '').strip() or None
-        student.location_city     = request.form.get('location_city', '').strip() or None
-        student.nationality       = request.form.get('nationality', '').strip() or None
-        student.gender            = request.form.get('gender', '').strip() or None
-        student.linkedin_url      = request.form.get('linkedin_url', '').strip() or None
-        student.github_url        = request.form.get('github_url', '').strip() or None
-        student.portfolio_url     = request.form.get('portfolio_url', '').strip() or None
-        student.university_major  = request.form.get('university_major', '').strip() or None
-        student.student_gpa       = request.form.get('student_gpa', '').strip() or None
-        student.graduation_year   = _parse_int(request.form.get('graduation_year', ''))
+
+        dept_id = request.form.get('university_department_id', type=int)
+        class_scope = request.form.get('university_class', '').strip() or None
+        if membership and membership.department_id:
+            dept_id = membership.department_id
+        if membership and membership.class_scope:
+            class_scope = membership.class_scope
+        if dept_id:
+            dept = UniversityDepartment.query.filter_by(id=dept_id, university_id=univ.id).first()
+            if not dept:
+                flash('Invalid department selected.', 'danger')
+                return render_template('university/student_form.html', univ=univ, student=student, departments=departments, scope_membership=membership)
+
+        student.university_department_id = dept_id
+        student.university_class = class_scope
+        student.phone = request.form.get('phone', '').strip() or None
+        student.headline = request.form.get('headline', '').strip() or None
+        student.bio = request.form.get('bio', '').strip() or None
+        student.location_city = request.form.get('location_city', '').strip() or None
+        student.nationality = request.form.get('nationality', '').strip() or None
+        student.gender = request.form.get('gender', '').strip() or None
+        student.linkedin_url = request.form.get('linkedin_url', '').strip() or None
+        student.github_url = request.form.get('github_url', '').strip() or None
+        student.portfolio_url = request.form.get('portfolio_url', '').strip() or None
+        student.university_major = request.form.get('university_major', '').strip() or None
+        student.student_gpa = request.form.get('student_gpa', '').strip() or None
+        student.graduation_year = _parse_int(request.form.get('graduation_year', ''))
         student.student_id_number = request.form.get('student_id_number', '').strip() or None
         new_pw = request.form.get('new_password', '').strip()
         if new_pw:
@@ -326,19 +376,21 @@ def student_edit(student_id):
         flash('Student updated.', 'success')
         return redirect(url_for('university.students'))
 
-    return render_template('university/student_form.html', univ=univ, student=student)
+    return render_template('university/student_form.html', univ=univ, student=student, departments=departments, scope_membership=membership)
 
 
 @university_bp.route('/students/<int:student_id>/delete', methods=['POST'])
 @university_coordinator_required
 def student_delete(student_id):
-    univ    = _my_university()
+    univ = _my_university()
+    membership = _my_membership()
     student = db.get_or_404(User, student_id)
-    if univ and student.university_id != univ.id:
+    if univ and student.id not in _student_ids(univ, membership):
         abort(403)
     name = student.full_name
-    # Unlink from university instead of hard-deleting the account
     student.university_id = None
+    student.university_department_id = None
+    student.university_class = None
     student.university_name = None
     log_audit('university.student_remove', f'{name} ← {univ.name if univ else "university"}', user_id=current_user.id)
     db.session.commit()
@@ -360,7 +412,7 @@ def application_new():
     open_positions = (Position.query
                       .filter_by(is_active=True, type='Internship')
                       .order_by(Position.title).all())
-    student_ids = _student_ids(univ)
+    student_ids = _student_ids(univ, _my_membership())
     students = User.query.filter(User.id.in_(student_ids)).order_by(User.full_name).all() if student_ids else []
 
     if request.method == 'POST':
@@ -378,8 +430,8 @@ def application_new():
             flash('Invalid student or position.', 'danger')
             return redirect(url_for('university.application_new'))
 
-        # Check student belongs to this university
-        if univ and student.university_id != univ.id:
+        # Check student belongs to this coordinator scope
+        if univ and student.id not in student_ids:
             abort(403)
 
         # Check not already applied
@@ -428,10 +480,9 @@ def students_export():
     import openpyxl
     from openpyxl.styles import Font, PatternFill, Alignment
     univ = _my_university()
-    if univ:
-        rows = User.query.filter_by(university_id=univ.id, role=ROLE_STUDENT).order_by(User.full_name).all()
-    else:
-        rows = User.query.filter_by(role=ROLE_STUDENT).order_by(User.full_name).all()
+    membership = _my_membership()
+    scoped_ids = _student_ids(univ, membership)
+    rows = User.query.filter(User.id.in_(scoped_ids)).order_by(User.full_name).all() if scoped_ids else []
 
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -506,6 +557,7 @@ def students_import_template():
 def students_import():
     import openpyxl
     univ = _my_university()
+    membership = _my_membership()
     if not univ:
         flash('You are not linked to any university.', 'warning')
         return redirect(url_for('university.students'))
@@ -556,8 +608,12 @@ def students_import():
         existing = User.query.filter_by(email=email).first()
         if existing:
             if existing.role == ROLE_STUDENT:
-                existing.university_id   = univ.id
+                existing.university_id = univ.id
                 existing.university_name = univ.name
+                if membership and membership.department_id:
+                    existing.university_department_id = membership.department_id
+                if membership and membership.class_scope:
+                    existing.university_class = membership.class_scope
                 for attr in ('university_major', 'student_gpa', 'student_id_number', 'phone'):
                     if data.get(attr):
                         setattr(existing, attr, data[attr])
@@ -577,7 +633,9 @@ def students_import():
             role              = ROLE_STUDENT,
             is_active         = True,
             university_id     = univ.id,
+            university_department_id = membership.department_id if membership else None,
             university_name   = univ.name,
+            university_class  = membership.class_scope if membership else None,
             university_major  = data.get('university_major') or None,
             student_gpa       = data.get('student_gpa') or None,
             graduation_year   = _parse_int(data.get('graduation_year', '')),
@@ -612,11 +670,15 @@ def students_import():
 
 # ─── helpers ─────────────────────────────────────────────────────────────────
 
-def _student_ids(univ):
+def _student_ids(univ, membership=None):
+    q = User.query.filter_by(role=ROLE_STUDENT)
     if univ:
-        return [u.id for u in User.query.filter_by(
-            university_id=univ.id, role=ROLE_STUDENT).all()]
-    return [u.id for u in User.query.filter_by(role=ROLE_STUDENT).all()]
+        q = q.filter_by(university_id=univ.id)
+    if membership and membership.department_id:
+        q = q.filter(User.university_department_id == membership.department_id)
+    if membership and membership.class_scope:
+        q = q.filter(User.university_class == membership.class_scope)
+    return [u.id for u in q.all()]
 
 
 def _internship_pos_ids():

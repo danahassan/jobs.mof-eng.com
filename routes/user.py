@@ -223,9 +223,20 @@ def apply(pos_id):
         site_url = current_app.config['SITE_URL']
 
         if requires_university_review:
-            # Notify university coordinators first; company/staff review starts only after approval.
-            coord_ids = [m.user_id for m in UniversityMember.query.filter_by(
-                university_id=current_user.university_id, role='coordinator').all()]
+            # Notify only coordinators responsible for this student's scope.
+            coord_q = UniversityMember.query.filter_by(
+                university_id=current_user.university_id, role='coordinator')
+            if current_user.university_department_id:
+                coord_q = coord_q.filter(or_(
+                    UniversityMember.department_id.is_(None),
+                    UniversityMember.department_id == current_user.university_department_id,
+                ))
+            if current_user.university_class:
+                coord_q = coord_q.filter(or_(
+                    UniversityMember.class_scope.is_(None),
+                    UniversityMember.class_scope == current_user.university_class,
+                ))
+            coord_ids = [m.user_id for m in coord_q.all()]
             coordinators = User.query.filter(
                 User.id.in_(coord_ids), User.is_active == True).all() if coord_ids else []
 

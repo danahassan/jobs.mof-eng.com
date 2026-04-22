@@ -242,11 +242,16 @@ def _migrate_db(app):
             _safe_add_column(conn, 'users', 'last_seen', 'DATETIME')
             # Student fields
             _safe_add_column(conn, 'users', 'university_id', 'INTEGER')
+            _safe_add_column(conn, 'users', 'university_department_id', 'INTEGER')
             _safe_add_column(conn, 'users', 'university_name', 'VARCHAR(200)')
+            _safe_add_column(conn, 'users', 'university_class', 'VARCHAR(100)')
             _safe_add_column(conn, 'users', 'university_major', 'VARCHAR(200)')
             _safe_add_column(conn, 'users', 'student_gpa', 'VARCHAR(20)')
             _safe_add_column(conn, 'users', 'graduation_year', 'INTEGER')
             _safe_add_column(conn, 'users', 'student_id_number', 'VARCHAR(50)')
+            # University coordinator scope fields
+            _safe_add_column(conn, 'university_members', 'department_id', 'INTEGER')
+            _safe_add_column(conn, 'university_members', 'class_scope', 'VARCHAR(100)')
             # Internship fields on applications
             _safe_add_column(conn, 'applications', 'internship_duration', 'VARCHAR(50)')
             _safe_add_column(conn, 'applications', 'internship_start_date', 'DATE')

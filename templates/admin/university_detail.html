@@ -165,13 +165,23 @@ body.editing .ud-save-btn{display:flex}
     <div class="card" style="padding:20px 24px">
       <div class="card-title"><i class="bi bi-person-video3"></i> Coordinators</div>
       {% for m in coords %}
-      <div class="ud-student-row">
+      <div class="ud-student-row" style="align-items:flex-start;gap:10px">
         <div style="width:34px;height:34px;border-radius:50%;background:var(--green-light);color:var(--green);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0">
           {{ m.user.initials if m.user else '?' }}
         </div>
         <div style="flex:1;min-width:0">
           <a href="{{ url_for('admin.user_detail', user_id=m.user_id) }}" style="font-size:13px;font-weight:600;color:var(--text)">{{ m.user.full_name if m.user else '—' }}</a>
           <div style="font-size:11px;color:var(--text3)">{{ m.user.email if m.user else '' }}</div>
+          <form method="POST" action="{{ url_for('admin.university_coordinator_scope_update', univ_id=univ.id, user_id=m.user_id) }}" style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+            <select name="department_id" class="form-control" style="font-size:12px;min-width:150px;max-width:220px">
+              <option value="">All departments</option>
+              {% for d in departments %}
+              <option value="{{ d.id }}" {% if m.department_id == d.id %}selected{% endif %}>{{ d.college ~ ' / ' if d.college else '' }}{{ d.name }}</option>
+              {% endfor %}
+            </select>
+            <input name="class_scope" class="form-control" placeholder="Class scope (optional)" value="{{ m.class_scope or '' }}" style="font-size:12px;min-width:130px;max-width:170px">
+            <button type="submit" class="btn btn-outline btn-sm" title="Save scope"><i class="bi bi-check2"></i></button>
+          </form>
         </div>
         <form method="POST" action="{{ url_for('admin.university_coordinator_remove', univ_id=univ.id, user_id=m.user_id) }}"
               onsubmit="return confirm('Remove this coordinator?')">
@@ -185,16 +195,50 @@ body.editing .ud-save-btn{display:flex}
       {% endfor %}
 
       {% if available_coords %}
-      <form method="POST" action="{{ url_for('admin.university_coordinator_add', univ_id=univ.id) }}" style="display:flex;gap:8px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
-        <select name="user_id" class="form-control" style="font-size:13px;flex:1">
+      <form method="POST" action="{{ url_for('admin.university_coordinator_add', univ_id=univ.id) }}" style="display:grid;gap:8px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+        <select name="user_id" class="form-control" style="font-size:13px;flex:1" required>
           <option value="">— Add coordinator —</option>
           {% for c in available_coords %}
           <option value="{{ c.id }}">{{ c.full_name }} ({{ c.email }})</option>
           {% endfor %}
         </select>
-        <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Add</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <select name="department_id" class="form-control" style="font-size:12px;min-width:180px;flex:1">
+            <option value="">All departments</option>
+            {% for d in departments %}
+            <option value="{{ d.id }}">{{ d.college ~ ' / ' if d.college else '' }}{{ d.name }}</option>
+            {% endfor %}
+          </select>
+          <input name="class_scope" class="form-control" placeholder="Class scope (optional)" style="font-size:12px;min-width:160px;max-width:220px">
+          <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Add</button>
+        </div>
       </form>
       {% endif %}
+    </div>
+
+    <div class="card" style="padding:20px 24px">
+      <div class="card-title"><i class="bi bi-diagram-3-fill"></i> Departments & Colleges</div>
+      {% for d in departments %}
+      <div class="ud-student-row">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:600;color:var(--text)">{{ d.name }}</div>
+          <div style="font-size:11px;color:var(--text3)">{{ d.college or 'No college' }}</div>
+        </div>
+        <form method="POST" action="{{ url_for('admin.university_department_delete', univ_id=univ.id, dept_id=d.id) }}" onsubmit="return confirm('Delete this department?')">
+          <button type="submit" class="btn btn-sm" style="color:#dc2626;border-color:#fecaca;background:transparent" title="Delete">
+            <i class="bi bi-trash"></i>
+          </button>
+        </form>
+      </div>
+      {% else %}
+      <div style="color:var(--text3);font-size:13px;text-align:center;padding:16px 0">No departments added yet.</div>
+      {% endfor %}
+
+      <form method="POST" action="{{ url_for('admin.university_department_add', univ_id=univ.id) }}" style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+        <input name="name" class="form-control" placeholder="Department name" required>
+        <input name="college" class="form-control" placeholder="College (optional)">
+        <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Add</button>
+      </form>
     </div>
 
     <!-- Students card -->
@@ -210,7 +254,11 @@ body.editing .ud-save-btn{display:flex}
           </div>
           <div style="flex:1;min-width:0">
             <a href="{{ url_for('admin.user_detail', user_id=s.id) }}" style="font-size:13px;font-weight:600;color:var(--text)">{{ s.full_name }}</a>
-            <div style="font-size:11px;color:var(--text3)">{{ s.university_major or s.email }}</div>
+            <div style="font-size:11px;color:var(--text3)">
+              {{ (s.university_department.college ~ ' / ' if s.university_department and s.university_department.college else '') ~ (s.university_department.name if s.university_department else 'No department') }}
+              {% if s.university_class %} · Class {{ s.university_class }}{% endif %}
+              {% if s.university_major %} · {{ s.university_major }}{% endif %}
+            </div>
           </div>
           {% if s.student_gpa %}<span style="font-size:11px;color:var(--text3);white-space:nowrap">GPA {{ s.student_gpa }}</span>{% endif %}
         </div>

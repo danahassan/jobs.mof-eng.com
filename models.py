@@ -86,7 +86,9 @@ class User(UserMixin, db.Model):
 
     # Student-specific fields
     university_id     = db.Column(db.Integer, db.ForeignKey('universities.id'), nullable=True)
+    university_department_id = db.Column(db.Integer, db.ForeignKey('university_departments.id'), nullable=True)
     university_name   = db.Column(db.String(200))   # free-text fallback if no university record
+    university_class  = db.Column(db.String(100))
     university_major  = db.Column(db.String(200))
     student_gpa       = db.Column(db.String(20))    # e.g. "3.8 / 4.0"
     graduation_year   = db.Column(db.Integer)
@@ -129,6 +131,8 @@ class User(UserMixin, db.Model):
                                              lazy='dynamic', cascade='all,delete-orphan')
     university_memberships = db.relationship('UniversityMember', back_populates='user',
                                              lazy='dynamic', cascade='all,delete-orphan')
+    university_department = db.relationship('UniversityDepartment', foreign_keys=[university_department_id],
+                                            backref=db.backref('student_users', lazy='dynamic'))
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -771,6 +775,8 @@ class University(db.Model):
 
     members  = db.relationship('UniversityMember', back_populates='university',
                                 lazy='dynamic', cascade='all,delete-orphan')
+    departments = db.relationship('UniversityDepartment', back_populates='university',
+                                  lazy='dynamic', cascade='all,delete-orphan')
     students = db.relationship('User', foreign_keys='User.university_id',
                                 backref=db.backref('university', lazy='joined'),
                                 lazy='dynamic')
@@ -795,12 +801,34 @@ class UniversityMember(db.Model):
     id            = db.Column(db.Integer, primary_key=True)
     university_id = db.Column(db.Integer, db.ForeignKey('universities.id'), nullable=False)
     user_id       = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    department_id = db.Column(db.Integer, db.ForeignKey('university_departments.id'))
+    class_scope   = db.Column(db.String(100))
     role          = db.Column(db.String(30), default='coordinator')
     joined_at     = db.Column(db.DateTime, default=datetime.utcnow)
     __table_args__ = (db.UniqueConstraint('university_id', 'user_id'),)
 
     university = db.relationship('University', back_populates='members')
     user       = db.relationship('User', back_populates='university_memberships')
+    department = db.relationship('UniversityDepartment', back_populates='members')
+
+
+class UniversityDepartment(db.Model):
+    __tablename__ = 'university_departments'
+
+    id            = db.Column(db.Integer, primary_key=True)
+    university_id = db.Column(db.Integer, db.ForeignKey('universities.id'), nullable=False)
+    name          = db.Column(db.String(200), nullable=False)
+    college       = db.Column(db.String(200))
+    is_active     = db.Column(db.Boolean, default=True)
+    created_at    = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (db.UniqueConstraint('university_id', 'name', name='uq_university_department_name'),)
+
+    university = db.relationship('University', back_populates='departments')
+    members    = db.relationship('UniversityMember', back_populates='department', lazy='dynamic')
+
+    def full_name(self):
+        return f'{self.college} / {self.name}' if self.college else self.name
 
 
 class UniversityRequest(db.Model):

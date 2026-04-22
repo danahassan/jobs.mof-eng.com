@@ -98,6 +98,29 @@
 
           <div class="uf-two">
             <div>
+              <label class="uf-label">Department / College</label>
+              <select name="university_department_id" class="form-control" {% if scope_membership and scope_membership.department_id %}disabled{% endif %}>
+                <option value="">— Select department —</option>
+                {% for d in departments or [] %}
+                <option value="{{ d.id }}" {% if (student and student.university_department_id == d.id) or (scope_membership and scope_membership.department_id == d.id) %}selected{% endif %}>{{ d.college ~ ' / ' if d.college else '' }}{{ d.name }}</option>
+                {% endfor %}
+              </select>
+              {% if scope_membership and scope_membership.department_id %}
+              <input type="hidden" name="university_department_id" value="{{ scope_membership.department_id }}">
+              <div class="uf-help">Your coordinator scope is locked to one department.</div>
+              {% endif %}
+            </div>
+            <div>
+              <label class="uf-label">Class / Cohort</label>
+              <input name="university_class" class="form-control"
+                     value="{{ scope_membership.class_scope if scope_membership and scope_membership.class_scope else (student.university_class if student else '') }}"
+                     placeholder="e.g. 2027" {% if scope_membership and scope_membership.class_scope %}readonly{% endif %}>
+              {% if scope_membership and scope_membership.class_scope %}<div class="uf-help">Your coordinator scope is locked to class {{ scope_membership.class_scope }}.</div>{% endif %}
+            </div>
+          </div>
+
+          <div class="uf-two">
+            <div>
               <label class="uf-label">Graduation Year</label>
               <input name="graduation_year" class="form-control" type="number"
                      value="{{ student.graduation_year if student else '' }}"
