@@ -5,7 +5,8 @@ from flask_login import current_user
 from sqlalchemy import or_
 
 from models import (db, Position, Company, SavedJob, UserSkill, Application,
-                    EXPERIENCE_LEVELS, JOB_TYPES)
+                    EXPERIENCE_LEVELS, JOB_TYPES,
+                    ROLE_USER)
 
 jobs_bp = Blueprint('jobs', __name__)
 
@@ -27,6 +28,10 @@ def listing():
     now = datetime.utcnow()
     query = Position.query.filter_by(is_active=True).filter(
         or_(Position.closes_at.is_(None), Position.closes_at >= now))
+
+    # Internships are only visible to authenticated non-ROLE_USER accounts
+    if not current_user.is_authenticated or current_user.role == ROLE_USER:
+        query = query.filter(Position.type != 'Internship')
 
     if q:
         query = query.filter(or_(
@@ -106,6 +111,11 @@ def detail(job_id):
     job = Position.query.get_or_404(job_id)
     if not job.is_active:
         abort(404)
+
+    # Internships hidden from unauthenticated visitors and regular users
+    if job.type == 'Internship':
+        if not current_user.is_authenticated or current_user.role == ROLE_USER:
+            abort(404)
 
     # Track view
     job.views_count = (job.views_count or 0) + 1

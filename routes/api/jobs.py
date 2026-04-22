@@ -2,7 +2,7 @@
 from flask import request, jsonify
 from flask_login import current_user
 from sqlalchemy import or_
-from models import db, Position, Company, SavedJob, EXPERIENCE_LEVELS, JOB_TYPES
+from models import db, Position, Company, SavedJob, EXPERIENCE_LEVELS, JOB_TYPES, ROLE_USER
 from . import api_bp
 
 
@@ -48,6 +48,9 @@ def jobs_list():
     per_page   = min(request.args.get('per_page', 20, type=int), 50)
 
     query = Position.query.filter_by(is_active=True)
+    # Internships only visible to authenticated non-ROLE_USER accounts
+    if not current_user.is_authenticated or current_user.role == ROLE_USER:
+        query = query.filter(Position.type != 'Internship')
     if q:
         query = query.filter(or_(
             Position.title.ilike(f'%{q}%'),
@@ -82,6 +85,8 @@ def jobs_list():
 def job_detail(job_id):
     j = Position.query.get_or_404(job_id)
     if not j.is_active:
+        return jsonify({'error': 'Not found'}), 404
+    if j.type == 'Internship' and (not current_user.is_authenticated or current_user.role == ROLE_USER):
         return jsonify({'error': 'Not found'}), 404
     j.views_count = (j.views_count or 0) + 1
     db.session.commit()

@@ -7,8 +7,9 @@ from sqlalchemy import func
 
 from models import (db, User, Company, CompanyMember, CompanyFollow, Position,
                     Application, ApplicationHistory, Interview, Notification,
-                    ROLE_EMPLOYER, ROLE_ADMIN, ALL_STATUSES, EXPERIENCE_LEVELS,
-                    JOB_TYPES, COMPANY_SIZES)
+                    UniversityMember,
+                    ROLE_EMPLOYER, ROLE_ADMIN, ROLE_STUDENT, ROLE_UNIVERSITY_COORD, ROLE_USER,
+                    ALL_STATUSES, EXPERIENCE_LEVELS, JOB_TYPES, COMPANY_SIZES)
 from helpers import (admin_required, log_history, save_cv, allowed_file,
                      send_email, push_notification)
 
@@ -416,7 +417,13 @@ def _build_position_from_form(form, company, pos=None):
 
 
 def _dispatch_job_alerts(pos):
-    """Notify users whose saved alerts match the new position."""
+    """Notify users about a new position.
+    - Internships: notify all university coordinators + students who follow the company.
+    - Regular jobs: notify users whose saved job alerts match.
+    """
+    if pos.type == 'Internship':
+        _dispatch_internship_alerts(pos)
+        return
     from models import JobAlert
     alerts = JobAlert.query.filter_by(is_active=True).all()
     count = 0
@@ -437,4 +444,76 @@ def _dispatch_job_alerts(pos):
             )
             count += 1
     if count:
+        db.session.commit()
+
+
+def _dispatch_internship_alerts(pos):
+    """Notify all university coordinators + students following the company about a new internship."""
+    site_url = current_app.config.get('SITE_URL', '')
+    notified_ids = set()
+
+    # 1. All university coordinators
+    coord_memberships = UniversityMember.query.filter_by(role='coordinator').all()
+    coordinators = User.query.filter(
+        User.id.in_([m.user_id for m in coord_memberships]),
+        User.is_active == True
+    ).all() if coord_memberships else []
+
+    for coord in coordinators:
+        push_notification(
+            coord.id,
+            f'New internship posted: {pos.title}' + (f' at {pos.company.name}' if pos.company else ''),
+            url_for('jobs.detail', job_id=pos.id),
+            icon='bi-mortarboard-fill'
+        )
+        try:
+            from flask import render_template as _rt
+            html = _rt('emails/new_internship_alert.html',
+                recipient=coord, position=pos,
+                company=pos.company, is_coordinator=True, site_url=site_url)
+            send_email(
+                coord.email,
+                f'New internship: {pos.title}' + (f' at {pos.company.name}' if pos.company else ''),
+                html
+            )
+        except Exception as e:
+            current_app.logger.warning(f'Internship coordinator alert email failed for {coord.email}: {e}')
+        notified_ids.add(coord.id)
+
+    # 2. Students who follow the company
+    if pos.company_id:
+        student_follows = (
+            CompanyFollow.query
+            .join(User, User.id == CompanyFollow.user_id)
+            .filter(
+                CompanyFollow.company_id == pos.company_id,
+                User.role == ROLE_STUDENT,
+                User.is_active == True
+            ).all()
+        )
+        for follow in student_follows:
+            student = follow.user
+            if student.id in notified_ids:
+                continue
+            push_notification(
+                student.id,
+                f'New internship at {pos.company.name}: {pos.title}',
+                url_for('jobs.detail', job_id=pos.id),
+                icon='bi-mortarboard-fill'
+            )
+            try:
+                from flask import render_template as _rt
+                html = _rt('emails/new_internship_alert.html',
+                    recipient=student, position=pos,
+                    company=pos.company, is_coordinator=False, site_url=site_url)
+                send_email(
+                    student.email,
+                    f'New internship at {pos.company.name}: {pos.title}',
+                    html
+                )
+            except Exception as e:
+                current_app.logger.warning(f'Internship student alert email failed for {student.email}: {e}')
+            notified_ids.add(student.id)
+
+    if notified_ids:
         db.session.commit()

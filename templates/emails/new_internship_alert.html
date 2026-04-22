@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>New Internship Posted — MOF Engineering</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+body { margin: 0; padding: 0; background: #f0f2f5; font-family: 'Inter', 'Segoe UI', Arial, sans-serif; font-size: 14px; color: #0f1923; }
+.wrap { max-width: 580px; margin: 32px auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+.header { background: linear-gradient(135deg, #1a2332 0%, #198754 100%); padding: 28px 32px; }
+.logo-text { color: #fff; font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+.logo-sub { color: rgba(255,255,255,0.45); font-size: 11px; margin-top: 2px; }
+.body { padding: 28px 32px; }
+.hero-banner { background: linear-gradient(135deg, #e8f5ee 0%, #d1ead9 100%); border-radius: 10px; padding: 18px 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 14px; }
+.hero-icon { width: 44px; height: 44px; border-radius: 10px; background: #198754; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 20px; flex-shrink: 0; }
+.hero-label { font-size: 11px; font-weight: 700; color: #198754; text-transform: uppercase; letter-spacing: 0.5px; }
+.hero-title { font-size: 15px; font-weight: 700; color: #0f1923; margin-top: 2px; }
+.company-row { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+.company-logo { width: 52px; height: 52px; border-radius: 10px; background: #e8f5ee; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 20px; color: #198754; flex-shrink: 0; overflow: hidden; }
+.company-logo img { width: 100%; height: 100%; object-fit: contain; }
+.company-name { font-size: 16px; font-weight: 700; }
+.company-sub { font-size: 12px; color: #6b7a8d; margin-top: 2px; }
+.intern-card { background: #f8fbf9; border: 1.5px solid #d1ead9; border-radius: 10px; padding: 18px 20px; margin: 16px 0; }
+.intern-title { font-size: 17px; font-weight: 700; color: #0f1923; margin-bottom: 6px; }
+.intern-meta { font-size: 12px; color: #6b7a8d; margin-bottom: 14px; }
+.intern-meta span { margin-right: 12px; }
+.intern-badge { display: inline-block; background: #e8f5ee; color: #198754; border: 1px solid #d1ead9; border-radius: 20px; padding: 3px 12px; font-size: 11px; font-weight: 700; }
+.btn-cta { display: inline-block; background: #198754; color: #fff !important; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 14px; margin-top: 10px; }
+p { color: #4a5a6a; line-height: 1.7; margin: 0 0 14px; }
+.divider { height: 1px; background: #e8ecf0; margin: 20px 0; }
+.footer { background: #f8fafb; padding: 16px 32px; font-size: 11px; color: #9aabb8; border-top: 1px solid #e4e8ed; }
+.footer a { color: #9aabb8; text-decoration: underline; }
+
+@media (max-width: 600px) {
+  .wrap { width: 100% !important; margin: 0 !important; border-radius: 0 !important; box-shadow: none !important; }
+  .header, .body, .footer { padding: 20px 20px !important; }
+  .hero-banner { flex-direction: column; align-items: flex-start; gap: 10px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div class="logo-text">MOF Engineering — Careers</div>
+    <div class="logo-sub">Managing Of Future Engineering</div>
+  </div>
+  <div class="body">
+    <p>Hi {{ recipient.full_name.split()[0] }},</p>
+
+    <div class="hero-banner">
+      <div class="hero-icon">🎓</div>
+      <div>
+        <div class="hero-label">New Internship Opportunity</div>
+        <div class="hero-title">{{ position.title }}</div>
+      </div>
+    </div>
+
+    {% if position.company %}
+    <div class="company-row">
+      <div class="company-logo">
+        {% if position.company.logo_filename %}
+          <img src="{{ site_url }}/static/uploads/company/{{ position.company.logo_filename }}" alt="{{ position.company.name }}">
+        {% else %}
+          {{ position.company.name[0] | upper }}
+        {% endif %}
+      </div>
+      <div>
+        <div class="company-name">{{ position.company.name }}</div>
+        <div class="company-sub">{{ position.company.industry or '' }}{% if position.company.industry and position.company.location %} · {% endif %}{{ position.company.location or '' }}</div>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="intern-card">
+      <div class="intern-title">{{ position.title }}</div>
+      <div class="intern-meta">
+        {% if position.location %}<span>📍 {{ position.location }}</span>{% endif %}
+        <span>🎓 Internship</span>
+        {% if position.is_remote %}<span>💻 Remote</span>{% endif %}
+        {% if position.closes_at %}<span>⏰ Closes {{ position.closes_at.strftime('%b %d, %Y') }}</span>{% endif %}
+      </div>
+      <span class="intern-badge">Internship</span>
+      {% if position.description %}
+        <p style="font-size:13px;color:#4a5a6a;margin:12px 0 0">{{ position.description[:220] }}{% if position.description|length > 220 %}…{% endif %}</p>
+      {% endif %}
+      <br>
+      <a href="{{ site_url }}{{ url_for('jobs.detail', job_id=position.id) }}" class="btn-cta">View Internship →</a>
+    </div>
+
+    {% if is_coordinator %}
+    <div class="divider"></div>
+    <p style="font-size:13px;color:#4a5a6a">As a university coordinator, you can review this internship and help your students apply through the university portal.</p>
+    <a href="{{ site_url }}{{ url_for('university.dashboard') }}" class="btn-cta" style="background:#0f1923">Go to University Portal →</a>
+    {% endif %}
+  </div>
+  <div class="footer">
+    <div style="margin-bottom:6px">
+      <strong style="color:#4a5a6a">MOF Engineering — Careers</strong>
+    </div>
+    <div>You received this email because you {% if is_coordinator %}are a registered university coordinator{% else %}follow {{ position.company.name if position.company else 'this company' }}{% endif %}.
+    To stop receiving these emails, update your notification preferences in your <a href="{{ site_url }}/profile">profile settings</a>.</div>
+  </div>
+</div>
+</body>
+</html>

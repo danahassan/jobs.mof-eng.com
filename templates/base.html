@@ -544,6 +544,8 @@ html.dark select.form-control option{background:#1e293b}
         <a href="{{ url_for('university.dashboard') }}" class="nav-item {% if request.endpoint == 'university.dashboard' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
         <a href="{{ url_for('university.students') }}" class="nav-item {% if request.endpoint == 'university.students' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-people-fill"></i> Students</a>
         <a href="{{ url_for('university.applications') }}" class="nav-item {% if request.blueprint == 'university' and 'application' in request.endpoint %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-collection-fill"></i> Internship Apps</a>
+        <div class="nav-section">Discover</div>
+        <a href="{{ url_for('companies.listing') }}" class="nav-item {% if request.blueprint == 'companies' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-building"></i> Companies</a>
         <div class="nav-section">Other</div>
         <a href="{{ url_for('messages.inbox') }}" class="nav-item {% if request.blueprint == 'messages' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-chat-dots-fill"></i> Messages{% if unread_count %}<span class="nav-badge">{{ unread_count }}</span>{% endif %}</a>
 
@@ -551,6 +553,8 @@ html.dark select.form-control option{background:#1e293b}
         <div class="nav-section">Student Portal</div>
         <a href="{{ url_for('student.dashboard') }}" class="nav-item {% if request.blueprint == 'student' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
         <a href="{{ url_for('user.browse') }}" class="nav-item {% if request.endpoint == 'user.browse' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-search"></i> Browse Internships</a>
+        <div class="nav-section">Discover</div>
+        <a href="{{ url_for('companies.listing') }}" class="nav-item {% if request.blueprint == 'companies' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-building"></i> Companies</a>
         <div class="nav-section">Other</div>
         <a href="{{ url_for('messages.inbox') }}" class="nav-item {% if request.blueprint == 'messages' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-chat-dots-fill"></i> Messages{% if unread_count %}<span class="nav-badge">{{ unread_count }}</span>{% endif %}</a>
 

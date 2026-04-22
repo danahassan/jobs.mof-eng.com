@@ -1291,8 +1291,14 @@ def company_manager_remove(company_id, user_id):
 # ─── COMPANY JOB ALERTS ───────────────────────────────────────────────────────
 
 def _send_company_job_alerts(position):
-    """Email & notify all followers of a company when a new job is posted."""
+    """Email & notify about a new position.
+    - Internships: university coordinators + student followers.
+    - Regular jobs: all company followers.
+    """
     if not position.company_id:
+        return
+    if position.type == 'Internship':
+        _send_internship_alerts(position)
         return
     followers = CompanyFollow.query.filter_by(company_id=position.company_id).all()
     for follow in followers:
@@ -1317,6 +1323,73 @@ def _send_company_job_alerts(position):
             'bi-briefcase-fill',
         )
     if followers:
+        db.session.commit()
+
+
+def _send_internship_alerts(position):
+    """Notify all university coordinators + students following the company about a new internship."""
+    site_url = current_app.config.get('SITE_URL', '')
+    notified_ids = set()
+
+    coord_memberships = UniversityMember.query.filter_by(role='coordinator').all()
+    coordinators = User.query.filter(
+        User.id.in_([m.user_id for m in coord_memberships]),
+        User.is_active == True
+    ).all() if coord_memberships else []
+
+    for coord in coordinators:
+        push_notification(
+            coord.id,
+            f'New internship posted: {position.title} at {position.company.name}',
+            url_for('jobs.detail', position_id=position.id),
+            'bi-mortarboard-fill',
+        )
+        try:
+            html = render_template('emails/new_internship_alert.html',
+                recipient=coord, position=position,
+                company=position.company, is_coordinator=True, site_url=site_url)
+            send_email(
+                coord.email,
+                f'New internship: {position.title} at {position.company.name}',
+                html,
+            )
+        except Exception as e:
+            current_app.logger.warning(f'Internship coordinator alert failed for {coord.email}: {e}')
+        notified_ids.add(coord.id)
+
+    student_follows = (
+        CompanyFollow.query
+        .join(User, User.id == CompanyFollow.user_id)
+        .filter(
+            CompanyFollow.company_id == position.company_id,
+            User.role == ROLE_STUDENT,
+            User.is_active == True
+        ).all()
+    )
+    for follow in student_follows:
+        student = follow.user
+        if student.id in notified_ids:
+            continue
+        push_notification(
+            student.id,
+            f'New internship at {position.company.name}: {position.title}',
+            url_for('jobs.detail', position_id=position.id),
+            'bi-mortarboard-fill',
+        )
+        try:
+            html = render_template('emails/new_internship_alert.html',
+                recipient=student, position=position,
+                company=position.company, is_coordinator=False, site_url=site_url)
+            send_email(
+                student.email,
+                f'New internship at {position.company.name}: {position.title}',
+                html,
+            )
+        except Exception as e:
+            current_app.logger.warning(f'Internship student alert failed for {student.email}: {e}')
+        notified_ids.add(student.id)
+
+    if notified_ids:
         db.session.commit()
 
 

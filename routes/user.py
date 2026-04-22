@@ -106,6 +106,10 @@ def browse():
 @user_bp.route('/positions/<int:pos_id>')
 def position_detail(pos_id):
     pos = db.get_or_404(Position, pos_id)
+    # Internships are only visible to students, coordinators, and staff
+    if pos.type == 'Internship':
+        if not current_user.is_authenticated or current_user.role not in (ROLE_STUDENT, 'admin', 'supervisor', 'employer', 'university_coord'):
+            abort(404)
     already_applied = False
     if current_user.is_authenticated:
         already_applied = Application.query.filter_by(
@@ -122,6 +126,11 @@ def apply(pos_id):
         return redirect(url_for('user.browse'))
 
     pos = db.get_or_404(Position, pos_id)
+
+    # Only students may apply for internships
+    if pos.type == 'Internship' and current_user.role != ROLE_STUDENT:
+        flash('Only students may apply for internship positions.', 'warning')
+        return redirect(url_for('user.browse'))
 
     if not pos.is_active:
         flash('This position is no longer accepting applications.', 'warning')
