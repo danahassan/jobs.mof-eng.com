@@ -127,7 +127,7 @@
           </td>
           <td data-label="Email">{{ u.email }}</td>
           <td data-label="Phone" class="text-muted">{{ u.phone or '—' }}</td>
-          <td data-label="Role"><span class="badge badge-{{ u.role }}">{{ u.role|capitalize }}</span></td>
+          <td data-label="Role"><span class="badge badge-{{ u.role }}">{{ u.role|replace('_',' ')|title }}</span></td>
           <td data-label="Status">
             {% if u.is_active %}<span class="badge badge-active">Active</span>
             {% else %}<span class="badge badge-inactive">Inactive</span>{% endif %}
