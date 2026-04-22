@@ -22,6 +22,7 @@ LANG_LEVELS       = ['Native', 'Fluent', 'Advanced', 'Intermediate', 'Basic']
 
 # ─── APPLICATION STATUSES ─────────────────────────────────────────────────────
 STATUS_NEW         = 'New'
+STATUS_UNIV_PENDING= 'Pending University Approval'
 STATUS_REVIEW      = 'Under Review'
 STATUS_INTERVIEW   = 'Interview'
 STATUS_OFFER       = 'Offer'
@@ -29,7 +30,7 @@ STATUS_HIRED       = 'Hired'
 STATUS_REJECTED    = 'Rejected'
 STATUS_FUTURE      = 'Future Consideration'
 
-ALL_STATUSES = [STATUS_NEW, STATUS_REVIEW, STATUS_INTERVIEW,
+ALL_STATUSES = [STATUS_UNIV_PENDING, STATUS_NEW, STATUS_REVIEW, STATUS_INTERVIEW,
                 STATUS_OFFER, STATUS_HIRED, STATUS_REJECTED, STATUS_FUTURE]
 
 # ─── SOURCES ──────────────────────────────────────────────────────────────────

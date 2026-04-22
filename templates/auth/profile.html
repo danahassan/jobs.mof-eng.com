@@ -239,6 +239,7 @@
         <div class="ap-row"><span class="ap-row-label">University</span><span class="ap-row-value">{{ student_university.name if student_university else (current_user.university_name or 'Not linked') }}</span></div>
         <div class="ap-row"><span class="ap-row-label">Major</span><span class="ap-row-value">{{ current_user.university_major or 'Not set' }}</span></div>
         <div class="ap-row"><span class="ap-row-label">Classmates</span><span class="ap-row-value">{{ classmates_count }}</span></div>
+        <div class="ap-row"><span class="ap-row-label">Coordinators</span><span class="ap-row-value">{{ student_coordinators|length }}</span></div>
         {% if student_classmates %}
           <div style="margin-top:10px">
             <div class="ap-row-label" style="margin-bottom:8px">Classmates at your university</div>
@@ -250,6 +251,16 @@
           </div>
         {% elif student_university %}
           <div class="ap-empty" style="margin-top:10px">No classmates found yet.</div>
+        {% endif %}
+        {% if student_coordinators %}
+          <div style="margin-top:10px">
+            <div class="ap-row-label" style="margin-bottom:8px">Your university coordinators</div>
+            <div class="ap-mini-list">
+              {% for co in student_coordinators %}
+                <a href="{{ url_for('messages.compose', to=co.id) }}" class="ap-mini-chip" style="text-decoration:none">{{ co.full_name }}</a>
+              {% endfor %}
+            </div>
+          </div>
         {% endif %}
       </div>
       {% endif %}

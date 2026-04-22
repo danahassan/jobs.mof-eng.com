@@ -6,7 +6,7 @@ from flask import (Blueprint, render_template, redirect, url_for,
 from flask_login import login_user, logout_user, login_required, current_user
 from models import (db, User, UserSkill, UserExperience, UserEducation,
                     UserLanguage, UserCertification, UserPortfolioItem,
-                    Position, ROLE_USER, ROLE_EMPLOYER, ROLE_STUDENT,
+                    Position, UniversityMember, ROLE_USER, ROLE_EMPLOYER, ROLE_STUDENT,
                     LANG_LEVELS)
 from sqlalchemy import or_
 from helpers import (log_audit, send_email, generate_reset_token,
@@ -182,6 +182,7 @@ def profile():
     portfolio   = u.portfolio_items.order_by(UserPortfolioItem.created_at).all()
     student_university = None
     student_classmates = []
+    student_coordinators = []
     classmates_count = 0
     if u.role == ROLE_STUDENT and u.university_id:
         student_university = u.university
@@ -190,12 +191,17 @@ def profile():
                         .filter(User.id != u.id))
         classmates_count = classmates_q.count()
         student_classmates = classmates_q.order_by(User.full_name.asc()).limit(8).all()
+        coord_ids = [m.user_id for m in UniversityMember.query.filter_by(
+            university_id=u.university_id, role='coordinator').all()]
+        student_coordinators = User.query.filter(
+            User.id.in_(coord_ids), User.is_active == True).order_by(User.full_name.asc()).all() if coord_ids else []
     return render_template('auth/profile.html', tab=tab, mode=mode,
                            skills_list=skills_list, exps=exps, edus=edus,
                            langs=langs, certs=certs, portfolio=portfolio,
                            lang_levels=LANG_LEVELS,
                            student_university=student_university,
                            student_classmates=student_classmates,
+                           student_coordinators=student_coordinators,
                            classmates_count=classmates_count)
 
 

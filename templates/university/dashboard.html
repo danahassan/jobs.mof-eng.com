@@ -93,7 +93,7 @@
   <!-- Status breakdown -->
   <div class="status-card">
     <div class="status-card-title"><i class="bi bi-bar-chart-fill"></i> By Status</div>
-    {% set sc = {'New':'#16a34a','Under Review':'#2563eb','Interview':'#7c3aed','Offer':'#d97706','Hired':'#198754','Rejected':'#dc2626','Future Consideration':'#64748b'} %}
+    {% set sc = {'Pending University Approval':'#ea580c','New':'#16a34a','Under Review':'#2563eb','Interview':'#7c3aed','Offer':'#d97706','Hired':'#198754','Rejected':'#dc2626','Future Consideration':'#64748b'} %}
     {% set max_cnt = [internship_apps, 1] | max %}
     {% for s in ALL_STATUSES %}
     {% set cnt = status_counts.get(s, 0) %}

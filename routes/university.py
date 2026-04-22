@@ -5,10 +5,11 @@ from flask import (Blueprint, render_template, redirect, url_for,
 from flask_login import current_user
 from sqlalchemy import or_, false as sql_false
 from models import (db, User, Application, Position, University, UniversityMember,
+                    ApplicationHistory, CompanyMember,
                     ROLE_STUDENT, ROLE_UNIVERSITY_COORD, ROLE_ADMIN,
-                    ALL_STATUSES, STATUS_NEW, STATUS_REVIEW, STATUS_INTERVIEW,
+                    ALL_STATUSES, STATUS_UNIV_PENDING, STATUS_NEW, STATUS_REVIEW, STATUS_INTERVIEW,
                     STATUS_OFFER, STATUS_HIRED, STATUS_REJECTED, SOURCES)
-from helpers import university_coordinator_required, log_audit, send_email
+from helpers import university_coordinator_required, log_audit, send_email, push_notification
 
 university_bp = Blueprint('university', __name__)
 
@@ -38,7 +39,7 @@ def dashboard():
     internship_q    = _internship_apps(student_ids)
     internship_apps = internship_q.count()
     active_apps     = internship_q.filter(
-        Application.status.in_([STATUS_NEW, STATUS_REVIEW, STATUS_INTERVIEW, STATUS_OFFER])
+        Application.status.in_([STATUS_UNIV_PENDING, STATUS_NEW, STATUS_REVIEW, STATUS_INTERVIEW, STATUS_OFFER])
     ).count()
     hired_count = internship_q.filter_by(status=STATUS_HIRED).count()
     recent_apps = (internship_q
@@ -119,7 +120,7 @@ def applications():
     base_q = _internship_apps(student_ids)
     kpi_total     = base_q.count()
     kpi_active    = base_q.filter(Application.status.in_(
-        [STATUS_NEW, STATUS_REVIEW, STATUS_INTERVIEW, STATUS_OFFER])).count()
+        [STATUS_UNIV_PENDING, STATUS_NEW, STATUS_REVIEW, STATUS_INTERVIEW, STATUS_OFFER])).count()
     kpi_hired     = base_q.filter_by(status=STATUS_HIRED).count()
     kpi_rejected  = base_q.filter_by(status=STATUS_REJECTED).count()
 
@@ -142,6 +143,76 @@ def application_detail(app_id):
     if app.position.type != 'Internship':
         abort(403)
     return render_template('university/application_detail.html', app=app, univ=univ)
+
+
+@university_bp.route('/applications/<int:app_id>/approve', methods=['POST'])
+@university_coordinator_required
+def application_approve(app_id):
+    app = Application.query.get_or_404(app_id)
+    univ = _my_university()
+    if not univ:
+        abort(403)
+    if app.applicant.university_id != univ.id or app.position.type != 'Internship':
+        abort(403)
+    if app.status != STATUS_UNIV_PENDING:
+        flash('This application is not waiting for university approval.', 'warning')
+        return redirect(url_for('university.applications'))
+
+    app.status = STATUS_NEW
+    db.session.add(ApplicationHistory(
+        application_id=app.id,
+        old_status=STATUS_UNIV_PENDING,
+        new_status=STATUS_NEW,
+        changed_by_id=current_user.id,
+        note='Approved by university coordinator and forwarded to company team.',
+    ))
+    log_audit('university.app_approve', f'{app.applicant.full_name} -> {app.position.title}', user_id=current_user.id)
+    db.session.commit()
+
+    site_url = current_app.config['SITE_URL']
+
+    # Notify applicant
+    try:
+        html = render_template('emails/application_received.html',
+                               app=app, user=app.applicant, pos=app.position)
+        send_email(app.applicant.email, f'Application forwarded to company review - {app.position.title}', html)
+    except Exception as e:
+        current_app.logger.warning(f'Applicant approval email failed: {e}')
+
+    # Notify company staff (same flow as direct application)
+    if app.position.company_id:
+        manager_ids = [m.user_id for m in CompanyMember.query.filter_by(
+            company_id=app.position.company_id, role='manager').all()]
+        supervisors = User.query.filter(
+            User.id.in_(manager_ids), User.is_active == True).all() if manager_ids else []
+    else:
+        supervisors = []
+
+    for staff in supervisors:
+        try:
+            push_notification(
+                staff.id,
+                f'New approved internship application: {app.applicant.full_name} -> {app.position.title}',
+                url_for('supervisor.application_detail', app_id=app.id),
+            )
+        except Exception:
+            pass
+
+    for staff in supervisors:
+        review_url = site_url + url_for('supervisor.application_detail', app_id=app.id)
+        try:
+            html = render_template('emails/application_notify_staff.html',
+                                   app=app, pos=app.position,
+                                   recipient_name=staff.full_name.split()[0],
+                                   review_url=review_url)
+            send_email(staff.email,
+                       f'Approved Internship Application: {app.applicant.full_name} -> {app.position.title}',
+                       html)
+        except Exception as e:
+            current_app.logger.warning(f'Staff notification email to {staff.email} failed: {e}')
+
+    flash('Application approved and forwarded to company review.', 'success')
+    return redirect(url_for('university.applications'))
 
 
 # ─── Student management ──────────────────────────────────────────────────────

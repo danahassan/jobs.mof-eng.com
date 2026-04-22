@@ -33,12 +33,16 @@
 .st-step-dot.done{background:var(--green);border-color:var(--green);color:#fff}
 .st-step-dot.active{background:#2563eb;border-color:#2563eb;color:#fff}
 .st-step-label{font-size:10px;color:var(--text3);margin-top:5px;text-align:center;white-space:nowrap}
+.st-mobile-status{display:none;margin-top:10px;font-size:12px;color:var(--text2)}
 
 @media(max-width:640px){
   .st-hero{padding:18px}
   .st-hero-name{font-size:18px}
   .st-hero-actions{width:100%}
   .status-timeline{display:none}
+  .st-mobile-status{display:block}
+  .app-card{flex-direction:column}
+  .app-card-status{width:100%;align-items:flex-start}
 }
 </style>
 
@@ -98,9 +102,9 @@
 
 {% if my_apps %}
 
-{% set status_order = {'New':1,'Under Review':2,'Interview':3,'Offer':4,'Hired':5,'Rejected':6,'Future Consideration':7} %}
-{% set status_icon  = {'New':'bi-inbox','Under Review':'bi-eye','Interview':'bi-camera-video','Offer':'bi-envelope-open','Hired':'bi-patch-check-fill','Rejected':'bi-x-circle','Future Consideration':'bi-bookmark'} %}
-{% set status_color = {'New':'#7c3aed','Under Review':'#2563eb','Interview':'#d97706','Offer':'#16a34a','Hired':'#198754','Rejected':'#dc2626','Future Consideration':'#64748b'} %}
+{% set status_order = {'Pending University Approval':1,'New':2,'Under Review':3,'Interview':4,'Offer':5,'Hired':6,'Rejected':7,'Future Consideration':8} %}
+{% set status_icon  = {'Pending University Approval':'bi-building-check','New':'bi-inbox','Under Review':'bi-eye','Interview':'bi-camera-video','Offer':'bi-envelope-open','Hired':'bi-patch-check-fill','Rejected':'bi-x-circle','Future Consideration':'bi-bookmark'} %}
+{% set status_color = {'Pending University Approval':'#ea580c','New':'#7c3aed','Under Review':'#2563eb','Interview':'#d97706','Offer':'#16a34a','Hired':'#198754','Rejected':'#dc2626','Future Consideration':'#64748b'} %}
 
 {% for app in my_apps %}
 <div class="app-card">
@@ -129,7 +133,7 @@
 
     <!-- Progress timeline (desktop) -->
     <div class="status-timeline">
-      {% set steps = [('New','bi-inbox'),('Under Review','bi-eye'),('Interview','bi-camera-video'),('Offer','bi-envelope-open'),('Hired','bi-patch-check-fill')] %}
+      {% set steps = [('Pending University Approval','bi-building-check'),('New','bi-inbox'),('Under Review','bi-eye'),('Interview','bi-camera-video'),('Offer','bi-envelope-open'),('Hired','bi-patch-check-fill')] %}
       {% set cur_order = status_order.get(app.status, 0) %}
       {% for s_name, s_icon in steps %}
         {% set s_order = status_order.get(s_name, 0) %}
@@ -141,6 +145,7 @@
         </div>
       {% endfor %}
     </div>
+    <div class="st-mobile-status"><i class="bi bi-info-circle"></i> Current status: <strong>{{ app.status }}</strong></div>
   </div>
 
   <!-- Status badge -->

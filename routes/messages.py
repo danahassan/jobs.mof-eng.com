@@ -4,7 +4,8 @@ from datetime import datetime, timedelta
 from flask import (Blueprint, render_template, redirect, url_for,
                    flash, request, abort, Response)
 from flask_login import login_required, current_user
-from models import db, User, Message, Application, Position, CompanyMember, ROLE_ADMIN, ROLE_SUPERVISOR, ROLE_USER
+from models import (db, User, Message, Application, Position, CompanyMember, UniversityMember,
+                    ROLE_ADMIN, ROLE_SUPERVISOR, ROLE_USER, ROLE_STUDENT, ROLE_UNIVERSITY_COORD)
 from helpers import push_notification, log_audit
 from sqlalchemy import or_, and_
 
@@ -17,11 +18,21 @@ def _supervisor_company_ids(supervisor_id):
             CompanyMember.query.filter_by(user_id=supervisor_id).all()}
 
 
+def _user_university_ids(user):
+    ids = set()
+    if user.university_id:
+        ids.add(user.university_id)
+    ids.update(m.university_id for m in UniversityMember.query.filter_by(user_id=user.id).all())
+    return ids
+
+
 def _can_message(sender, receiver):
     """Messaging permission rules:
     - Admin  → anyone
     - Supervisor → admin, other supervisors, or applicants who applied to their company
     - User → supervisor only if user applied to a job at that supervisor's company
+    - Student ↔ student/university coordinator within the same university
+    - University coordinator ↔ student/university coordinator within the same university
     - Users may NOT message admins directly
     """
     if sender.id == receiver.id:
@@ -56,6 +67,10 @@ def _can_message(sender, receiver):
             Application.applicant_id == sender.id,
             Position.company_id.in_(company_ids),
         ).first() is not None
+
+    # Student/university coordinator messaging within same university
+    if sender.role in (ROLE_STUDENT, ROLE_UNIVERSITY_COORD) and receiver.role in (ROLE_STUDENT, ROLE_UNIVERSITY_COORD):
+        return bool(_user_university_ids(sender) & _user_university_ids(receiver))
 
     return False
 

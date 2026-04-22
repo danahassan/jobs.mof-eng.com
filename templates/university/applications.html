@@ -12,6 +12,9 @@
   .ua-card-name{font-size:15px;font-weight:700;color:var(--text)}
   .ua-card-pos{font-size:12px;color:var(--text2);margin-top:2px}
   .ua-card-meta{display:flex;flex-wrap:wrap;gap:8px;font-size:12px;color:var(--text3);margin-top:8px}
+  form[method="GET"]{flex-direction:column}
+  form[method="GET"] .form-control{width:100%!important}
+  form[method="GET"] .btn{width:100%;justify-content:center}
 }
 @media(min-width:769px){.ua-cards{display:none}}
 </style>
@@ -72,7 +75,7 @@
   <div class="table-responsive">
     <table class="tbl">
       <thead>
-        <tr><th>#</th><th>Student</th><th>Position</th><th>Company</th><th>Duration</th><th>Applied</th><th>Status</th></tr>
+        <tr><th>#</th><th>Student</th><th>Position</th><th>Company</th><th>Duration</th><th>Applied</th><th>Status</th><th>Action</th></tr>
       </thead>
       <tbody>
         {% for app in apps.items %}
@@ -91,9 +94,18 @@
             {{ (app.applied_at | localdt).strftime('%b %d, %Y') }}
           </td>
           <td data-label="Status"><span class="badge badge-{{ app.status.lower().replace(' ','') }}">{{ app.status }}</span></td>
+          <td data-label="Action">
+            {% if app.status == 'Pending University Approval' %}
+            <form method="POST" action="{{ url_for('university.application_approve', app_id=app.id) }}">
+              <button type="submit" class="btn btn-primary btn-xs"><i class="bi bi-check2-circle"></i> Approve</button>
+            </form>
+            {% else %}
+            <span style="font-size:11px;color:var(--text3)">Forwarded</span>
+            {% endif %}
+          </td>
         </tr>
         {% else %}
-        <tr><td colspan="7"><div class="empty-state"><i class="bi bi-inbox"></i> No applications found.</div></td></tr>
+        <tr><td colspan="8"><div class="empty-state"><i class="bi bi-inbox"></i> No applications found.</div></td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -118,6 +130,11 @@
       <span><i class="bi bi-calendar3"></i> {{ (app.applied_at | localdt).strftime('%b %d, %Y') }}</span>
       {% if app.academic_credit_required %}<span><i class="bi bi-award"></i> Credit required</span>{% endif %}
     </div>
+    {% if app.status == 'Pending University Approval' %}
+    <form method="POST" action="{{ url_for('university.application_approve', app_id=app.id) }}" style="margin-top:10px">
+      <button type="submit" class="btn btn-primary btn-sm" style="width:100%"><i class="bi bi-check2-circle"></i> Approve & Forward</button>
+    </form>
+    {% endif %}
   </div>
   {% else %}
   <div class="empty-state"><i class="bi bi-inbox"></i> No applications found.</div>

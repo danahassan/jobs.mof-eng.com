@@ -5,10 +5,11 @@ from flask import (Blueprint, render_template, redirect, url_for,
 from flask_login import login_required, current_user
 from sqlalchemy import or_, and_, func
 from models import (db, Position, Application, ApplicationHistory, Interview,
-                    SavedJob, CompanyFollow, Message, User, CompanyMember, ROLE_ADMIN,
+                    SavedJob, CompanyFollow, Message, User, CompanyMember, UniversityMember, ROLE_ADMIN,
                     ROLE_STUDENT,
                     SOURCES, SALARY_RANGES, STATUS_NEW, STATUS_REVIEW, STATUS_INTERVIEW,
-                    STATUS_OFFER, STATUS_HIRED, ALL_STATUSES)
+                    STATUS_OFFER, STATUS_HIRED, STATUS_REJECTED,
+                    STATUS_UNIV_PENDING, ALL_STATUSES)
 from helpers import save_cv, allowed_file, send_email, push_notification, log_audit
 from datetime import datetime
 
@@ -136,6 +137,13 @@ def apply(pos_id):
         flash('You have already applied for this position.', 'info')
         return redirect(url_for('user.my_applications'))
 
+    requires_university_review = (
+        current_user.role == ROLE_STUDENT and pos.type == 'Internship'
+    )
+    if requires_university_review and not current_user.university_id:
+        flash('Your student profile must be linked to a university coordinator before submitting internship applications.', 'warning')
+        return redirect(url_for('auth.profile'))
+
     if request.method == 'POST':
         cover_letter    = request.form.get('cover_letter', '').strip()
         source          = request.form.get('source', 'Website')
@@ -170,7 +178,7 @@ def apply(pos_id):
             expected_salary          = expected_salary or None,
             cv_filename              = cv_stored,
             cv_original              = cv_original,
-            status                   = STATUS_NEW,
+            status                   = STATUS_UNIV_PENDING if requires_university_review else STATUS_NEW,
             internship_duration      = internship_duration,
             internship_start_date    = internship_start_date,
             academic_credit_required = academic_credit_required,
@@ -180,6 +188,60 @@ def apply(pos_id):
                   user_id=current_user.id)
         db.session.commit()
 
+        # CV file path for attachment
+        cv_path = None
+        if application.cv_filename:
+            cv_path = os.path.join(current_app.config['UPLOAD_FOLDER'], application.cv_filename)
+
+        site_url = current_app.config['SITE_URL']
+
+        if requires_university_review:
+            # Notify university coordinators first; company/staff review starts only after approval.
+            coord_ids = [m.user_id for m in UniversityMember.query.filter_by(
+                university_id=current_user.university_id, role='coordinator').all()]
+            coordinators = User.query.filter(
+                User.id.in_(coord_ids), User.is_active == True).all() if coord_ids else []
+
+            for coord in coordinators:
+                try:
+                    push_notification(
+                        coord.id,
+                        f'New internship request from {current_user.full_name}: {pos.title}',
+                        url_for('university.application_detail', app_id=application.id),
+                    )
+                except Exception:
+                    pass
+
+            for coord in coordinators:
+                try:
+                    html = render_template(
+                        'emails/application_notify_staff.html',
+                        app=application,
+                        pos=pos,
+                        recipient_name=coord.full_name.split()[0],
+                        review_url=site_url + url_for('university.application_detail', app_id=application.id),
+                    )
+                    send_email(
+                        coord.email,
+                        f'Internship Approval Needed: {current_user.full_name} → {pos.title}',
+                        html,
+                        attachment_path=cv_path,
+                        attachment_name=application.cv_original,
+                    )
+                except Exception as e:
+                    current_app.logger.warning(f'Coordinator notification email to {coord.email} failed: {e}')
+
+            try:
+                html = render_template('emails/application_pending_university.html',
+                                       app=application, user=current_user, pos=pos)
+                send_email(current_user.email,
+                           f'Internship request submitted for university approval — {pos.title}', html)
+            except Exception as e:
+                current_app.logger.warning(f'Pending approval email failed: {e}')
+
+            flash(f'Your internship request for "{pos.title}" is pending university coordinator approval.', 'success')
+            return redirect(url_for('user.my_applications'))
+
         # In-app notification for admin(s)
         from models import User, ROLE_ADMIN, ROLE_SUPERVISOR
         admins = User.query.filter_by(role=ROLE_ADMIN, is_active=True).all()
@@ -188,11 +250,6 @@ def apply(pos_id):
                 f'New application from {current_user.full_name} for {pos.title}',
                 url_for('admin.application_detail', app_id=application.id))
         db.session.commit()
-
-        # CV file path for attachment
-        cv_path = None
-        if application.cv_filename:
-            cv_path = os.path.join(current_app.config['UPLOAD_FOLDER'], application.cv_filename)
 
         # 1. Confirmation email to applicant
         try:
@@ -204,7 +261,6 @@ def apply(pos_id):
             current_app.logger.warning(f'Applicant confirmation email failed: {e}')
 
         # 2. Notification email to supervisors managing this company only
-        site_url = current_app.config['SITE_URL']
         review_url = site_url + url_for('admin.application_detail', app_id=application.id)
         if pos.company_id:
             manager_ids = [m.user_id for m in CompanyMember.query.filter_by(
@@ -294,7 +350,7 @@ def my_applications():
     total_all = all_q.count()
     status_counts = {s: all_q.filter_by(status=s).count() for s in ALL_STATUSES}
     active_count = sum(status_counts.get(s, 0)
-                       for s in [STATUS_REVIEW, STATUS_INTERVIEW, STATUS_OFFER])
+                       for s in [STATUS_UNIV_PENDING, STATUS_NEW, STATUS_REVIEW, STATUS_INTERVIEW, STATUS_OFFER])
     interview_count = status_counts.get(STATUS_INTERVIEW, 0)
     success_count   = status_counts.get(STATUS_OFFER, 0) + status_counts.get(STATUS_HIRED, 0)
 
