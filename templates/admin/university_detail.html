@@ -74,10 +74,9 @@ body.editing .ud-save-btn{display:flex}
   </div>
 </div>
 
-<form id="ud-edit-form" method="POST" action="{{ url_for('admin.university_edit', univ_id=univ.id) }}" enctype="multipart/form-data">
-
 <div class="ud-grid">
   <!-- LEFT: info + description -->
+  <form id="ud-edit-form" method="POST" action="{{ url_for('admin.university_edit', univ_id=univ.id) }}" enctype="multipart/form-data">
   <div class="ud-left">
     <div class="card" style="padding:20px 24px">
       <div class="card-title"><i class="bi bi-info-circle"></i> University Info</div>
@@ -158,6 +157,7 @@ body.editing .ud-save-btn{display:flex}
       <textarea name="description" class="form-control ud-inp" rows="5" style="margin-top:4px;resize:vertical">{{ univ.description or '' }}</textarea>
     </div>
   </div>
+  </form>
 
   <!-- RIGHT: coordinators + students + danger -->
   <div class="ud-right">
@@ -288,6 +288,4 @@ body.editing .ud-save-btn{display:flex}
     </div>
   </div>
 </div>
-
-</form>
 {% endblock %}
