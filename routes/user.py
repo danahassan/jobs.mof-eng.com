@@ -121,7 +121,7 @@ def position_detail(pos_id):
 @user_bp.route('/apply/<int:pos_id>', methods=['GET', 'POST'])
 @login_required
 def apply(pos_id):
-    if current_user.role in ('admin', 'supervisor'):
+    if current_user.role in ('admin', 'supervisor', 'university_coordinator'):
         flash('Staff accounts cannot submit job applications.', 'warning')
         return redirect(url_for('user.browse'))
 

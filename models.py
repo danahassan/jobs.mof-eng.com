@@ -175,6 +175,13 @@ class User(UserMixin, db.Model):
 
     @property
     def profile_strength(self):
+        # Staff/coordinator accounts are considered complete once basic info is present
+        if self.role in (ROLE_ADMIN, ROLE_SUPERVISOR, ROLE_UNIVERSITY_COORD):
+            score = 0
+            if self.full_name:       score += 50
+            if self.email:           score += 30
+            if self.avatar_filename: score += 20
+            return min(score, 100)
         score = 0
         if self.full_name:                       score += 10
         if self.headline:                         score += 5

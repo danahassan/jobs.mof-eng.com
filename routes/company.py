@@ -43,7 +43,7 @@ def listing():
 
     total = query.count()
 
-    is_student = current_user.is_authenticated and current_user.role == ROLE_STUDENT
+    is_student = current_user.is_authenticated and current_user.role in (ROLE_STUDENT, 'university_coordinator')
 
     # KPI metrics
     kpi_total     = Company.query.filter_by(is_active=True).count()
@@ -85,8 +85,8 @@ def profile(slug):
     if not current_user.is_authenticated or current_user.role == ROLE_USER:
         # Regular/unauthenticated users: hide internships
         jobs_q = jobs_q.filter(Position.type != 'Internship')
-    elif current_user.role == ROLE_STUDENT:
-        # Students: show only internships
+    elif current_user.role in (ROLE_STUDENT, 'university_coordinator'):
+        # Students and coordinators: show only internships
         jobs_q = jobs_q.filter(Position.type == 'Internship')
     jobs = jobs_q.order_by(Position.created_at.desc()).all()
     photos = company.photos.all()

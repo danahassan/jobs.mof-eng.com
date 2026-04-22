@@ -104,6 +104,7 @@
 
 {% block content %}
 {% set tips = [] %}
+{% if current_user.role not in ('admin', 'supervisor', 'university_coordinator') %}
 {% if not current_user.phone %}{% set _ = tips.append('Add your phone number') %}{% endif %}
 {% if not current_user.bio %}{% set _ = tips.append('Write a short professional bio') %}{% endif %}
 {% if not current_user.linkedin_url and not current_user.portfolio_url %}{% set _ = tips.append('Add a LinkedIn or portfolio link') %}{% endif %}
@@ -111,6 +112,7 @@
 {% if exps|length == 0 %}{% set _ = tips.append('Add work experience') %}{% endif %}
 {% if edus|length == 0 %}{% set _ = tips.append('Add education') %}{% endif %}
 {% if not current_user.avatar_filename %}{% set _ = tips.append('Upload a profile photo') %}{% endif %}
+{% endif %}
 
 <div class="ap-shell">
   <section class="ap-hero">
