@@ -5,7 +5,7 @@
 {% block extra_css %}
 <style>
 /* ── Admin university cards (mirrors ac-* from companies) ── */
-.au-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;margin-bottom:24px}
+.au-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:24px}
 .au-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;display:flex;flex-direction:column;transition:box-shadow .15s,transform .15s}
 .au-card:hover{box-shadow:0 4px 18px rgba(0,0,0,.08);transform:translateY(-2px)}
 .au-card-cover{height:90px;background:linear-gradient(135deg,#1a3a5c 0%,#0f5c3a 100%);flex-shrink:0}
@@ -24,6 +24,7 @@
 .view-toggle a{padding:6px 11px;color:var(--text3);text-decoration:none;font-size:14px;display:flex;align-items:center;transition:background .1s}
 .view-toggle a.active{background:var(--green);color:#fff}
 .view-toggle a:not(.active):hover{background:var(--border);color:var(--text)}
+@media(max-width:900px){.au-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:600px){.au-grid{grid-template-columns:1fr}}
 </style>
 {% endblock %}
