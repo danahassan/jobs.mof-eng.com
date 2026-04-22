@@ -3,22 +3,55 @@
 {% block page_title %}Students{% endblock %}
 
 {% block content %}
-<!-- Header row -->
-<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px">
-  <div>
-    <div style="font-size:18px;font-weight:700;color:var(--text)">
-      {% if univ %}{{ univ.name }} — {% endif %}Students
+<style>
+/* ── Students page ── */
+.st-tbl-wrap{display:none}
+.st-cards-wrap{display:flex;flex-direction:column;gap:12px}
+.st-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow)}
+.st-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px}
+.st-name{font-size:15px;font-weight:700;color:var(--text)}
+.st-sub{font-size:12px;color:var(--text3);margin-top:2px}
+.st-meta{display:flex;flex-wrap:wrap;gap:8px;font-size:12px;color:var(--text3)}
+.st-actions{display:flex;gap:6px;flex-shrink:0}
+.io-group{display:flex;gap:6px;flex-wrap:wrap}
+@media(min-width:769px){
+  .st-tbl-wrap{display:block}
+  .st-cards-wrap{display:none}
+}
+@media(max-width:560px){
+  .io-group .btn-text{display:none}
+  .io-group .btn,.io-group button.btn{padding:6px 8px!important;min-width:32px;justify-content:center}
+}
+</style>
+
+<!-- Header -->
+<div class="section-header" style="margin-bottom:16px;flex-wrap:wrap;gap:10px">
+  <span class="text-muted text-sm">{{ students.total }} student{{ 's' if students.total != 1 }}</span>
+  <div class="d-flex gap-2 align-center flex-wrap">
+    <div class="io-group">
+      <a href="{{ url_for('university.students_export') }}" class="btn btn-outline btn-sm" title="Export as Excel">
+        <i class="bi bi-file-earmark-excel"></i><span class="btn-text"> Export</span>
+      </a>
+      <a href="{{ url_for('university.students_import_template') }}" class="btn btn-outline btn-sm" title="Download blank template">
+        <i class="bi bi-file-earmark-arrow-down"></i><span class="btn-text"> Template</span>
+      </a>
+      <label class="btn btn-outline btn-sm" style="cursor:pointer;margin:0" title="Import from Excel">
+        <i class="bi bi-file-earmark-arrow-up"></i><span class="btn-text"> Import</span>
+        <form method="POST" action="{{ url_for('university.students_import') }}" enctype="multipart/form-data" id="import-form">
+          <input type="file" name="file" accept=".xlsx,.xls" style="display:none"
+                 onchange="document.getElementById('import-form').submit()">
+        </form>
+      </label>
     </div>
-    <div style="font-size:12px;color:var(--text3);margin-top:2px">{{ students.total }} registered student{{ 's' if students.total != 1 }}</div>
+    <a href="{{ url_for('university.student_add') }}" class="btn btn-primary btn-sm">
+      <i class="bi bi-person-plus-fill"></i> Add Student
+    </a>
   </div>
-  <a href="{{ url_for('university.student_add') }}" class="btn btn-primary btn-sm">
-    <i class="bi bi-person-plus-fill"></i> Add Student
-  </a>
 </div>
 
 <!-- Search bar -->
-<form method="GET" style="margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap">
-  <div style="position:relative;flex:1;min-width:220px">
+<form method="GET" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+  <div style="position:relative;flex:1;min-width:200px">
     <i class="bi bi-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:13px"></i>
     <input type="text" name="q" class="form-control" placeholder="Search by name, email or major…"
            value="{{ search }}" style="padding-left:32px">
@@ -28,50 +61,53 @@
 </form>
 
 <!-- Desktop table -->
-<div class="table-card" style="display:none" id="st-table">
+<div class="table-card st-tbl-wrap">
   <div class="table-responsive">
     <table class="tbl">
       <thead>
-        <tr>
-          <th>#</th><th>Name</th><th>Email</th><th>Major</th><th>GPA</th><th>Grad. Year</th><th>Actions</th>
-        </tr>
+        <tr><th>Name</th><th>Email</th><th>Major</th><th>GPA</th><th>Grad Year</th><th>Student ID</th><th></th></tr>
       </thead>
       <tbody>
         {% for s in students.items %}
         <tr>
-          <td data-label="#">{{ s.id }}</td>
           <td data-label="Name">
-            <div style="font-weight:600;color:var(--text)">{{ s.full_name }}</div>
-            {% if s.student_id_number %}<div style="font-size:11px;color:var(--text3)">ID: {{ s.student_id_number }}</div>{% endif %}
+            <div style="display:flex;align-items:center;gap:8px">
+              <div class="avatar" style="width:32px;height:32px;font-size:12px">{{ s.initials }}</div>
+              <div>
+                <div style="font-weight:600;color:var(--text)">{{ s.full_name }}</div>
+                {% if s.phone %}<div style="font-size:11px;color:var(--text3)">{{ s.phone }}</div>{% endif %}
+              </div>
+            </div>
           </td>
-          <td data-label="Email" style="color:var(--text2)">{{ s.email }}</td>
-          <td data-label="Major" style="color:var(--text2)">{{ s.university_major or '—' }}</td>
+          <td data-label="Email" style="font-size:13px">{{ s.email }}</td>
+          <td data-label="Major" style="font-size:13px;color:var(--text3)">{{ s.university_major or '—' }}</td>
           <td data-label="GPA">
             {% if s.student_gpa %}
             <span style="background:#f0fdf4;color:#198754;padding:2px 8px;border-radius:10px;font-size:12px;font-weight:600">{{ s.student_gpa }}</span>
             {% else %}—{% endif %}
           </td>
-          <td data-label="Grad. Year" style="color:var(--text2)">{{ s.graduation_year or '—' }}</td>
-          <td data-label="Actions">
-            <div style="display:flex;gap:6px">
-              <a href="{{ url_for('university.student_edit', student_id=s.id) }}" class="btn btn-sm btn-outline" title="Edit">
+          <td data-label="Grad Year" style="font-size:13px;color:var(--text3)">{{ s.graduation_year or '—' }}</td>
+          <td data-label="Student ID" style="font-size:13px;color:var(--text3)">{{ s.student_id_number or '—' }}</td>
+          <td>
+            <div style="display:flex;gap:6px;justify-content:flex-end">
+              <a href="{{ url_for('university.student_edit', student_id=s.id) }}" class="btn btn-outline btn-sm" title="Edit">
                 <i class="bi bi-pencil"></i>
               </a>
               <form method="POST" action="{{ url_for('university.student_delete', student_id=s.id) }}"
-                    onsubmit="return confirm('Remove {{ s.full_name }} from your university?')">
-                <button type="submit" class="btn btn-sm" style="color:#dc2626;border:1px solid #fecaca;background:transparent" title="Remove">
-                  <i class="bi bi-x-lg"></i>
+                    onsubmit="return confirm('Remove {{ s.full_name|e }} from your university?')">
+                <button type="submit" class="btn btn-sm" title="Remove"
+                        style="background:transparent;color:#dc2626;border:1px solid #fca5a5;width:32px;height:32px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:8px">
+                  <i class="bi bi-person-dash"></i>
                 </button>
               </form>
             </div>
           </td>
         </tr>
         {% else %}
-        <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text3)">
-          <i class="bi bi-people" style="font-size:32px;display:block;margin-bottom:8px"></i>
-          No students found.
-          <a href="{{ url_for('university.student_add') }}" style="display:block;margin-top:8px">Add a student →</a>
-        </td></tr>
+        <tr><td colspan="7"><div class="empty-state">
+          <i class="bi bi-people"></i>
+          <p>No students found. <a href="{{ url_for('university.student_add') }}">Add a student →</a></p>
+        </div></td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -79,78 +115,59 @@
 </div>
 
 <!-- Mobile cards -->
-<div id="st-cards" style="display:flex;flex-direction:column;gap:12px">
+<div class="st-cards-wrap">
   {% for s in students.items %}
-  <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow)">
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px">
-      <div>
-        <div style="font-size:15px;font-weight:700;color:var(--text)">{{ s.full_name }}</div>
-        <div style="font-size:12px;color:var(--text3)">{{ s.email }}</div>
+  <div class="st-card">
+    <div class="st-card-top">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="avatar" style="width:40px;height:40px;font-size:14px;flex-shrink:0">{{ s.initials }}</div>
+        <div>
+          <div class="st-name">{{ s.full_name }}</div>
+          <div class="st-sub">{{ s.email }}</div>
+        </div>
       </div>
-      <div style="display:flex;gap:6px;flex-shrink:0">
-        <a href="{{ url_for('university.student_edit', student_id=s.id) }}" class="btn btn-sm btn-outline"><i class="bi bi-pencil"></i></a>
+      <div class="st-actions">
+        <a href="{{ url_for('university.student_edit', student_id=s.id) }}" class="btn btn-outline btn-sm" title="Edit">
+          <i class="bi bi-pencil"></i>
+        </a>
         <form method="POST" action="{{ url_for('university.student_delete', student_id=s.id) }}"
-              onsubmit="return confirm('Remove {{ s.full_name }}?')">
-          <button type="submit" class="btn btn-sm" style="color:#dc2626;border:1px solid #fecaca;background:transparent"><i class="bi bi-x-lg"></i></button>
+              onsubmit="return confirm('Remove {{ s.full_name|e }}?')">
+          <button type="submit" class="btn btn-sm"
+                  style="background:transparent;color:#dc2626;border:1px solid #fca5a5;width:32px;height:32px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:8px">
+            <i class="bi bi-person-dash"></i>
+          </button>
         </form>
       </div>
     </div>
-    <div style="display:flex;flex-wrap:wrap;gap:8px;font-size:12px;color:var(--text3)">
+    <div class="st-meta">
       {% if s.university_major %}<span style="background:var(--green-light);color:var(--green);padding:2px 8px;border-radius:10px"><i class="bi bi-book"></i> {{ s.university_major }}</span>{% endif %}
       {% if s.student_gpa %}<span style="background:#f0fdf4;color:#198754;padding:2px 8px;border-radius:10px"><i class="bi bi-award"></i> GPA {{ s.student_gpa }}</span>{% endif %}
       {% if s.graduation_year %}<span><i class="bi bi-calendar3"></i> Class of {{ s.graduation_year }}</span>{% endif %}
       {% if s.student_id_number %}<span><i class="bi bi-card-text"></i> {{ s.student_id_number }}</span>{% endif %}
+      {% if s.phone %}<span><i class="bi bi-phone"></i> {{ s.phone }}</span>{% endif %}
     </div>
   </div>
   {% else %}
-  <div style="text-align:center;padding:32px;color:var(--text3);background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg)">
-    <i class="bi bi-people" style="font-size:32px;display:block;margin-bottom:8px"></i>
-    No students found.
-    <a href="{{ url_for('university.student_add') }}" style="display:block;margin-top:8px">Add a student →</a>
+  <div class="empty-state" style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:40px">
+    <i class="bi bi-people"></i>
+    <p>No students found. <a href="{{ url_for('university.student_add') }}">Add a student →</a></p>
   </div>
   {% endfor %}
 </div>
 
+<!-- Pagination -->
 {% if students.pages > 1 %}
-<div style="margin-top:16px;display:flex;gap:4px;flex-wrap:wrap">
-  {% if students.has_prev %}
-  <a href="{{ url_for('university.students', page=students.prev_num, q=search) }}" class="page-link"><i class="bi bi-chevron-left"></i></a>
-  {% endif %}
-  {% for p in students.iter_pages(left_edge=1,right_edge=1,left_current=2,right_current=2) %}
+<div class="pagination">
+  <a href="{{ url_for('university.students', page=students.prev_num, q=search) }}"
+     class="page-link {% if not students.has_prev %}disabled{% endif %}"><i class="bi bi-chevron-left"></i></a>
+  {% for p in students.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
     {% if p %}
-    <a href="{{ url_for('university.students', page=p, q=search) }}"
-       class="page-link {% if p == students.page %}active{% endif %}">{{ p }}</a>
-    {% else %}<span class="page-link" style="color:var(--text3)">…</span>{% endif %}
+      <a href="{{ url_for('university.students', page=p, q=search) }}"
+         class="page-link {% if p == students.page %}active{% endif %}">{{ p }}</a>
+    {% else %}<span class="page-link">…</span>{% endif %}
   {% endfor %}
-  {% if students.has_next %}
-  <a href="{{ url_for('university.students', page=students.next_num, q=search) }}" class="page-link"><i class="bi bi-chevron-right"></i></a>
-  {% endif %}
+  <a href="{{ url_for('university.students', page=students.next_num, q=search) }}"
+     class="page-link {% if not students.has_next %}disabled{% endif %}"><i class="bi bi-chevron-right"></i></a>
 </div>
 {% endif %}
-
-<style>
-.page-link{padding:6px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;color:var(--text2);text-decoration:none;background:var(--card);transition:all .15s;display:inline-flex;align-items:center}
-.page-link:hover,.page-link.active{background:var(--green);color:#fff;border-color:var(--green);text-decoration:none}
-.tbl th,.tbl td{padding:10px 14px;font-size:13px}
-.tbl th{background:#f8f9fa;border-bottom:2px solid var(--border);font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);font-weight:700}
-.tbl tbody tr:hover td{background:#f8fafb}
-.tbl td{border-bottom:1px solid var(--border)}
-</style>
-<script>
-(function(){
-  var deskEl = document.getElementById('st-table');
-  var mobEl  = document.getElementById('st-cards');
-  function layout(){
-    if(window.innerWidth >= 769){
-      deskEl.style.display = '';
-      mobEl.style.display  = 'none';
-    } else {
-      deskEl.style.display = 'none';
-      mobEl.style.display  = 'flex';
-    }
-  }
-  layout();
-  window.addEventListener('resize', layout);
-})();
-</script>
 {% endblock %}

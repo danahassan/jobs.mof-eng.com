@@ -1,8 +1,9 @@
 import secrets
+import io
 from flask import (Blueprint, render_template, redirect, url_for,
-                   flash, request, current_app, abort, jsonify)
+                   flash, request, current_app, abort, jsonify, send_file)
 from flask_login import current_user
-from sqlalchemy import or_
+from sqlalchemy import or_, false as sql_false
 from models import (db, User, Application, Position, University, UniversityMember,
                     ROLE_STUDENT, ROLE_UNIVERSITY_COORD, ROLE_ADMIN,
                     ALL_STATUSES, STATUS_NEW, STATUS_REVIEW, STATUS_INTERVIEW,
@@ -320,6 +321,207 @@ def application_new():
                            univ=univ, students=students, positions=open_positions)
 
 
+# ─── Student export / import ─────────────────────────────────────────────────
+
+_STUDENT_COLS = [
+    ('student_id_number', 'Student ID'),
+    ('full_name',         'Full Name'),
+    ('email',             'Email'),
+    ('phone',             'Phone'),
+    ('university_major',  'Major'),
+    ('student_gpa',       'GPA'),
+    ('graduation_year',   'Graduation Year'),
+]
+
+
+@university_bp.route('/students/export')
+@university_coordinator_required
+def students_export():
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment
+    univ = _my_university()
+    if univ:
+        rows = User.query.filter_by(university_id=univ.id, role=ROLE_STUDENT).order_by(User.full_name).all()
+    else:
+        rows = User.query.filter_by(role=ROLE_STUDENT).order_by(User.full_name).all()
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = 'Students'
+
+    header_fill = PatternFill('solid', fgColor='1a5c38')
+    header_font = Font(color='FFFFFF', bold=True)
+    headers = [col[1] for col in _STUDENT_COLS]
+    for ci, h in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=ci, value=h)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal='center')
+        ws.column_dimensions[cell.column_letter].width = max(len(h) + 4, 16)
+
+    for ri, s in enumerate(rows, 2):
+        for ci, (attr, _) in enumerate(_STUDENT_COLS, 1):
+            ws.cell(row=ri, column=ci, value=getattr(s, attr, None))
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    name = f"{univ.name.replace(' ','_')}_students.xlsx" if univ else 'students.xlsx'
+    return send_file(buf, as_attachment=True, download_name=name,
+                     mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+
+@university_bp.route('/students/import-template')
+@university_coordinator_required
+def students_import_template():
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = 'Students'
+
+    header_fill = PatternFill('solid', fgColor='1a5c38')
+    header_font = Font(color='FFFFFF', bold=True)
+    example_data = {
+        'student_id_number': '20231001',
+        'full_name':         'Ahmed Al-Rashidi',
+        'email':             'ahmed@example.com',
+        'phone':             '+96894123456',
+        'university_major':  'Computer Science',
+        'student_gpa':       '3.75',
+        'graduation_year':   '2025',
+    }
+    for ci, (attr, label) in enumerate(_STUDENT_COLS, 1):
+        cell = ws.cell(row=1, column=ci, value=label)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal='center')
+        ws.column_dimensions[cell.column_letter].width = max(len(label) + 4, 18)
+        ws.cell(row=2, column=ci, value=example_data.get(attr, ''))
+
+    # Mark example row in light gray
+    from openpyxl.styles import PatternFill as PF
+    ex_fill = PF('solid', fgColor='F3F4F6')
+    for ci in range(1, len(_STUDENT_COLS) + 1):
+        ws.cell(row=2, column=ci).fill = ex_fill
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return send_file(buf, as_attachment=True, download_name='students_import_template.xlsx',
+                     mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+
+@university_bp.route('/students/import', methods=['POST'])
+@university_coordinator_required
+def students_import():
+    import openpyxl
+    univ = _my_university()
+    if not univ:
+        flash('You are not linked to any university.', 'warning')
+        return redirect(url_for('university.students'))
+
+    f = request.files.get('file')
+    if not f or not f.filename:
+        flash('No file selected.', 'danger')
+        return redirect(url_for('university.students'))
+    if not f.filename.lower().endswith(('.xlsx', '.xls')):
+        flash('Please upload an Excel file (.xlsx or .xls).', 'danger')
+        return redirect(url_for('university.students'))
+
+    try:
+        wb = openpyxl.load_workbook(io.BytesIO(f.read()), data_only=True)
+        ws = wb.active
+    except Exception:
+        flash('Could not read the uploaded file. Make sure it is a valid Excel workbook.', 'danger')
+        return redirect(url_for('university.students'))
+
+    headers = [str(cell.value or '').strip() for cell in ws[1]]
+    label_to_attr = {col[1]: col[0] for col in _STUDENT_COLS}
+    col_map = {}  # column index → attribute name
+    for ci, h in enumerate(headers):
+        if h in label_to_attr:
+            col_map[ci] = label_to_attr[h]
+
+    if 'email' not in col_map.values() or 'full_name' not in col_map.values():
+        flash('Import failed: the file must have "Email" and "Full Name" columns.', 'danger')
+        return redirect(url_for('university.students'))
+
+    created = linked = skipped = 0
+    errors = []
+    for row in ws.iter_rows(min_row=2, values_only=True):
+        if all(v is None for v in row):
+            continue  # skip blank rows
+        data = {}
+        for ci, attr in col_map.items():
+            val = row[ci] if ci < len(row) else None
+            data[attr] = str(val).strip() if val is not None else ''
+
+        email = data.get('email', '').lower()
+        full_name = data.get('full_name', '').strip()
+        if not email or not full_name:
+            errors.append(f'Row skipped — missing email or name: {data}')
+            skipped += 1
+            continue
+
+        existing = User.query.filter_by(email=email).first()
+        if existing:
+            if existing.role == ROLE_STUDENT:
+                existing.university_id   = univ.id
+                existing.university_name = univ.name
+                for attr in ('university_major', 'student_gpa', 'student_id_number', 'phone'):
+                    if data.get(attr):
+                        setattr(existing, attr, data[attr])
+                if data.get('graduation_year'):
+                    existing.graduation_year = _parse_int(data['graduation_year'])
+                linked += 1
+            else:
+                errors.append(f'Non-student account exists for {email} — skipped')
+                skipped += 1
+            continue
+
+        temp_pw = secrets.token_urlsafe(10)
+        student = User(
+            full_name         = full_name,
+            email             = email,
+            phone             = data.get('phone') or None,
+            role              = ROLE_STUDENT,
+            is_active         = True,
+            university_id     = univ.id,
+            university_name   = univ.name,
+            university_major  = data.get('university_major') or None,
+            student_gpa       = data.get('student_gpa') or None,
+            graduation_year   = _parse_int(data.get('graduation_year', '')),
+            student_id_number = data.get('student_id_number') or None,
+        )
+        student.set_password(temp_pw)
+        db.session.add(student)
+        db.session.flush()  # get student.id before commit
+
+        try:
+            html = render_template('emails/welcome_student.html',
+                                   student=student, univ=univ, temp_password=temp_pw)
+            send_email(student.email, 'Welcome to MOF Jobs — Your Student Account', html)
+        except Exception as e:
+            current_app.logger.warning(f'Welcome email failed for {email}: {e}')
+
+        log_audit('university.student_import', f'{full_name} → {univ.name}', user_id=current_user.id)
+        created += 1
+
+    db.session.commit()
+
+    parts = []
+    if created:  parts.append(f'{created} created')
+    if linked:   parts.append(f'{linked} linked')
+    if skipped:  parts.append(f'{skipped} skipped')
+    msg = 'Import complete: ' + ', '.join(parts) + '.' if parts else 'No rows processed.'
+    flash(msg, 'success' if not errors else 'warning')
+    for err in errors[:5]:
+        flash(err, 'warning')
+    return redirect(url_for('university.students'))
+
+
 # ─── helpers ─────────────────────────────────────────────────────────────────
 
 def _student_ids(univ):
@@ -329,15 +531,21 @@ def _student_ids(univ):
     return [u.id for u in User.query.filter_by(role=ROLE_STUDENT).all()]
 
 
+def _internship_pos_ids():
+    """Return all internship position IDs (avoids JOIN in paginated queries)."""
+    return [p.id for p in Position.query.filter_by(type='Internship').all()]
+
+
 def _internship_apps(student_ids):
     if not student_ids:
-        return Application.query.filter(False)
-    return (Application.query
-            .join(Application.position)
-            .filter(
-                Application.applicant_id.in_(student_ids),
-                Position.type == 'Internship',
-            ))
+        return Application.query.filter(sql_false())
+    pos_ids = _internship_pos_ids()
+    if not pos_ids:
+        return Application.query.filter(sql_false())
+    return Application.query.filter(
+        Application.applicant_id.in_(student_ids),
+        Application.position_id.in_(pos_ids),
+    )
 
 
 def _parse_int(s):
