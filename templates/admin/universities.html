@@ -90,7 +90,7 @@
           <td data-label="Location">{{ u.location or '—' }}</td>
           <td data-label="Students">
             <span style="background:#f5f3ff;color:#7c3aed;padding:2px 8px;border-radius:10px;font-size:12px;font-weight:600">
-              {{ u.students.count() }}
+              {{ u.students.filter_by(role='student').count() }}
             </span>
           </td>
           <td data-label="Coordinators">
