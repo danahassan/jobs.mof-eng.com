@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+{% block title %}My Internship Dashboard — MOF Jobs{% endblock %}
+{% block page_title %}My Dashboard{% endblock %}
+
+{% block content %}
+<style>
+/* ── Student dashboard ── */
+.st-hero{background:linear-gradient(135deg,#1a3a5c 0%,#0f5c3a 100%);border-radius:var(--radius-lg);padding:24px 28px;margin-bottom:20px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;color:#fff}
+.st-hero-avatar{width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,.15);border:3px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;color:#fff;flex-shrink:0}
+.st-hero-info{flex:1;min-width:160px}
+.st-hero-name{font-size:22px;font-weight:800;line-height:1.2}
+.st-hero-meta{display:flex;flex-wrap:wrap;gap:14px;margin-top:8px;font-size:13px;opacity:.85}
+.st-hero-meta span{display:flex;align-items:center;gap:5px}
+.st-hero-actions{display:flex;gap:8px;flex-wrap:wrap}
+.st-hero-actions .btn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff}
+.st-hero-actions .btn:hover{background:rgba(255,255,255,.25)}
+.st-hero-actions .btn-primary{background:var(--green);border-color:var(--green)}
+
+.app-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;margin-bottom:10px;display:flex;align-items:flex-start;gap:14px;box-shadow:var(--shadow);transition:box-shadow .15s}
+.app-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.08)}
+.app-card-logo{width:44px;height:44px;border-radius:10px;background:var(--green-light);color:var(--green);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;flex-shrink:0;border:1px solid var(--border)}
+.app-card-logo img{width:100%;height:100%;border-radius:10px;object-fit:contain}
+.app-card-body{flex:1;min-width:0}
+.app-card-title{font-size:15px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.app-card-company{font-size:12px;color:var(--text3);margin-top:2px}
+.app-card-meta{display:flex;flex-wrap:wrap;gap:10px;font-size:12px;color:var(--text3);margin-top:8px}
+.app-card-status{flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+
+.status-timeline{display:flex;align-items:center;gap:0;margin:20px 0 8px}
+.st-step{display:flex;flex-direction:column;align-items:center;flex:1;position:relative}
+.st-step:not(:last-child)::after{content:'';position:absolute;top:14px;left:50%;width:100%;height:2px;background:var(--border);z-index:0}
+.st-step-dot{width:28px;height:28px;border-radius:50%;border:2px solid var(--border);background:var(--card);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--text3);z-index:1;position:relative}
+.st-step-dot.done{background:var(--green);border-color:var(--green);color:#fff}
+.st-step-dot.active{background:#2563eb;border-color:#2563eb;color:#fff}
+.st-step-label{font-size:10px;color:var(--text3);margin-top:5px;text-align:center;white-space:nowrap}
+
+@media(max-width:640px){
+  .st-hero{padding:18px}
+  .st-hero-name{font-size:18px}
+  .st-hero-actions{width:100%}
+  .status-timeline{display:none}
+}
+</style>
+
+<!-- Hero card -->
+<div class="st-hero">
+  <div class="st-hero-avatar">{{ current_user.initials }}</div>
+  <div class="st-hero-info">
+    <div class="st-hero-name">{{ current_user.full_name }}</div>
+    <div class="st-hero-meta">
+      {% if current_user.university_name %}
+        <span><i class="bi bi-mortarboard-fill"></i> {{ current_user.university_name }}</span>
+      {% endif %}
+      {% if current_user.university_major %}
+        <span><i class="bi bi-book"></i> {{ current_user.university_major }}</span>
+      {% endif %}
+      {% if current_user.student_gpa %}
+        <span><i class="bi bi-star-fill"></i> GPA {{ current_user.student_gpa }}</span>
+      {% endif %}
+      {% if current_user.graduation_year %}
+        <span><i class="bi bi-calendar3"></i> Class of {{ current_user.graduation_year }}</span>
+      {% endif %}
+    </div>
+  </div>
+  <div class="st-hero-actions">
+    <a href="{{ url_for('user.browse') }}" class="btn btn-sm"><i class="bi bi-search"></i> Browse Internships</a>
+    <a href="{{ url_for('profile.view') }}" class="btn btn-primary btn-sm"><i class="bi bi-person-circle"></i> My Profile</a>
+  </div>
+</div>
+
+<!-- KPI strip -->
+<div class="kpi-strip" style="margin-bottom:20px">
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#ede9fe;color:#7c3aed"><i class="bi bi-collection-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_total }}</div><div class="kpi-lbl">Applied</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#fff7ed;color:#ea580c"><i class="bi bi-hourglass-split"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_active }}</div><div class="kpi-lbl">In Progress</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#e8f5ee;color:#198754"><i class="bi bi-patch-check-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_placed }}</div><div class="kpi-lbl">Placed</div></div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon" style="background:#fee2e2;color:#dc2626"><i class="bi bi-x-circle-fill"></i></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_rejected }}</div><div class="kpi-lbl">Rejected</div></div>
+  </div>
+</div>
+
+<!-- Applications -->
+<div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between">
+  <span><i class="bi bi-briefcase" style="color:var(--green)"></i> My Internship Applications</span>
+  {% if kpi_total > 0 %}
+  <span style="font-size:12px;font-weight:400;color:var(--text3)">{{ kpi_total }} application{{ 's' if kpi_total != 1 }}</span>
+  {% endif %}
+</div>
+
+{% if my_apps %}
+
+{% set status_order = {'New':1,'Under Review':2,'Interview':3,'Offer':4,'Hired':5,'Rejected':6,'Future Consideration':7} %}
+{% set status_icon  = {'New':'bi-inbox','Under Review':'bi-eye','Interview':'bi-camera-video','Offer':'bi-envelope-open','Hired':'bi-patch-check-fill','Rejected':'bi-x-circle','Future Consideration':'bi-bookmark'} %}
+{% set status_color = {'New':'#7c3aed','Under Review':'#2563eb','Interview':'#d97706','Offer':'#16a34a','Hired':'#198754','Rejected':'#dc2626','Future Consideration':'#64748b'} %}
+
+{% for app in my_apps %}
+<div class="app-card">
+  <!-- Logo -->
+  <div class="app-card-logo">
+    {% if app.position.company and app.position.company.logo_filename %}
+      <img src="{{ url_for('static', filename='uploads/company/' + app.position.company.logo_filename) }}"
+           alt="{{ app.position.company.name }}">
+    {% else %}
+      <i class="bi bi-briefcase" style="font-size:20px"></i>
+    {% endif %}
+  </div>
+
+  <!-- Body -->
+  <div class="app-card-body">
+    <div class="app-card-title">{{ app.position.title }}</div>
+    <div class="app-card-company">
+      {% if app.position.company %}<i class="bi bi-building"></i> {{ app.position.company.name }}{% endif %}
+      {% if app.position.location %} · <i class="bi bi-geo-alt"></i> {{ app.position.location }}{% endif %}
+    </div>
+    <div class="app-card-meta">
+      <span><i class="bi bi-calendar3"></i> Applied {{ (app.applied_at | localdt).strftime('%b %d, %Y') }}</span>
+      {% if app.internship_duration %}<span><i class="bi bi-clock"></i> {{ app.internship_duration }}</span>{% endif %}
+      {% if app.academic_credit_required %}<span><i class="bi bi-award"></i> Credit required</span>{% endif %}
+    </div>
+
+    <!-- Progress timeline (desktop) -->
+    <div class="status-timeline">
+      {% set steps = [('New','bi-inbox'),('Under Review','bi-eye'),('Interview','bi-camera-video'),('Offer','bi-envelope-open'),('Hired','bi-patch-check-fill')] %}
+      {% set cur_order = status_order.get(app.status, 0) %}
+      {% for s_name, s_icon in steps %}
+        {% set s_order = status_order.get(s_name, 0) %}
+        <div class="st-step">
+          <div class="st-step-dot {% if s_order < cur_order %}done{% elif s_order == cur_order and app.status not in ['Rejected','Future Consideration'] %}active{% endif %}">
+            <i class="bi {{ s_icon }}"></i>
+          </div>
+          <div class="st-step-label">{{ s_name }}</div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Status badge -->
+  <div class="app-card-status">
+    <span class="badge badge-{{ app.status.lower().replace(' ','') }}">{{ app.status }}</span>
+    {% if app.assigned_to %}
+    <span style="font-size:11px;color:var(--text3)"><i class="bi bi-person"></i> {{ app.assigned_to.full_name.split()[0] }}</span>
+    {% endif %}
+  </div>
+</div>
+{% endfor %}
+
+{% else %}
+<div class="empty-state" style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:48px">
+  <i class="bi bi-briefcase" style="font-size:40px"></i>
+  <h3 style="margin:12px 0 6px">No applications yet</h3>
+  <p style="color:var(--text3);margin-bottom:20px">Your university coordinator will submit internship applications on your behalf, or you can apply directly.</p>
+  <a href="{{ url_for('user.browse') }}" class="btn btn-primary"><i class="bi bi-search"></i> Browse Internship Positions</a>
+</div>
+{% endif %}
+{% endblock %}

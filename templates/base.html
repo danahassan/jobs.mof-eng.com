@@ -546,10 +546,18 @@ html.dark select.form-control option{background:#1e293b}
         <div class="nav-section">Other</div>
         <a href="{{ url_for('messages.inbox') }}" class="nav-item {% if request.blueprint == 'messages' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-chat-dots-fill"></i> Messages{% if unread_count %}<span class="nav-badge">{{ unread_count }}</span>{% endif %}</a>
 
+      {% elif current_user.role == ROLE_STUDENT %}
+        <div class="nav-section">Student Portal</div>
+        <a href="{{ url_for('student.dashboard') }}" class="nav-item {% if request.blueprint == 'student' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
+        <a href="{{ url_for('user.browse') }}" class="nav-item {% if request.endpoint == 'user.browse' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-search"></i> Browse Internships</a>
+        <div class="nav-section">Account</div>
+        <a href="{{ url_for('profile.view') }}" class="nav-item {% if request.blueprint == 'profile' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-person-circle"></i> My Profile</a>
+        <a href="{{ url_for('messages.inbox') }}" class="nav-item {% if request.blueprint == 'messages' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-chat-dots-fill"></i> Messages{% if unread_count %}<span class="nav-badge">{{ unread_count }}</span>{% endif %}</a>
+
       {% else %}
-        <div class="nav-section">{% if current_user.role == ROLE_STUDENT %}Internship{% else %}Careers{% endif %}</div>
+        <div class="nav-section">Careers</div>
         <a href="{{ url_for('user.dashboard') }}" class="nav-item {% if request.endpoint == 'user.dashboard' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
-        <a href="{{ url_for('jobs.listing') }}" class="nav-item {% if request.blueprint == 'jobs' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-search"></i> {% if current_user.role == ROLE_STUDENT %}Browse Internships{% else %}Browse Jobs{% endif %}</a>
+        <a href="{{ url_for('jobs.listing') }}" class="nav-item {% if request.blueprint == 'jobs' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-search"></i> Browse Jobs</a>
         <a href="{{ url_for('user.my_applications') }}" class="nav-item {% if request.endpoint == 'user.my_applications' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-collection-fill"></i> My Applications</a>
         <a href="{{ url_for('user.saved_jobs') }}" class="nav-item {% if request.endpoint == 'user.saved_jobs' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-bookmark-fill"></i> Saved</a>
         <a href="{{ url_for('analytics.candidate') }}" class="nav-item {% if request.endpoint == 'analytics.candidate' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-bar-chart-fill"></i> My Analytics</a>

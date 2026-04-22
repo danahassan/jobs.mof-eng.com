@@ -92,6 +92,7 @@ def create_app(config_name=None):
     from routes.supervisor_apply  import supervisor_apply_bp
     from routes.university_apply  import university_apply_bp
     from routes.university        import university_bp
+    from routes.student           import student_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(admin_bp,             url_prefix='/admin')
@@ -109,6 +110,7 @@ def create_app(config_name=None):
     app.register_blueprint(supervisor_apply_bp)
     app.register_blueprint(university_apply_bp)
     app.register_blueprint(university_bp,        url_prefix='/university')
+    app.register_blueprint(student_bp,           url_prefix='/student')
 
     # Root redirect
     @app.route('/')
@@ -154,6 +156,8 @@ def create_app(config_name=None):
             return redirect(url_for('employer.dashboard'))
         elif current_user.role == ROLE_UNIVERSITY_COORD:
             return redirect(url_for('university.dashboard'))
+        elif current_user.role == ROLE_STUDENT:
+            return redirect(url_for('student.dashboard'))
         return redirect(url_for('user.dashboard'))
 
     # Context processor — available in all templates
