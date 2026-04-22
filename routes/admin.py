@@ -11,8 +11,8 @@ from models import (db, User, Position, Application, ApplicationHistory,
                     UserSkill, UserExperience, UserEducation,
                     UserLanguage, UserCertification,
                     Message, SupervisorRequest, University, UniversityMember, UniversityRequest,
-                    ROLE_ADMIN, ROLE_SUPERVISOR, ROLE_USER, ROLE_UNIVERSITY_COORD, LANG_LEVELS,
-                    ALL_STATUSES, SOURCES, STATUS_NEW)
+                    ROLE_ADMIN, ROLE_SUPERVISOR, ROLE_USER, ROLE_STUDENT, ROLE_UNIVERSITY_COORD,
+                    LANG_LEVELS, ALL_STATUSES, SOURCES, STATUS_NEW)
 from sqlalchemy import or_, and_
 from helpers import (admin_required, log_history, save_cv, allowed_file,
                      send_email, save_company_image, push_notification, log_audit,
