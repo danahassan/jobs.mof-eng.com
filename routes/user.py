@@ -40,6 +40,7 @@ def browse():
     jtype   = request.args.get('type', '')
     remote  = request.args.get('remote', '')
     student_internships_only = current_user.is_authenticated and current_user.role == ROLE_STUDENT
+    hide_internships = (not current_user.is_authenticated) or (current_user.is_authenticated and current_user.role == 'user')
 
     now = datetime.utcnow()
     q = Position.query.filter_by(is_active=True).filter(
@@ -47,6 +48,8 @@ def browse():
     if student_internships_only:
         q = q.filter_by(type='Internship')
         jtype = 'Internship'
+    elif hide_internships:
+        q = q.filter(Position.type != 'Internship')
     if dept:
         q = q.filter_by(department=dept)
     if jtype and not student_internships_only:
@@ -60,9 +63,13 @@ def browse():
     depts_q = db.session.query(Position.department).filter_by(is_active=True)
     if student_internships_only:
         depts_q = depts_q.filter_by(type='Internship')
+    elif hide_internships:
+        depts_q = depts_q.filter(Position.type != 'Internship')
     depts     = depts_q.distinct().all()
     depts     = [d[0] for d in depts if d[0]]
-    types     = ['Internship'] if student_internships_only else ['Full-time', 'Part-time', 'Contract', 'Internship']
+    types     = ['Internship'] if student_internships_only else (
+        ['Full-time', 'Part-time', 'Contract'] if hide_internships else ['Full-time', 'Part-time', 'Contract', 'Internship']
+    )
 
     saved_ids = set()
     if current_user.is_authenticated:
@@ -73,6 +80,8 @@ def browse():
     kpi_base = Position.query.filter_by(is_active=True)
     if student_internships_only:
         kpi_base = kpi_base.filter_by(type='Internship')
+    elif hide_internships:
+        kpi_base = kpi_base.filter(Position.type != 'Internship')
     kpi_total  = kpi_base.count()
     kpi_remote = kpi_base.filter_by(is_remote=True).count()
 
@@ -82,16 +91,25 @@ def browse():
     )
     if student_internships_only:
         kpi_depts_q = kpi_depts_q.filter(Position.type == 'Internship')
+    elif hide_internships:
+        kpi_depts_q = kpi_depts_q.filter(Position.type != 'Internship')
     kpi_depts = kpi_depts_q.scalar() or 0
 
-    kpi_types = 1 if student_internships_only else (
-        db.session.query(func.count(func.distinct(Position.type))).filter(
+    if student_internships_only:
+        kpi_types = 1
+    elif hide_internships:
+        kpi_types = db.session.query(func.count(func.distinct(Position.type))).filter(
+            Position.is_active == True,
+            Position.type != 'Internship').scalar() or 0
+    else:
+        kpi_types = db.session.query(func.count(func.distinct(Position.type))).filter(
             Position.is_active == True).scalar() or 0
-    )
 
     kpi_apps_q = Application.query.join(Position).filter(Position.is_active == True)
     if student_internships_only:
         kpi_apps_q = kpi_apps_q.filter(Position.type == 'Internship')
+    elif hide_internships:
+        kpi_apps_q = kpi_apps_q.filter(Position.type != 'Internship')
     kpi_apps = kpi_apps_q.count()
 
     return render_template('user/browse.html',
