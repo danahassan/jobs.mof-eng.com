@@ -296,7 +296,23 @@ def student_edit(student_id):
 
     if request.method == 'POST':
         student.full_name         = request.form.get('full_name', student.full_name).strip()
+        new_email = request.form.get('email', '').strip().lower()
+        if new_email and new_email != student.email:
+            # Check email not already taken by another account
+            clash = User.query.filter(User.email == new_email, User.id != student.id).first()
+            if clash:
+                flash('That email address is already in use by another account.', 'danger')
+                return render_template('university/student_form.html', univ=univ, student=student)
+            student.email = new_email
         student.phone             = request.form.get('phone', '').strip() or None
+        student.headline          = request.form.get('headline', '').strip() or None
+        student.bio               = request.form.get('bio', '').strip() or None
+        student.location_city     = request.form.get('location_city', '').strip() or None
+        student.nationality       = request.form.get('nationality', '').strip() or None
+        student.gender            = request.form.get('gender', '').strip() or None
+        student.linkedin_url      = request.form.get('linkedin_url', '').strip() or None
+        student.github_url        = request.form.get('github_url', '').strip() or None
+        student.portfolio_url     = request.form.get('portfolio_url', '').strip() or None
         student.university_major  = request.form.get('university_major', '').strip() or None
         student.student_gpa       = request.form.get('student_gpa', '').strip() or None
         student.graduation_year   = _parse_int(request.form.get('graduation_year', ''))

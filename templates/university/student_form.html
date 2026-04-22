@@ -16,27 +16,70 @@
 
       <form method="POST">
         <div class="uf-stack">
-          <div>
-            <label class="uf-label">Full Name <span class="uf-required">*</span></label>
-            <input name="full_name" class="form-control" required
-                   value="{{ student.full_name if student else '' }}"
-                   placeholder="e.g. Ahmed Mohammed">
+
+          <div class="uf-section-heading">Basic Information</div>
+
+          <div class="uf-two">
+            <div>
+              <label class="uf-label">Full Name <span class="uf-required">*</span></label>
+              <input name="full_name" class="form-control" required
+                     value="{{ student.full_name if student else '' }}"
+                     placeholder="e.g. Ahmed Mohammed">
+            </div>
+            <div>
+              <label class="uf-label">Email Address <span class="uf-required">*</span></label>
+              <input name="email" class="form-control" type="email"
+                     {% if not student %}required{% endif %}
+                     value="{{ student.email if student else '' }}"
+                     placeholder="student@university.edu">
+              {% if not student %}<div class="uf-help">If this email already exists it will be linked to your university.</div>{% endif %}
+            </div>
           </div>
 
-          {% if not student %}
-          <div>
-            <label class="uf-label">Email Address <span class="uf-required">*</span></label>
-            <input name="email" class="form-control" type="email" required
-                   placeholder="student@university.edu">
-            <div class="uf-help">If this email already has a student account it will be linked to your university.</div>
+          <div class="uf-two">
+            <div>
+              <label class="uf-label">Phone</label>
+              <input name="phone" class="form-control"
+                     value="{{ student.phone if student else '' }}" placeholder="+964…">
+            </div>
+            <div>
+              <label class="uf-label">Location / City</label>
+              <input name="location_city" class="form-control"
+                     value="{{ student.location_city if student else '' }}" placeholder="Slemani, Iraq">
+            </div>
           </div>
-          {% endif %}
+
+          <div class="uf-two">
+            <div>
+              <label class="uf-label">Nationality</label>
+              <input name="nationality" class="form-control"
+                     value="{{ student.nationality if student else '' }}" placeholder="Iraqi">
+            </div>
+            <div>
+              <label class="uf-label">Gender</label>
+              <select name="gender" class="form-control">
+                <option value="">— Select —</option>
+                <option value="Male"   {% if student and student.gender == 'Male'   %}selected{% endif %}>Male</option>
+                <option value="Female" {% if student and student.gender == 'Female' %}selected{% endif %}>Female</option>
+                <option value="Other"  {% if student and student.gender == 'Other'  %}selected{% endif %}>Other</option>
+              </select>
+            </div>
+          </div>
 
           <div>
-            <label class="uf-label">Phone</label>
-            <input name="phone" class="form-control"
-                   value="{{ student.phone if student else '' }}" placeholder="+964…">
+            <label class="uf-label">Headline</label>
+            <input name="headline" class="form-control"
+                   value="{{ student.headline if student else '' }}"
+                   placeholder="e.g. Civil Engineering Student, Class of 2026">
           </div>
+
+          <div>
+            <label class="uf-label">Bio / About</label>
+            <textarea name="bio" class="form-control" rows="3"
+                      placeholder="Brief introduction about the student…">{{ student.bio if student else '' }}</textarea>
+          </div>
+
+          <div class="uf-section-heading" style="margin-top:8px">Academic Information</div>
 
           <div class="uf-two">
             <div>
@@ -68,12 +111,38 @@
             </div>
           </div>
 
+          <div class="uf-section-heading" style="margin-top:8px">Links</div>
+
+          <div class="uf-two">
+            <div>
+              <label class="uf-label"><i class="bi bi-linkedin" style="color:#0a66c2"></i> LinkedIn URL</label>
+              <input name="linkedin_url" class="form-control" type="url"
+                     value="{{ student.linkedin_url if student else '' }}"
+                     placeholder="https://linkedin.com/in/…">
+            </div>
+            <div>
+              <label class="uf-label"><i class="bi bi-github"></i> GitHub URL</label>
+              <input name="github_url" class="form-control" type="url"
+                     value="{{ student.github_url if student else '' }}"
+                     placeholder="https://github.com/…">
+            </div>
+          </div>
+
+          <div>
+            <label class="uf-label"><i class="bi bi-globe2" style="color:var(--green)"></i> Portfolio / Website</label>
+            <input name="portfolio_url" class="form-control" type="url"
+                   value="{{ student.portfolio_url if student else '' }}"
+                   placeholder="https://…">
+          </div>
+
           {% if student %}
+          <div class="uf-section-heading" style="margin-top:8px">Account</div>
           <div>
             <label class="uf-label">New Password <span class="uf-help-inline">leave blank to keep current</span></label>
             <input name="new_password" class="form-control" type="password" autocomplete="new-password">
           </div>
           {% endif %}
+
         </div>
 
         <div class="uf-actions">
@@ -114,6 +183,7 @@
 .uf-actions{display:flex;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)}
 .uf-side-title{font-size:13px;font-weight:700;color:var(--text2);margin-bottom:10px;display:flex;align-items:center;gap:6px}
 .uf-side-list{margin:0;padding-left:18px;color:var(--text2);font-size:13px;line-height:1.65}
+.uf-section-heading{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--green);border-bottom:1px solid var(--border);padding-bottom:6px;margin-top:4px}
 
 @media(max-width:980px){
   .uf-grid{grid-template-columns:1fr}
