@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>New Job Alert — MOF Jobs</title>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
   body { margin: 0; padding: 0; background: #f0f2f5; font-family: 'Segoe UI', Arial, sans-serif; font-size: 14px; color: #0f1923; }
   .wrap { max-width: 580px; margin: 32px auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
   .header { background: #0f1923; padding: 28px 32px; }
@@ -24,6 +26,19 @@
   p { color: #4a5a6a; line-height: 1.7; }
   .footer { background: #f8fafb; padding: 16px 32px; font-size: 11px; color: #9aabb8; border-top: 1px solid #e4e8ed; }
   .unsubscribe { color: #9aabb8; text-decoration: underline; }
+
+  @media (max-width: 600px) {
+    body { padding: 0 !important; }
+    .wrap, .wrapper { width: 100% !important; max-width: 100% !important; margin: 0 !important; border-radius: 0 !important; border: none !important; box-shadow: none !important; }
+    .header { padding: 20px 24px !important; }
+    .body { padding: 20px 24px !important; }
+    .footer { padding: 20px 24px !important; }
+    .info-grid { grid-template-columns: 1fr !important; }
+    .info-cell { border-right: none !important; border-bottom: 1px solid #e8ecf0 !important; }
+    .info-cell:last-child { border-bottom: none !important; }
+    .hero-banner { padding: 16px 20px !important; }
+    .cta, .cta-btn { display: block !important; text-align: center !important; }
+  }
 </style>
 </head>
 <body>

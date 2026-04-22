@@ -5,7 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{% if is_admin %}Admin{% else %}Supervisor{% endif %} Account — MOF Jobs</title>
 <style>
-  body{margin:0;padding:0;background:#f0f4f8;font-family:'Segoe UI',Arial,sans-serif}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+  body{margin:0;padding:0;background:#f0f4f8;font-family:'Inter',Arial,sans-serif}
   .wrapper{max-width:580px;margin:32px auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #dde3ea;box-shadow:0 4px 16px rgba(0,0,0,.07)}
   .header{background:{% if is_admin %}linear-gradient(135deg,#1a2332 0%,#7c3aed 100%){% else %}linear-gradient(135deg,#1a2332 0%,#2563eb 100%){% endif %};padding:32px 36px 28px}
   .header-logo{color:#fff;font-size:20px;font-weight:700;letter-spacing:-0.3px}
@@ -39,6 +41,19 @@
   .footer{background:#f8fafc;padding:16px 36px;border-top:1px solid #e2e8f0}
   .footer-text{font-size:11px;color:#a0aec0;line-height:1.6;text-align:center}
   .footer-text a{color:{% if is_admin %}#7c3aed{% else %}#2563eb{% endif %}}
+
+  @media (max-width: 600px) {
+    body { padding: 0 !important; }
+    .wrap, .wrapper { width: 100% !important; max-width: 100% !important; margin: 0 !important; border-radius: 0 !important; border: none !important; box-shadow: none !important; }
+    .header { padding: 20px 24px !important; }
+    .body { padding: 20px 24px !important; }
+    .footer { padding: 20px 24px !important; }
+    .info-grid { grid-template-columns: 1fr !important; }
+    .info-cell { border-right: none !important; border-bottom: 1px solid #e8ecf0 !important; }
+    .info-cell:last-child { border-bottom: none !important; }
+    .hero-banner { padding: 16px 20px !important; }
+    .cta, .cta-btn { display: block !important; text-align: center !important; }
+  }
 </style>
 </head>
 <body>
