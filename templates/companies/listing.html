@@ -18,7 +18,7 @@
   </div>
   <div class="kpi-card">
     <div class="kpi-icon" style="background:#eff6ff;color:#2563eb"><i class="bi bi-briefcase-fill"></i></div>
-    <div class="kpi-body"><div class="kpi-val">{{ kpi_open_jobs }}</div><div class="kpi-lbl">Open Jobs</div></div>
+    <div class="kpi-body"><div class="kpi-val">{{ kpi_open_jobs }}</div><div class="kpi-lbl">{{ 'Open Internships' if is_student else 'Open Jobs' }}</div></div>
   </div>
   <div class="kpi-card">
     <div class="kpi-icon" style="background:#fce7f3;color:#db2777"><i class="bi bi-people-fill"></i></div>
@@ -105,8 +105,9 @@
       {% endif %}
 
       <div class="cl-card-stats">
-        <span class="cl-stat {% if company.open_jobs_count > 0 %}cl-stat-jobs{% endif %}">
-          <i class="bi bi-briefcase"></i> {{ company.open_jobs_count }} job{{ 's' if company.open_jobs_count != 1 }}
+        {% set jcount = internship_counts.get(company.id, 0) if is_student else company.open_jobs_count %}
+        <span class="cl-stat {% if jcount > 0 %}cl-stat-jobs{% endif %}">
+          <i class="bi bi-briefcase"></i> {{ jcount }} {{ 'internship' if is_student else 'job' }}{{ 's' if jcount != 1 }}
         </span>
         <span class="cl-stat">
           <i class="bi bi-heart"></i> {{ company.follower_count }}
@@ -175,8 +176,9 @@
         {% if company.industry %}<span><i class="bi bi-tag"></i> {{ company.industry }}</span>{% endif %}
         {% if company.location %}<span><i class="bi bi-geo-alt"></i> {{ company.location }}</span>{% endif %}
         {% if company.size %}<span><i class="bi bi-building"></i> {{ company.size }}</span>{% endif %}
-        <span {% if company.open_jobs_count > 0 %}class="cl-jobs-active"{% endif %}>
-          <i class="bi bi-briefcase"></i> {{ company.open_jobs_count }} job{{ 's' if company.open_jobs_count != 1 }}
+        {% set jcount = internship_counts.get(company.id, 0) if is_student else company.open_jobs_count %}
+        <span {% if jcount > 0 %}class="cl-jobs-active"{% endif %}>
+          <i class="bi bi-briefcase"></i> {{ jcount }} {{ 'internship' if is_student else 'job' }}{{ 's' if jcount != 1 }}
         </span>
         <span><i class="bi bi-heart"></i> {{ company.follower_count }} follower{{ 's' if company.follower_count != 1 }}</span>
       </div>

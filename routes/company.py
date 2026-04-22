@@ -43,14 +43,30 @@ def listing():
 
     total = query.count()
 
+    is_student = current_user.is_authenticated and current_user.role == ROLE_STUDENT
+
     # KPI metrics
     kpi_total     = Company.query.filter_by(is_active=True).count()
     kpi_verified  = Company.query.filter_by(is_active=True, is_verified=True).count()
-    kpi_open_jobs = db.session.query(func.count(Position.id))\
-                      .filter(Position.is_active==True, Position.company_id != None).scalar() or 0
     kpi_followers = db.session.query(func.count(CompanyFollow.id)).scalar() or 0
     kpi_industries= db.session.query(func.count(func.distinct(Company.industry)))\
                       .filter(Company.is_active==True, Company.industry != None).scalar() or 0
+
+    pos_q = db.session.query(func.count(Position.id))\
+                .filter(Position.is_active==True, Position.company_id != None)
+    if is_student:
+        pos_q = pos_q.filter(Position.type == 'Internship')
+    else:
+        pos_q = pos_q.filter(Position.type != 'Internship')
+    kpi_open_jobs = pos_q.scalar() or 0
+
+    # Per-company internship counts for students (model property counts all types)
+    internship_counts = {}
+    if is_student:
+        rows = db.session.query(Position.company_id, func.count(Position.id))\
+                .filter(Position.is_active==True, Position.type=='Internship')\
+                .group_by(Position.company_id).all()
+        internship_counts = {r[0]: r[1] for r in rows}
 
     return render_template('companies/listing.html',
         companies=companies, q=q, industry=industry, view=view,
@@ -58,7 +74,8 @@ def listing():
         pagination=pagination, total=total,
         kpi_total=kpi_total, kpi_verified=kpi_verified,
         kpi_open_jobs=kpi_open_jobs, kpi_followers=kpi_followers,
-        kpi_industries=kpi_industries)
+        kpi_industries=kpi_industries,
+        is_student=is_student, internship_counts=internship_counts)
 
 
 @company_bp.route('/<slug>')
