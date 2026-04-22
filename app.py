@@ -143,8 +143,10 @@ def create_app(config_name=None):
                 managed_companies = (CompanyMember.query
                                      .filter_by(user_id=current_user.id, role='manager')
                                      .all())
+        from datetime import timedelta
         return dict(
             now=datetime.utcnow(),
+            timedelta=timedelta,
             ROLE_ADMIN=ROLE_ADMIN,
             ROLE_SUPERVISOR=ROLE_SUPERVISOR,
             ROLE_USER=ROLE_USER,
