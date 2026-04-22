@@ -1102,7 +1102,7 @@ def _send_company_job_alerts(position):
         push_notification(
             user.id,
             f'New job at {position.company.name}: {position.title}',
-            url_for('jobs.detail', position_id=position.id),
+            url_for('jobs.detail', job_id=position.id),
             'bi-briefcase-fill',
         )
     if followers:

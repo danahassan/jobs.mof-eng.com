@@ -1319,7 +1319,7 @@ def _send_company_job_alerts(position):
         push_notification(
             user.id,
             f'New job at {position.company.name}: {position.title}',
-            url_for('jobs.detail', position_id=position.id),
+            url_for('jobs.detail', job_id=position.id),
             'bi-briefcase-fill',
         )
     if followers:
@@ -1341,7 +1341,7 @@ def _send_internship_alerts(position):
         push_notification(
             coord.id,
             f'New internship posted: {position.title} at {position.company.name}',
-            url_for('jobs.detail', position_id=position.id),
+            url_for('jobs.detail', job_id=position.id),
             'bi-mortarboard-fill',
         )
         try:
@@ -1373,7 +1373,7 @@ def _send_internship_alerts(position):
         push_notification(
             student.id,
             f'New internship at {position.company.name}: {position.title}',
-            url_for('jobs.detail', position_id=position.id),
+            url_for('jobs.detail', job_id=position.id),
             'bi-mortarboard-fill',
         )
         try:
