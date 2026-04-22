@@ -4,7 +4,7 @@ from flask import (Blueprint, render_template, redirect, url_for,
                    flash, request, abort, jsonify)
 from flask_login import login_required, current_user
 
-from models import db, Company, CompanyFollow, CompanyPhoto, Position, ROLE_USER
+from models import db, Company, CompanyFollow, CompanyPhoto, Position, ROLE_USER, ROLE_STUDENT
 from sqlalchemy import func
 from helpers import log_audit
 
@@ -65,9 +65,12 @@ def listing():
 def profile(slug):
     company = Company.query.filter_by(slug=slug, is_active=True).first_or_404()
     jobs_q = Position.query.filter_by(company_id=company.id, is_active=True)
-    # Hide internships from unauthenticated visitors and regular users
     if not current_user.is_authenticated or current_user.role == ROLE_USER:
+        # Regular/unauthenticated users: hide internships
         jobs_q = jobs_q.filter(Position.type != 'Internship')
+    elif current_user.role == ROLE_STUDENT:
+        # Students: show only internships
+        jobs_q = jobs_q.filter(Position.type == 'Internship')
     jobs = jobs_q.order_by(Position.created_at.desc()).all()
     photos = company.photos.all()
     following = False

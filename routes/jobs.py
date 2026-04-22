@@ -4,9 +4,10 @@ from flask import Blueprint, render_template, request, jsonify, abort
 from flask_login import current_user
 from sqlalchemy import or_
 
+from flask import redirect, url_for
 from models import (db, Position, Company, SavedJob, UserSkill, Application,
                     EXPERIENCE_LEVELS, JOB_TYPES,
-                    ROLE_USER)
+                    ROLE_USER, ROLE_STUDENT)
 
 jobs_bp = Blueprint('jobs', __name__)
 
@@ -14,6 +15,9 @@ jobs_bp = Blueprint('jobs', __name__)
 @jobs_bp.route('/')
 def listing():
     """Public advanced job listing with filters."""
+    # Students should only browse internships via their own portal
+    if current_user.is_authenticated and current_user.role == ROLE_STUDENT:
+        return redirect(url_for('user.browse'))
     q          = request.args.get('q', '').strip()
     dept       = request.args.get('dept', '').strip()
     jtype      = request.args.get('type', '').strip()
