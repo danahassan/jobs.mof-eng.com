@@ -110,7 +110,7 @@ def _admin_university_students_query(univ_id, search='', department_id=None, cla
 
 def _admin_university_student_redirect(univ_id):
     params = {}
-    for key in ('q', 'department_id', 'class_filter', 'major_filter', 'graduation_year', 'gpa_min', 'gpa_max', 'page'):
+    for key in ('tab', 'q', 'department_id', 'class_filter', 'major_filter', 'graduation_year', 'gpa_min', 'gpa_max', 'page'):
         value = request.values.get(key, '').strip() if key != 'page' else request.values.get(key, type=int)
         if value:
             params[key] = value
