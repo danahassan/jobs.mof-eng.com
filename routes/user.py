@@ -429,11 +429,8 @@ def application_detail(app_id):
     history    = app.history.filter(ApplicationHistory.new_status.isnot(None)).order_by(ApplicationHistory.created_at.asc()).all()
     interviews = app.interviews.order_by(Interview.scheduled_at).all()
 
-    # Determine the best conversation partner: assigned supervisor > any admin
-    partner = app.assigned_to
-    if not partner:
-        partner = User.query.filter_by(role=ROLE_ADMIN, is_active=True)\
-                            .order_by(User.id).first()
+    # Only allow messaging the assigned supervisor (never fall back to admins)
+    partner = app.assigned_to if (app.assigned_to and app.assigned_to.role != ROLE_ADMIN) else None
 
     thread_messages = []
     if partner:
