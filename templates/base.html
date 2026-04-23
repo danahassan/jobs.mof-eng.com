@@ -19,10 +19,15 @@
 <link rel="manifest" href="/manifest.json">
 
 <!-- Favicon — MOF logo -->
-<link rel="icon" type="image/png" href="/static/icons/mof-logo.png">
-<link rel="apple-touch-icon" sizes="180x180" href="/static/icons/icon-192.png">
-<link rel="apple-touch-icon" sizes="512x512" href="/static/icons/icon-512.png">
-<link rel="shortcut icon" type="image/png" href="/static/icons/mof-logo.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/static/icons/favicon-16.png">
+<link rel="icon" type="image/png" href="/static/icons/icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/static/icons/apple-touch-icon.png">
+<link rel="apple-touch-icon" sizes="167x167" href="/static/icons/apple-touch-icon-167.png">
+<link rel="apple-touch-icon" sizes="152x152" href="/static/icons/apple-touch-icon-152.png">
+<link rel="apple-touch-icon" sizes="120x120" href="/static/icons/apple-touch-icon-120.png">
+<link rel="mask-icon" href="/static/icons/mof-logo.png" color="#22c55e">
+<link rel="shortcut icon" type="image/png" href="/static/icons/favicon-32.png">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -845,43 +850,58 @@ function _urlBase64ToUint8Array(b64) {
   return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
 }
 (async function initPush() {
-  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
+    console.info('[Push] not supported in this browser');
+    return;
+  }
   try {
     const sw  = await navigator.serviceWorker.ready;
     const btn = document.getElementById('pushEnableBtn');
-    const existing = await sw.pushManager.getSubscription();
+    async function getKey() {
+      const r = await fetch('/api/v1/push/vapid-public-key', {credentials:'same-origin'});
+      const j = await r.json();
+      return j.publicKey || '';
+    }
     async function doSubscribe() {
-      try {
-        const r = await fetch('/api/v1/push/vapid-public-key', {credentials:'same-origin'});
-        const { publicKey } = await r.json();
-        if (!publicKey) return;
-        const sub = await sw.pushManager.subscribe({
+      const publicKey = await getKey();
+      if (!publicKey) {
+        console.warn('[Push] VAPID public key missing on server — push disabled');
+        return null;
+      }
+      let sub = await sw.pushManager.getSubscription();
+      if (!sub) {
+        sub = await sw.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: _urlBase64ToUint8Array(publicKey),
         });
-        await fetch('/api/v1/push/subscribe', {
-          method: 'POST', credentials: 'same-origin',
-          headers: {'Content-Type':'application/json'},
-          body: JSON.stringify(sub.toJSON()),
-        });
-        if (btn) btn.style.display = 'none';
-      } catch(e) { /* user denied or error — stay silent */ }
+      }
+      const res = await fetch('/api/v1/push/subscribe', {
+        method: 'POST', credentials: 'same-origin',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(sub.toJSON()),
+      });
+      console.info('[Push] subscribed', res.status);
+      if (btn) btn.style.display = 'none';
+      return sub;
     }
-    if (existing) {
-      // Re-sync existing subscription in case it changed
+
+    const existing = await sw.pushManager.getSubscription();
+    if (existing && Notification.permission === 'granted') {
+      // Re-sync existing subscription
       await fetch('/api/v1/push/subscribe', {
         method: 'POST', credentials: 'same-origin',
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify(existing.toJSON()),
       });
       if (btn) btn.style.display = 'none';
+    } else if (Notification.permission === 'granted') {
+      await doSubscribe();
+    } else if (Notification.permission !== 'denied') {
+      if (btn) btn.style.display = 'inline-flex';
     } else {
-      if (Notification.permission === 'granted') {
-        await doSubscribe();
-      } else if (Notification.permission !== 'denied') {
-        if (btn) btn.style.display = 'inline-flex';
-      }
+      console.info('[Push] permission denied — user must re-enable in browser settings');
     }
+
     if (btn) {
       btn.addEventListener('click', async () => {
         const perm = await Notification.requestPermission();
@@ -889,7 +909,22 @@ function _urlBase64ToUint8Array(b64) {
         else btn.style.display = 'none';
       });
     }
-  } catch(e) {}
+
+    // Foreground push relay → toast (so user sees something even if OS suppresses)
+    navigator.serviceWorker.addEventListener('message', evt => {
+      if (!evt.data || evt.data.type !== 'push') return;
+      try {
+        const t = document.createElement('div');
+        t.style.cssText = 'position:fixed;right:16px;bottom:16px;z-index:99999;background:#0f1923;color:#fff;padding:12px 16px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.3);max-width:320px;font:500 14px/1.4 system-ui,sans-serif;cursor:pointer';
+        t.innerHTML = '<div style="font-weight:700;margin-bottom:2px">'+ (evt.data.title||'MOF Jobs') +'</div><div style="opacity:.9;font-weight:400">'+ (evt.data.body||'') +'</div>';
+        t.onclick = () => { window.location.href = evt.data.url || '/notifications'; };
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 6000);
+      } catch (_) {}
+    });
+  } catch(e) {
+    console.warn('[Push] init failed', e);
+  }
 })();
 {% endif %}
 </script>

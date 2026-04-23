@@ -40,6 +40,49 @@
 
 <div class="notif-page-wrap">
 
+  <!-- Push diagnostics (admin-only) -->
+  {% if current_user.role == 'admin' %}
+  <details style="margin-bottom:14px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 14px">
+    <summary style="cursor:pointer;font-size:13px;font-weight:600;color:var(--text2)"><i class="bi bi-tools"></i> Push notification diagnostics</summary>
+    <div id="pushDiag" style="margin-top:10px;font-size:12.5px;color:var(--text2);line-height:1.6"></div>
+    <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-outline btn-sm" type="button" onclick="pushDiagRefresh()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+      <button class="btn btn-primary btn-sm" type="button" onclick="pushDiagTest()"><i class="bi bi-send"></i> Send test push to me</button>
+    </div>
+    <div id="pushDiagResult" style="margin-top:8px;font-size:12px;color:var(--text3)"></div>
+  </details>
+  <script>
+    async function pushDiagRefresh(){
+      const box = document.getElementById('pushDiag');
+      box.innerHTML = 'Loading…';
+      try{
+        const r = await fetch('/api/v1/push/status', {credentials:'same-origin'});
+        const j = await r.json();
+        const sw = await navigator.serviceWorker.getRegistration();
+        const sub = sw ? await sw.pushManager.getSubscription() : null;
+        box.innerHTML =
+          '<div>VAPID configured (server): <strong style="color:'+(j.vapid_configured?'#16a34a':'#dc2626')+'">'+j.vapid_configured+'</strong></div>'+
+          '<div>pywebpush installed: <strong style="color:'+(j.pywebpush_installed?'#16a34a':'#dc2626')+'">'+j.pywebpush_installed+'</strong></div>'+
+          '<div>Subscriptions stored for you: <strong>'+j.subscriptions+'</strong></div>'+
+          '<div>Browser permission: <strong>'+Notification.permission+'</strong></div>'+
+          '<div>SW registered: <strong>'+(!!sw)+'</strong>'+(sw?(' ('+sw.scope+')'):'')+'</div>'+
+          '<div>Browser PushSubscription present: <strong>'+(!!sub)+'</strong></div>'+
+          '<div>Standalone (installed PWA): <strong>'+(window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true)+'</strong></div>';
+      }catch(e){ box.innerHTML = 'Error: '+e; }
+    }
+    async function pushDiagTest(){
+      const out = document.getElementById('pushDiagResult');
+      out.textContent = 'Sending…';
+      try{
+        const r = await fetch('/api/v1/push/test', {method:'POST', credentials:'same-origin'});
+        const j = await r.json();
+        out.textContent = 'Server response: ' + JSON.stringify(j) + ' — check the device for the notification.';
+      }catch(e){ out.textContent = 'Error: '+e; }
+    }
+    document.addEventListener('DOMContentLoaded', pushDiagRefresh);
+  </script>
+  {% endif %}
+
   <!-- Header -->
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
     <div style="display:flex;align-items:center;gap:10px">

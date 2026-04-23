@@ -203,24 +203,36 @@ def push_notification(user_id, message, link=None, icon='bi-bell-fill'):
 
 
 def _send_web_push(user_id, message, link=None):
-    """Fire-and-forget Web Push to all subscriptions for a user."""
+    """Fire-and-forget Web Push to all subscriptions for a user.
+    Logs failures via current_app.logger so admins can diagnose silent breakage.
+    """
     try:
         from models import PushSubscription, db as _db
-        from pywebpush import webpush, WebPushException
+        try:
+            from pywebpush import webpush, WebPushException
+        except ImportError:
+            current_app.logger.warning('[push] pywebpush not installed — pip install pywebpush')
+            return
         import json as _json
         cfg = current_app.config
         private_key = cfg.get('VAPID_PRIVATE_KEY', '')
-        if not private_key:
+        public_key  = cfg.get('VAPID_PUBLIC_KEY', '')
+        if not private_key or not public_key:
+            current_app.logger.warning(
+                '[push] VAPID keys not configured (VAPID_PRIVATE_KEY / VAPID_PUBLIC_KEY env vars missing) — push disabled'
+            )
             return
         subs = PushSubscription.query.filter_by(user_id=user_id).all()
         if not subs:
+            current_app.logger.info('[push] user %s has no push subscriptions', user_id)
             return
         payload = _json.dumps({
             'title': 'MOF Jobs',
             'body':  message,
-            'url':   link or '/',
+            'url':   link or '/notifications',
         })
         dead = []
+        sent = 0
         for sub in subs:
             try:
                 webpush(
@@ -231,15 +243,27 @@ def _send_web_push(user_id, message, link=None):
                     data=payload,
                     vapid_private_key=private_key,
                     vapid_claims={'sub': cfg.get('VAPID_SUBJECT', 'mailto:admin@mof-eng.com')},
+                    ttl=86400,
                 )
+                sent += 1
             except WebPushException as exc:
-                if exc.response is not None and exc.response.status_code in (404, 410):
+                code = exc.response.status_code if exc.response is not None else None
+                if code in (404, 410):
                     dead.append(sub.id)
-            except Exception:
-                pass
+                    current_app.logger.info('[push] dropping expired sub %s (HTTP %s)', sub.id, code)
+                else:
+                    current_app.logger.warning('[push] webpush failed sub=%s code=%s body=%s',
+                                               sub.id, code,
+                                               exc.response.text if exc.response is not None else '')
+            except Exception as e:
+                current_app.logger.warning('[push] unexpected error sub=%s: %s', sub.id, e)
         if dead:
             PushSubscription.query.filter(PushSubscription.id.in_(dead)).delete(
                 synchronize_session=False)
             _db.session.commit()
-    except Exception:
-        pass
+        current_app.logger.info('[push] user=%s sent=%s dead=%s', user_id, sent, len(dead))
+    except Exception as e:
+        try:
+            current_app.logger.exception('[push] fatal: %s', e)
+        except Exception:
+            pass
