@@ -767,6 +767,7 @@ class University(db.Model):
     location      = db.Column(db.String(200))
     website       = db.Column(db.String(300))
     logo_filename = db.Column(db.String(200))
+    banner_filename = db.Column(db.String(200))
     contact_email = db.Column(db.String(200))
     contact_phone = db.Column(db.String(100))
     is_active     = db.Column(db.Boolean, default=True)

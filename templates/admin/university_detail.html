@@ -4,333 +4,201 @@
 
 {% block extra_css %}
 <style>
-.ud-hero{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-md);margin-bottom:20px}
-.ud-cover{height:120px;background:linear-gradient(135deg,#0d7a4e 0%,#1a5276 100%);position:relative}
-.ud-profile-row{padding:0 24px 20px;display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-top:-36px;position:relative}
-.ud-logo{width:72px;height:72px;border-radius:14px;object-fit:contain;background:#fff;border:3px solid #fff;box-shadow:0 2px 12px rgba(0,0,0,.15);flex-shrink:0}
-.ud-logo-ph{width:72px;height:72px;border-radius:14px;background:var(--green);display:flex;align-items:center;justify-content:center;border:3px solid #fff;box-shadow:0 2px 12px rgba(0,0,0,.15);flex-shrink:0;font-size:28px;font-weight:700;color:#fff}
-.ud-name{font-size:20px;font-weight:800;color:var(--text);margin:0}
-.ud-meta{font-size:13px;color:var(--text3);display:flex;gap:12px;flex-wrap:wrap;margin-top:4px}
+.ud-page{display:flex;flex-direction:column;gap:16px}
+.ud-hero{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-md)}
+.ud-cover{height:170px;background:linear-gradient(130deg,#0e7a4f,#1f557a);position:relative}
+.ud-cover.has-banner{background-size:cover;background-position:center}
+.ud-cover::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.35),rgba(0,0,0,.05))}
+.ud-head{padding:0 20px 18px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:-36px;position:relative;z-index:2}
+.ud-ident{display:flex;align-items:flex-end;gap:14px;min-width:0}
+.ud-logo{width:74px;height:74px;border-radius:14px;object-fit:contain;background:#fff;border:3px solid #fff;box-shadow:0 2px 12px rgba(0,0,0,.15);flex-shrink:0}
+.ud-logo-ph{width:74px;height:74px;border-radius:14px;background:#0d7a4e;color:#fff;border:3px solid #fff;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;box-shadow:0 2px 12px rgba(0,0,0,.15)}
+.ud-name{font-size:22px;font-weight:800;color:var(--text);margin:0}
+.ud-meta{font-size:13px;color:var(--text3);display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}
 .ud-meta span{display:inline-flex;align-items:center;gap:4px}
-.ud-actions{display:flex;gap:8px;flex-wrap:wrap;padding-bottom:4px}
-.ud-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.ud-left{display:flex;flex-direction:column;gap:16px}
-.ud-right{display:flex;flex-direction:column;gap:16px}
-/* Inline editing */
-.ud-val{font-size:13px;color:var(--text);font-weight:500}
-.ud-inp{display:none}
-body.editing .ud-val{display:none!important}
-body.editing .ud-inp{display:block!important}
-body.editing .ud-edit-btn{display:none}
-body.editing .ud-save-btn{display:flex}
-.ud-edit-btn,.ud-save-btn{display:flex}
-.ud-save-btn{display:none}
-.ud-row{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
-.ud-row:last-child{border-bottom:none;padding-bottom:0}
-.ud-row-icon{width:30px;height:30px;border-radius:7px;background:var(--green-light);color:var(--green);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;margin-top:1px}
-.ud-row-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text3);margin-bottom:2px}
-.ud-student-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
-.ud-student-row:last-child{border-bottom:none;padding-bottom:0}
-.ud-dept-edit{display:grid;grid-template-columns:minmax(120px,1fr) minmax(120px,1fr) auto auto;gap:8px;align-items:center;flex:1;min-width:0}
-.ud-students-filters{display:grid;grid-template-columns:minmax(220px,1.4fr) minmax(160px,.8fr) minmax(140px,.7fr) minmax(160px,.8fr) minmax(120px,.6fr) minmax(110px,.5fr) minmax(110px,.5fr) auto auto;gap:8px;margin-bottom:14px}
-.ud-students-import{display:grid;grid-template-columns:minmax(220px,1.2fr) minmax(170px,.8fr) minmax(140px,.7fr) auto;gap:8px;margin-bottom:16px;padding:12px;border:1px dashed var(--border);border-radius:12px;background:#fafbfc}
-.ud-students-assign{display:grid;grid-template-columns:minmax(190px,1.1fr) minmax(160px,1fr) minmax(170px,.9fr) minmax(130px,.7fr) minmax(130px,.7fr) minmax(170px,.9fr) minmax(100px,.5fr) minmax(110px,.5fr) auto;gap:8px;margin-bottom:16px;padding:12px;border:1px solid var(--border);border-radius:12px;background:#fff}
-.ud-students-bulk{display:grid;grid-template-columns:minmax(170px,.9fr) minmax(170px,.9fr) minmax(140px,.7fr) auto;gap:8px;margin-bottom:16px;padding:12px;border:1px solid var(--border);border-radius:12px;background:#fafbfc}
-.ud-student-actions{display:flex;gap:8px;justify-content:flex-end;align-items:center;flex-wrap:wrap}
-.ud-students-table{min-width:980px}
-@media(max-width:1080px){
-  .ud-students-filters{grid-template-columns:1fr 1fr 1fr 1fr 1fr 1fr 1fr auto auto}
-  .ud-students-assign{grid-template-columns:1fr 1fr 1fr 1fr}
+.ud-actions{display:flex;gap:8px;flex-wrap:wrap}
+
+.ud-tabs{display:flex;gap:8px;flex-wrap:wrap;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px}
+.ud-tab-btn{border:1px solid var(--border);background:#fff;color:var(--text2);padding:8px 12px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.ud-tab-btn.active{background:#0d7a4e;color:#fff;border-color:#0d7a4e}
+
+.ud-pane{display:none}
+.ud-pane.active{display:block}
+.ud-pane-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.ud-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);padding:18px}
+.ud-card-title{font-size:16px;font-weight:800;color:var(--text);margin:0 0 14px;display:flex;align-items:center;gap:8px}
+.ud-row{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
+.ud-row:last-child{border-bottom:none}
+.ud-row-label{font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text3);letter-spacing:.04em}
+.ud-row-value{font-size:13px;color:var(--text);font-weight:500}
+.ud-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ud-full{grid-column:1 / -1}
+
+.ud-toolbar{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.ud-toolbar-right{display:flex;gap:8px;flex-wrap:wrap}
+.ud-filters{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr .8fr .8fr .8fr auto auto;gap:8px;margin-bottom:12px}
+.ud-assign{display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr 1fr 1fr .8fr .8fr auto;gap:8px;margin-bottom:12px;padding:12px;border:1px solid var(--border);border-radius:12px;background:#fff}
+.ud-import{display:grid;grid-template-columns:1.2fr 1fr 1fr auto;gap:8px;margin-bottom:12px;padding:12px;border:1px dashed var(--border);border-radius:12px;background:#fafbfc}
+.ud-bulk{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;margin-bottom:12px;padding:12px;border:1px solid var(--border);border-radius:12px;background:#fafbfc}
+.ud-table-wrap{overflow:auto}
+.ud-table{min-width:1050px}
+.ud-st-actions{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
+
+.ud-list-row{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--border)}
+.ud-list-row:last-child{border-bottom:none}
+.ud-list-main{flex:1;min-width:0}
+.ud-small{font-size:11px;color:var(--text3)}
+
+@media(max-width:1100px){
+  .ud-filters{grid-template-columns:1fr 1fr 1fr 1fr 1fr 1fr 1fr auto auto}
+  .ud-assign{grid-template-columns:1fr 1fr 1fr 1fr}
 }
-@media(max-width:820px){
-  .ud-grid{grid-template-columns:1fr}
-  .ud-dept-edit{grid-template-columns:1fr 1fr auto auto}
-  .ud-students-filters,.ud-students-import,.ud-students-assign,.ud-students-bulk{grid-template-columns:1fr 1fr}
+@media(max-width:900px){
+  .ud-pane-grid{grid-template-columns:1fr}
+  .ud-form-grid,.ud-filters,.ud-assign,.ud-import,.ud-bulk{grid-template-columns:1fr 1fr}
 }
-@media(max-width:600px){
-  .ud-cover{height:80px}
-  .ud-profile-row{padding:0 16px 16px}
-  .ud-meta{font-size:12px;gap:8px}
+@media(max-width:640px){
+  .ud-cover{height:120px}
+  .ud-head{padding:0 14px 14px}
+  .ud-meta{font-size:12px}
   .ud-actions{width:100%}
   .ud-actions .btn{flex:1;justify-content:center}
-  .ud-dept-edit{grid-template-columns:1fr;gap:6px}
-  .ud-students-filters,.ud-students-import,.ud-students-assign,.ud-students-bulk{grid-template-columns:1fr}
-  .ud-student-actions{justify-content:flex-start}
+  .ud-form-grid,.ud-filters,.ud-assign,.ud-import,.ud-bulk{grid-template-columns:1fr}
+  .ud-st-actions{justify-content:flex-start}
 }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- Hero -->
-<div class="ud-hero">
-  <div class="ud-cover"></div>
-  <div class="ud-profile-row">
-    <div style="display:flex;align-items:flex-end;gap:16px">
-      {% if univ.logo_filename %}
-        <img src="{{ url_for('static', filename='uploads/company/' + univ.logo_filename) }}"
-             alt="{{ univ.name }}" class="ud-logo">
-      {% else %}
-        <div class="ud-logo-ph">{{ univ.name[0].upper() }}</div>
-      {% endif %}
-      <div style="padding-bottom:4px">
-        <h2 class="ud-name">{{ univ.name }}</h2>
-        <div class="ud-meta">
-          {% if univ.location %}<span><i class="bi bi-geo-alt"></i> {{ univ.location }}</span>{% endif %}
-          {% if univ.website %}<span><i class="bi bi-globe"></i> <a href="{{ univ.website }}" target="_blank" style="color:var(--green)">{{ univ.website }}</a></span>{% endif %}
-          <span><i class="bi bi-people-fill"></i> {{ student_total }} student(s)</span>
-          <span><i class="bi bi-person-video3"></i> {{ coords|length }} coordinator(s)</span>
-          <span><i class="bi bi-collection-fill"></i> {{ internship_count }} internship app(s)</span>
-        </div>
-      </div>
-    </div>
-    <div class="ud-actions">
-      <button type="button" class="btn btn-outline btn-sm ud-edit-btn" onclick="document.body.classList.add('editing')">
-        <i class="bi bi-pencil"></i> Edit
-      </button>
-      <button type="button" class="btn btn-outline btn-sm ud-save-btn" onclick="document.getElementById('ud-edit-form').submit()">
-        <i class="bi bi-check-lg"></i> Save Changes
-      </button>
-      <button type="button" class="btn btn-outline btn-sm ud-save-btn" style="color:#dc2626;border-color:#fecaca" onclick="document.body.classList.remove('editing')">
-        Cancel
-      </button>
-      <a href="{{ url_for('admin.universities') }}" class="btn btn-outline btn-sm"><i class="bi bi-arrow-left"></i> Back</a>
-    </div>
-  </div>
-</div>
-
-<div class="ud-grid">
-  <!-- LEFT: info + description -->
-  <form id="ud-edit-form" method="POST" action="{{ url_for('admin.university_edit', univ_id=univ.id) }}" enctype="multipart/form-data">
-  <div class="ud-left">
-    <div class="card" style="padding:20px 24px">
-      <div class="card-title"><i class="bi bi-info-circle"></i> University Info</div>
-
-      <div class="ud-row">
-        <div class="ud-row-icon"><i class="bi bi-mortarboard"></i></div>
-        <div style="flex:1;min-width:0">
-          <div class="ud-row-lbl">Name</div>
-          <div class="ud-val">{{ univ.name }}</div>
-          <input name="name" value="{{ univ.name }}" class="form-control ud-inp" style="margin-top:4px">
-        </div>
-      </div>
-
-      <div class="ud-row">
-        <div class="ud-row-icon"><i class="bi bi-geo-alt"></i></div>
-        <div style="flex:1;min-width:0">
-          <div class="ud-row-lbl">Location</div>
-          <div class="ud-val">{{ univ.location or '—' }}</div>
-          <input name="location" value="{{ univ.location or '' }}" class="form-control ud-inp" style="margin-top:4px" placeholder="City, Country">
-        </div>
-      </div>
-
-      <div class="ud-row">
-        <div class="ud-row-icon"><i class="bi bi-globe"></i></div>
-        <div style="flex:1;min-width:0">
-          <div class="ud-row-lbl">Website</div>
-          <div class="ud-val">{% if univ.website %}<a href="{{ univ.website }}" target="_blank" style="color:var(--green)">{{ univ.website }}</a>{% else %}—{% endif %}</div>
-          <input name="website" value="{{ univ.website or '' }}" class="form-control ud-inp" style="margin-top:4px" placeholder="https://…">
-        </div>
-      </div>
-
-      <div class="ud-row">
-        <div class="ud-row-icon"><i class="bi bi-envelope"></i></div>
-        <div style="flex:1;min-width:0">
-          <div class="ud-row-lbl">Contact Email</div>
-          <div class="ud-val">{{ univ.contact_email or '—' }}</div>
-          <input name="contact_email" value="{{ univ.contact_email or '' }}" class="form-control ud-inp" style="margin-top:4px" type="email">
-        </div>
-      </div>
-
-      <div class="ud-row">
-        <div class="ud-row-icon"><i class="bi bi-telephone"></i></div>
-        <div style="flex:1;min-width:0">
-          <div class="ud-row-lbl">Contact Phone</div>
-          <div class="ud-val">{{ univ.contact_phone or '—' }}</div>
-          <input name="contact_phone" value="{{ univ.contact_phone or '' }}" class="form-control ud-inp" style="margin-top:4px">
-        </div>
-      </div>
-
-      <div class="ud-row" style="border-bottom:none">
-        <div class="ud-row-icon"><i class="bi bi-toggle-on"></i></div>
-        <div style="flex:1;min-width:0">
-          <div class="ud-row-lbl">Status</div>
-          <div class="ud-val">
-            {% if univ.is_active %}
-              <span style="background:#d1fae5;color:#065f46;padding:2px 10px;border-radius:20px;font-size:12px;font-weight:600">Active</span>
-            {% else %}
-              <span style="background:#fee2e2;color:#991b1b;padding:2px 10px;border-radius:20px;font-size:12px;font-weight:600">Inactive</span>
-            {% endif %}
+<div class="ud-page">
+  <div class="ud-hero">
+    <div class="ud-cover {% if univ.banner_filename %}has-banner{% endif %}" {% if univ.banner_filename %}style="background-image:url('{{ url_for('static', filename='uploads/company/' + univ.banner_filename) }}')"{% endif %}></div>
+    <div class="ud-head">
+      <div class="ud-ident">
+        {% if univ.logo_filename %}
+          <img src="{{ url_for('static', filename='uploads/company/' + univ.logo_filename) }}" alt="{{ univ.name }}" class="ud-logo">
+        {% else %}
+          <div class="ud-logo-ph">{{ univ.name[0].upper() }}</div>
+        {% endif %}
+        <div>
+          <h2 class="ud-name">{{ univ.name }}</h2>
+          <div class="ud-meta">
+            {% if univ.location %}<span><i class="bi bi-geo-alt"></i> {{ univ.location }}</span>{% endif %}
+            {% if univ.website %}<span><i class="bi bi-globe"></i> <a href="{{ univ.website }}" target="_blank" style="color:var(--green)">{{ univ.website }}</a></span>{% endif %}
+            <span><i class="bi bi-people-fill"></i> {{ student_total }} student(s)</span>
+            <span><i class="bi bi-diagram-3-fill"></i> {{ departments|length }} department(s)</span>
+            <span><i class="bi bi-person-video3"></i> {{ coords|length }} coordinator(s)</span>
           </div>
-          <label class="ud-inp" style="display:flex;align-items:center;gap:8px;margin-top:4px;font-size:13px;cursor:pointer">
-            <input type="checkbox" name="is_active" value="1" {% if univ.is_active %}checked{% endif %}> Active
-          </label>
         </div>
       </div>
-
-      <!-- Logo upload (editing only) -->
-      <div class="ud-inp" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
-        <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text3);display:block;margin-bottom:6px">Replace Logo</label>
-        <input type="file" name="logo" accept=".png,.jpg,.jpeg,.webp" class="form-control">
+      <div class="ud-actions">
+        <a href="{{ url_for('admin.universities') }}" class="btn btn-outline btn-sm"><i class="bi bi-arrow-left"></i> Back</a>
       </div>
-    </div>
-
-    <!-- Description -->
-    <div class="card" style="padding:20px 24px">
-      <div class="card-title"><i class="bi bi-card-text"></i> About</div>
-      <div class="ud-val" style="font-size:13px;color:var(--text2);line-height:1.7;white-space:pre-wrap">{{ univ.description or 'No description provided.' }}</div>
-      <textarea name="description" class="form-control ud-inp" rows="5" style="margin-top:4px;resize:vertical">{{ univ.description or '' }}</textarea>
     </div>
   </div>
-  </form>
 
-  <!-- RIGHT: coordinators + students + danger -->
-  <div class="ud-right">
-    <!-- Coordinators card -->
-    <div class="card" style="padding:20px 24px">
-      <div class="card-title"><i class="bi bi-person-video3"></i> Coordinators</div>
-      {% for m in coords %}
-      <div class="ud-student-row" style="align-items:flex-start;gap:10px">
-        <div style="width:34px;height:34px;border-radius:50%;background:var(--green-light);color:var(--green);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0">
-          {{ m.user.initials if m.user else '?' }}
-        </div>
-        <div style="flex:1;min-width:0">
-          <a href="{{ url_for('admin.user_detail', user_id=m.user_id) }}" style="font-size:13px;font-weight:600;color:var(--text)">{{ m.user.full_name if m.user else '—' }}</a>
-          <div style="font-size:11px;color:var(--text3)">{{ m.user.email if m.user else '' }}</div>
-          <form method="POST" action="{{ url_for('admin.university_coordinator_scope_update', univ_id=univ.id, user_id=m.user_id) }}" style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
-            <select name="department_id" class="form-control" style="font-size:12px;min-width:150px;max-width:220px">
-              <option value="">All departments</option>
-              {% for d in departments %}
-              <option value="{{ d.id }}" {% if m.department_id == d.id %}selected{% endif %}>{{ d.college ~ ' / ' if d.college else '' }}{{ d.name }}</option>
-              {% endfor %}
-            </select>
-            <input name="class_scope" class="form-control" placeholder="Class scope (optional)" value="{{ m.class_scope or '' }}" style="font-size:12px;min-width:130px;max-width:170px">
-            <button type="submit" class="btn btn-outline btn-sm" title="Save scope"><i class="bi bi-check2"></i></button>
-          </form>
-        </div>
-        <form method="POST" action="{{ url_for('admin.university_coordinator_remove', univ_id=univ.id, user_id=m.user_id) }}"
-              onsubmit="return confirm('Remove this coordinator?')">
-          <button type="submit" class="btn btn-sm" style="color:#dc2626;border-color:#fecaca;background:transparent" title="Remove">
-            <i class="bi bi-x-lg"></i>
-          </button>
+  <div class="ud-tabs">
+    <button class="ud-tab-btn active" data-tab="info"><i class="bi bi-info-circle"></i> University Info</button>
+    <button class="ud-tab-btn" data-tab="students"><i class="bi bi-people"></i> Students</button>
+    <button class="ud-tab-btn" data-tab="departments"><i class="bi bi-diagram-3"></i> Departments</button>
+    <button class="ud-tab-btn" data-tab="coordinators"><i class="bi bi-person-video3"></i> Coordinators</button>
+  </div>
+
+  <section class="ud-pane active" id="tab-info">
+    <div class="ud-pane-grid">
+      <div class="ud-card">
+        <h3 class="ud-card-title"><i class="bi bi-pencil-square"></i> Edit University</h3>
+        <form method="POST" action="{{ url_for('admin.university_edit', univ_id=univ.id) }}" enctype="multipart/form-data" class="ud-form-grid">
+          <input class="form-control" name="name" value="{{ univ.name }}" placeholder="University name" required>
+          <input class="form-control" name="location" value="{{ univ.location or '' }}" placeholder="Location">
+          <input class="form-control" type="url" name="website" value="{{ univ.website or '' }}" placeholder="Website">
+          <input class="form-control" type="email" name="contact_email" value="{{ univ.contact_email or '' }}" placeholder="Contact email">
+          <input class="form-control" name="contact_phone" value="{{ univ.contact_phone or '' }}" placeholder="Contact phone">
+          <label style="display:flex;align-items:center;gap:8px;padding:8px 4px;font-size:13px"><input type="checkbox" name="is_active" value="1" {% if univ.is_active %}checked{% endif %}> Active</label>
+          <div class="ud-full">
+            <label class="ud-small" style="display:block;margin-bottom:4px">Description</label>
+            <textarea class="form-control" name="description" rows="5" style="resize:vertical">{{ univ.description or '' }}</textarea>
+          </div>
+          <div>
+            <label class="ud-small" style="display:block;margin-bottom:4px">University Logo</label>
+            <input type="file" class="form-control" name="logo" accept=".png,.jpg,.jpeg,.webp">
+          </div>
+          <div>
+            <label class="ud-small" style="display:block;margin-bottom:4px">University Banner</label>
+            <input type="file" class="form-control" name="banner" accept=".png,.jpg,.jpeg,.webp">
+          </div>
+          <div class="ud-full" style="display:flex;justify-content:flex-end">
+            <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-check2"></i> Save University</button>
+          </div>
         </form>
       </div>
-      {% else %}
-      <div style="color:var(--text3);font-size:13px;text-align:center;padding:16px 0">No coordinators linked yet.</div>
-      {% endfor %}
 
-      {% if available_coords %}
-      <form method="POST" action="{{ url_for('admin.university_coordinator_add', univ_id=univ.id) }}" style="display:grid;gap:8px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
-        <select name="user_id" class="form-control" style="font-size:13px;flex:1" required>
-          <option value="">— Add coordinator —</option>
-          {% for c in available_coords %}
-          <option value="{{ c.id }}">{{ c.full_name }} ({{ c.email }})</option>
-          {% endfor %}
-        </select>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <select name="department_id" class="form-control" style="font-size:12px;min-width:180px;flex:1">
-            <option value="">All departments</option>
-            {% for d in departments %}
-            <option value="{{ d.id }}">{{ d.college ~ ' / ' if d.college else '' }}{{ d.name }}</option>
-            {% endfor %}
-          </select>
-          <input name="class_scope" class="form-control" placeholder="Class scope (optional)" style="font-size:12px;min-width:160px;max-width:220px">
-          <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Add</button>
-        </div>
-      </form>
-      {% endif %}
-    </div>
-
-    <div class="card" style="padding:20px 24px">
-      <div class="card-title"><i class="bi bi-diagram-3-fill"></i> Departments & Colleges</div>
-      {% for d in departments %}
-      <div class="ud-student-row">
-        <form method="POST" action="{{ url_for('admin.university_department_edit', univ_id=univ.id, dept_id=d.id) }}" class="ud-dept-edit">
-          <input name="name" class="form-control" value="{{ d.name }}" placeholder="Department name" required>
-          <input name="college" class="form-control" value="{{ d.college or '' }}" placeholder="College (optional)">
-          <button type="submit" class="btn btn-outline btn-sm" title="Save"><i class="bi bi-check2"></i></button>
-        </form>
-        <form method="POST" action="{{ url_for('admin.university_department_delete', univ_id=univ.id, dept_id=d.id) }}" onsubmit="return confirm('Delete this department?')" style="margin-left:8px">
-          <button type="submit" class="btn btn-sm" style="color:#dc2626;border-color:#fecaca;background:transparent" title="Delete">
-            <i class="bi bi-trash"></i>
-          </button>
+      <div class="ud-card" style="border-color:#fecaca">
+        <h3 class="ud-card-title" style="color:#dc2626"><i class="bi bi-exclamation-triangle-fill"></i> Danger Zone</h3>
+        <p style="font-size:13px;color:var(--text2)">Permanently deletes this university. Students will be unlinked and this cannot be undone.</p>
+        <form method="POST" action="{{ url_for('admin.university_delete', univ_id=univ.id) }}" onsubmit="return confirm('Delete {{ univ.name|e }} permanently? This cannot be undone.')">
+          <button type="submit" class="btn" style="background:#dc2626;color:#fff;border-color:#dc2626"><i class="bi bi-trash3-fill"></i> Delete University</button>
         </form>
       </div>
-      {% else %}
-      <div style="color:var(--text3);font-size:13px;text-align:center;padding:16px 0">No departments added yet.</div>
-      {% endfor %}
-
-      <form method="POST" action="{{ url_for('admin.university_department_add', univ_id=univ.id) }}" style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
-        <input name="name" class="form-control" placeholder="Department name" required>
-        <input name="college" class="form-control" placeholder="College (optional)">
-        <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Add</button>
-      </form>
     </div>
+  </section>
 
-    <!-- Students card -->
-    <div class="card" style="padding:20px 24px">
-      <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:14px">
-        <div class="card-title" style="margin-bottom:0"><i class="bi bi-person-badge-fill"></i> Students
-          <span style="background:#f5f3ff;color:#7c3aed;border-radius:20px;padding:2px 8px;font-size:11px;font-weight:600;margin-left:6px">{{ student_total }}</span>
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
+  <section class="ud-pane" id="tab-students">
+    <div class="ud-card">
+      <div class="ud-toolbar">
+        <h3 class="ud-card-title" style="margin:0"><i class="bi bi-people"></i> Students <span style="font-size:12px;color:var(--text3)">({{ student_total }})</span></h3>
+        <div class="ud-toolbar-right">
           <a href="{{ url_for('admin.university_students_export', univ_id=univ.id, fmt='xlsx', q=q_str, department_id=department_filter, class_filter=class_filter, major_filter=major_filter, graduation_year=graduation_year_filter, gpa_min=gpa_min_filter, gpa_max=gpa_max_filter) }}" class="btn btn-outline btn-sm"><i class="bi bi-download"></i> Export</a>
           <a href="{{ url_for('admin.university_students_import_template', univ_id=univ.id) }}" class="btn btn-outline btn-sm"><i class="bi bi-file-earmark-spreadsheet"></i> Template</a>
         </div>
       </div>
 
-      <form method="GET" action="{{ url_for('admin.university_detail', univ_id=univ.id) }}" class="ud-students-filters">
+      <form method="GET" action="{{ url_for('admin.university_detail', univ_id=univ.id) }}" class="ud-filters">
         <input type="text" name="q" class="form-control" placeholder="Search by name, email, ID, major, class" value="{{ q_str }}">
         <select name="department_id" class="form-control">
           <option value="">All departments</option>
           {% for d in departments %}
-          <option value="{{ d.id }}" {% if department_filter == d.id %}selected{% endif %}>{{ d.college ~ ' / ' if d.college else '' }}{{ d.name }}</option>
+          <option value="{{ d.id }}" {% if department_filter == d.id %}selected{% endif %}>{{ d.full_name() }}</option>
           {% endfor %}
         </select>
-        <input type="text" name="class_filter" class="form-control" placeholder="Class filter" value="{{ class_filter }}">
-        <input type="text" name="major_filter" class="form-control" placeholder="Major filter" value="{{ major_filter }}">
+        <input type="text" name="class_filter" class="form-control" placeholder="Class" value="{{ class_filter }}">
+        <input type="text" name="major_filter" class="form-control" placeholder="Major" value="{{ major_filter }}">
         <input type="number" name="graduation_year" class="form-control" placeholder="Grad year" value="{{ graduation_year_filter or '' }}">
         <input type="number" step="0.01" name="gpa_min" class="form-control" placeholder="GPA min" value="{{ gpa_min_filter }}">
         <input type="number" step="0.01" name="gpa_max" class="form-control" placeholder="GPA max" value="{{ gpa_max_filter }}">
-        <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-funnel"></i> Filter</button>
+        <button class="btn btn-primary btn-sm" type="submit"><i class="bi bi-funnel"></i> Filter</button>
         <a href="{{ url_for('admin.university_detail', univ_id=univ.id) }}" class="btn btn-outline btn-sm"><i class="bi bi-arrow-counterclockwise"></i> Reset</a>
       </form>
 
-      <form method="POST" action="{{ url_for('admin.university_students_import', univ_id=univ.id) }}" enctype="multipart/form-data" class="ud-students-import">
+      <form method="POST" action="{{ url_for('admin.university_students_import', univ_id=univ.id) }}" enctype="multipart/form-data" class="ud-import">
         <input type="file" name="file" class="form-control" accept=".xlsx,.xls" required>
         <select name="default_department_id" class="form-control">
           <option value="">Default department</option>
-          {% for d in departments %}
-          <option value="{{ d.id }}">{{ d.college ~ ' / ' if d.college else '' }}{{ d.name }}</option>
-          {% endfor %}
+          {% for d in departments %}<option value="{{ d.id }}">{{ d.full_name() }}</option>{% endfor %}
         </select>
-        <input type="text" name="default_class" class="form-control" placeholder="Default class/cohort">
+        <input type="text" name="default_class" class="form-control" placeholder="Default class">
         <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-upload"></i> Import</button>
       </form>
 
-      <div style="font-size:12px;color:var(--text3);margin-bottom:8px">Admins assign a student to this university here, and can set department, class, major, GPA, and graduation year at the same time.</div>
-      <form method="POST" action="{{ url_for('admin.university_student_assign', univ_id=univ.id) }}" class="ud-students-assign">
+      <form method="POST" action="{{ url_for('admin.university_student_assign', univ_id=univ.id) }}" class="ud-assign">
         <select name="student_id" class="form-control">
           <option value="">Assign existing student</option>
-          {% for student in assignable_students %}
-          <option value="{{ student.id }}">{{ student.full_name }}{% if student.email %} ({{ student.email }}){% endif %}</option>
-          {% endfor %}
+          {% for student in assignable_students %}<option value="{{ student.id }}">{{ student.full_name }}{% if student.email %} ({{ student.email }}){% endif %}</option>{% endfor %}
         </select>
-        <input type="text" name="full_name" class="form-control" placeholder="Or create: full name">
+        <input type="text" name="full_name" class="form-control" placeholder="Or create full name">
         <input type="email" name="email" class="form-control" placeholder="Student email">
         <select name="department_id" class="form-control">
           <option value="">Department</option>
-          {% for d in departments %}
-          <option value="{{ d.id }}">{{ d.name }}</option>
-          {% endfor %}
+          {% for d in departments %}<option value="{{ d.id }}">{{ d.name }}</option>{% endfor %}
         </select>
-        <input type="text" name="university_class" class="form-control" placeholder="Class / cohort">
+        <input type="text" name="university_class" class="form-control" placeholder="Class">
         <input type="text" name="university_major" class="form-control" placeholder="Major">
         <input type="text" name="student_gpa" class="form-control" placeholder="GPA">
         <input type="number" name="graduation_year" class="form-control" placeholder="Grad year">
         <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Assign</button>
       </form>
 
-      <form id="students-bulk-form" method="POST" action="{{ url_for('admin.university_students_bulk', univ_id=univ.id) }}" class="ud-students-bulk">
+      <form id="students-bulk-form" method="POST" action="{{ url_for('admin.university_students_bulk', univ_id=univ.id) }}" class="ud-bulk">
         <input type="hidden" name="q" value="{{ q_str }}">
         <input type="hidden" name="department_id" value="{{ department_filter or '' }}">
         <input type="hidden" name="class_filter" value="{{ class_filter }}">
@@ -340,23 +208,21 @@ body.editing .ud-save-btn{display:flex}
         <input type="hidden" name="gpa_max" value="{{ gpa_max_filter }}">
         <input type="hidden" name="page" value="{{ students.page }}">
         <select name="bulk_action" class="form-control" required>
-          <option value="">Bulk action for selected students</option>
-          <option value="set_department">Set department / class</option>
+          <option value="">Bulk action</option>
+          <option value="set_department">Set department/class</option>
           <option value="clear_department">Clear department</option>
           <option value="unlink">Unlink from university</option>
         </select>
         <select name="bulk_department_id" class="form-control">
           <option value="">Bulk department</option>
-          {% for d in departments %}
-          <option value="{{ d.id }}">{{ d.college ~ ' / ' if d.college else '' }}{{ d.name }}</option>
-          {% endfor %}
+          {% for d in departments %}<option value="{{ d.id }}">{{ d.full_name() }}</option>{% endfor %}
         </select>
         <input type="text" name="bulk_class" class="form-control" placeholder="Bulk class (optional)">
-        <button type="submit" class="btn btn-outline btn-sm"><i class="bi bi-stack"></i> Apply to selected</button>
+        <button type="submit" class="btn btn-outline btn-sm"><i class="bi bi-stack"></i> Apply</button>
       </form>
 
-      <div class="table-responsive">
-        <table class="tbl ud-students-table">
+      <div class="ud-table-wrap">
+        <table class="tbl ud-table">
           <thead>
             <tr>
               <th style="width:36px"><input type="checkbox" onclick="document.querySelectorAll('.bulk-student-checkbox').forEach((el)=>el.checked=this.checked)"></th>
@@ -367,88 +233,152 @@ body.editing .ud-save-btn{display:flex}
               <th>GPA</th>
               <th>Grad Year</th>
               <th>Student ID</th>
-              <th style="width:270px"></th>
+              <th style="width:280px">Actions</th>
             </tr>
           </thead>
           <tbody>
             {% for s in students.items %}
             <tr>
-              <td data-label="Select"><input type="checkbox" class="bulk-student-checkbox" name="student_ids" value="{{ s.id }}" form="students-bulk-form"></td>
-              <td data-label="Student">
+              <td><input type="checkbox" class="bulk-student-checkbox" name="student_ids" value="{{ s.id }}" form="students-bulk-form"></td>
+              <td>
                 <div style="display:flex;align-items:center;gap:10px">
-                  <div style="width:30px;height:30px;border-radius:50%;background:#f5f3ff;color:#7c3aed;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">{{ s.initials }}</div>
-                  <div style="min-width:0">
-                    <a href="{{ url_for('admin.user_detail', user_id=s.id) }}" style="font-size:13px;font-weight:600;color:var(--text)">{{ s.full_name }}</a>
-                    <div style="font-size:11px;color:var(--text3)">{{ s.email }}</div>
+                  <div style="width:30px;height:30px;border-radius:50%;background:#f5f3ff;color:#7c3aed;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">{{ s.initials }}</div>
+                  <div>
+                    <div style="font-size:13px;font-weight:700">{{ s.full_name }}</div>
+                    <div class="ud-small">{{ s.email }}</div>
                   </div>
                 </div>
               </td>
-              <td data-label="Department">
-                <span style="font-size:13px;color:var(--text3)">{{ s.university_department.full_name() if s.university_department else '—' }}</span>
-              </td>
-              <td data-label="Class">
-                <span style="font-size:13px;color:var(--text3)">{{ s.university_class or '—' }}</span>
-              </td>
-              <td data-label="Major">
-                <span style="font-size:13px;color:var(--text3)">{{ s.university_major or '—' }}</span>
-              </td>
-              <td data-label="GPA">
-                <span style="font-size:13px;color:var(--text3)">{{ s.student_gpa or '—' }}</span>
-              </td>
-              <td data-label="Grad Year">
-                <span style="font-size:13px;color:var(--text3)">{{ s.graduation_year or '—' }}</span>
-              </td>
-              <td data-label="Student ID" style="font-size:13px;color:var(--text3)">{{ s.student_id_number or '—' }}</td>
-              <td data-label="Actions">
-                <div class="ud-student-actions">
+              <td>{{ s.university_department.full_name() if s.university_department else '—' }}</td>
+              <td>{{ s.university_class or '—' }}</td>
+              <td>{{ s.university_major or '—' }}</td>
+              <td>{{ s.student_gpa or '—' }}</td>
+              <td>{{ s.graduation_year or '—' }}</td>
+              <td>{{ s.student_id_number or '—' }}</td>
+              <td>
+                <div class="ud-st-actions">
                   <a href="{{ url_for('admin.user_detail', user_id=s.id) }}" class="btn btn-outline btn-sm"><i class="bi bi-eye"></i> View</a>
                   <a href="{{ url_for('admin.user_edit', user_id=s.id) }}" class="btn btn-outline btn-sm"><i class="bi bi-pencil"></i> Edit</a>
-                  <form method="POST" action="{{ url_for('admin.university_student_delete', univ_id=univ.id, student_id=s.id, q=q_str, department_id=department_filter, class_filter=class_filter, major_filter=major_filter, graduation_year=graduation_year_filter, gpa_min=gpa_min_filter, gpa_max=gpa_max_filter, page=students.page) }}" onsubmit="return confirm('Delete {{ s.full_name|e }} permanently? This will remove the account and related records.')">
-                    <button type="submit" class="btn btn-sm" style="color:#dc2626;border-color:#fecaca;background:transparent"><i class="bi bi-trash"></i> Delete</button>
-                  </form>
                   <form method="POST" action="{{ url_for('admin.university_student_unlink', univ_id=univ.id, student_id=s.id, q=q_str, department_id=department_filter, class_filter=class_filter, major_filter=major_filter, graduation_year=graduation_year_filter, gpa_min=gpa_min_filter, gpa_max=gpa_max_filter, page=students.page) }}" onsubmit="return confirm('Unlink {{ s.full_name|e }} from {{ univ.name|e }}?')">
                     <button type="submit" class="btn btn-outline btn-sm"><i class="bi bi-link-45deg"></i> Unlink</button>
+                  </form>
+                  <form method="POST" action="{{ url_for('admin.university_student_delete', univ_id=univ.id, student_id=s.id, q=q_str, department_id=department_filter, class_filter=class_filter, major_filter=major_filter, graduation_year=graduation_year_filter, gpa_min=gpa_min_filter, gpa_max=gpa_max_filter, page=students.page) }}" onsubmit="return confirm('Delete {{ s.full_name|e }} permanently? This removes the account and related records.')">
+                    <button type="submit" class="btn btn-sm" style="color:#dc2626;border-color:#fecaca;background:transparent"><i class="bi bi-trash"></i> Delete</button>
                   </form>
                 </div>
               </td>
             </tr>
             {% else %}
-            <tr>
-              <td colspan="9"><div class="empty-state"><i class="bi bi-people"></i> No students match the current filters.</div></td>
-            </tr>
+            <tr><td colspan="9"><div class="empty-state"><i class="bi bi-people"></i> No students match current filters.</div></td></tr>
             {% endfor %}
           </tbody>
         </table>
       </div>
 
       {% if students.pages > 1 %}
-      <div class="pagination" style="margin-top:16px">
+      <div class="pagination" style="margin-top:14px">
         <a href="{{ url_for('admin.university_detail', univ_id=univ.id, page=students.prev_num, q=q_str, department_id=department_filter, class_filter=class_filter, major_filter=major_filter, graduation_year=graduation_year_filter, gpa_min=gpa_min_filter, gpa_max=gpa_max_filter) }}" class="page-link {% if not students.has_prev %}disabled{% endif %}"><i class="bi bi-chevron-left"></i></a>
         {% for p in students.iter_pages() %}
           {% if p %}
             <a href="{{ url_for('admin.university_detail', univ_id=univ.id, page=p, q=q_str, department_id=department_filter, class_filter=class_filter, major_filter=major_filter, graduation_year=graduation_year_filter, gpa_min=gpa_min_filter, gpa_max=gpa_max_filter) }}" class="page-link {% if p == students.page %}active{% endif %}">{{ p }}</a>
-          {% else %}
-            <span class="page-link">…</span>
-          {% endif %}
+          {% else %}<span class="page-link">…</span>{% endif %}
         {% endfor %}
         <a href="{{ url_for('admin.university_detail', univ_id=univ.id, page=students.next_num, q=q_str, department_id=department_filter, class_filter=class_filter, major_filter=major_filter, graduation_year=graduation_year_filter, gpa_min=gpa_min_filter, gpa_max=gpa_max_filter) }}" class="page-link {% if not students.has_next %}disabled{% endif %}"><i class="bi bi-chevron-right"></i></a>
       </div>
       {% endif %}
     </div>
+  </section>
 
-    <!-- Danger zone -->
-    <div class="card" style="padding:20px 24px;border-color:#fecaca">
-      <div class="card-title" style="color:#dc2626"><i class="bi bi-exclamation-triangle-fill"></i> Danger Zone</div>
-      <p style="font-size:13px;color:var(--text2);margin-bottom:14px">
-        Permanently deletes the university record. Students will be unlinked. This cannot be undone.
-      </p>
-      <form method="POST" action="{{ url_for('admin.university_delete', univ_id=univ.id) }}"
-            onsubmit="return confirm('Delete {{ univ.name }} permanently? This cannot be undone.')">
-        <button type="submit" class="btn" style="background:#dc2626;color:#fff;border-color:#dc2626">
-          <i class="bi bi-trash3-fill"></i> Delete University
-        </button>
+  <section class="ud-pane" id="tab-departments">
+    <div class="ud-card">
+      <h3 class="ud-card-title"><i class="bi bi-diagram-3"></i> Departments & Colleges</h3>
+      {% for d in departments %}
+      <div class="ud-list-row">
+        <form method="POST" action="{{ url_for('admin.university_department_edit', univ_id=univ.id, dept_id=d.id) }}" class="ud-form-grid" style="flex:1">
+          <input name="name" class="form-control" value="{{ d.name }}" required>
+          <input name="college" class="form-control" value="{{ d.college or '' }}" placeholder="College (optional)">
+          <div class="ud-full" style="display:flex;justify-content:flex-end"><button type="submit" class="btn btn-outline btn-sm"><i class="bi bi-check2"></i> Save</button></div>
+        </form>
+        <form method="POST" action="{{ url_for('admin.university_department_delete', univ_id=univ.id, dept_id=d.id) }}" onsubmit="return confirm('Delete this department?')">
+          <button type="submit" class="btn btn-sm" style="color:#dc2626;border-color:#fecaca;background:transparent"><i class="bi bi-trash"></i> Delete</button>
+        </form>
+      </div>
+      {% else %}
+      <div class="empty-state"><i class="bi bi-diagram-3"></i> No departments added yet.</div>
+      {% endfor %}
+
+      <form method="POST" action="{{ url_for('admin.university_department_add', univ_id=univ.id) }}" class="ud-form-grid" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+        <input name="name" class="form-control" placeholder="Department name" required>
+        <input name="college" class="form-control" placeholder="College (optional)">
+        <div class="ud-full" style="display:flex;justify-content:flex-end"><button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Add Department</button></div>
       </form>
     </div>
-  </div>
+  </section>
+
+  <section class="ud-pane" id="tab-coordinators">
+    <div class="ud-card">
+      <h3 class="ud-card-title"><i class="bi bi-person-video3"></i> Coordinators</h3>
+      {% for m in coords %}
+      <div class="ud-list-row">
+        <div style="width:34px;height:34px;border-radius:50%;background:var(--green-light);color:var(--green);display:flex;align-items:center;justify-content:center;font-weight:700">{{ m.user.initials if m.user else '?' }}</div>
+        <div class="ud-list-main">
+          <a href="{{ url_for('admin.user_detail', user_id=m.user_id) }}" style="font-size:13px;font-weight:700;color:var(--text)">{{ m.user.full_name if m.user else '—' }}</a>
+          <div class="ud-small">{{ m.user.email if m.user else '' }}</div>
+          <form method="POST" action="{{ url_for('admin.university_coordinator_scope_update', univ_id=univ.id, user_id=m.user_id) }}" class="ud-form-grid" style="margin-top:8px">
+            <select name="department_id" class="form-control">
+              <option value="">All departments</option>
+              {% for d in departments %}<option value="{{ d.id }}" {% if m.department_id == d.id %}selected{% endif %}>{{ d.full_name() }}</option>{% endfor %}
+            </select>
+            <input name="class_scope" class="form-control" placeholder="Class scope (optional)" value="{{ m.class_scope or '' }}">
+            <div class="ud-full" style="display:flex;justify-content:flex-end"><button type="submit" class="btn btn-outline btn-sm"><i class="bi bi-check2"></i> Save Scope</button></div>
+          </form>
+        </div>
+        <form method="POST" action="{{ url_for('admin.university_coordinator_remove', univ_id=univ.id, user_id=m.user_id) }}" onsubmit="return confirm('Remove this coordinator?')">
+          <button type="submit" class="btn btn-sm" style="color:#dc2626;border-color:#fecaca;background:transparent"><i class="bi bi-x-lg"></i> Remove</button>
+        </form>
+      </div>
+      {% else %}
+      <div class="empty-state"><i class="bi bi-person-video3"></i> No coordinators linked yet.</div>
+      {% endfor %}
+
+      {% if available_coords %}
+      <form method="POST" action="{{ url_for('admin.university_coordinator_add', univ_id=univ.id) }}" class="ud-form-grid" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+        <select name="user_id" class="form-control" required>
+          <option value="">Select coordinator</option>
+          {% for c in available_coords %}<option value="{{ c.id }}">{{ c.full_name }} ({{ c.email }})</option>{% endfor %}
+        </select>
+        <select name="department_id" class="form-control">
+          <option value="">All departments</option>
+          {% for d in departments %}<option value="{{ d.id }}">{{ d.full_name() }}</option>{% endfor %}
+        </select>
+        <input name="class_scope" class="form-control" placeholder="Class scope (optional)">
+        <div class="ud-full" style="display:flex;justify-content:flex-end"><button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Add Coordinator</button></div>
+      </form>
+      {% endif %}
+    </div>
+  </section>
 </div>
+
+<script>
+(function(){
+  const btns = Array.from(document.querySelectorAll('.ud-tab-btn'));
+  const panes = Array.from(document.querySelectorAll('.ud-pane'));
+
+  function activate(tab){
+    btns.forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+    panes.forEach(p => p.classList.toggle('active', p.id === `tab-${tab}`));
+    if (window.location.hash !== `#${tab}`) {
+      history.replaceState(null, '', `#${tab}`);
+    }
+  }
+
+  btns.forEach(btn => btn.addEventListener('click', () => activate(btn.dataset.tab)));
+  const hash = (window.location.hash || '').replace('#','');
+  if (hash && document.getElementById(`tab-${hash}`)) {
+    activate(hash);
+  } else {
+    activate('info');
+  }
+})();
+</script>
 {% endblock %}

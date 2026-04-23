@@ -249,6 +249,7 @@ def _migrate_db(app):
             _safe_add_column(conn, 'users', 'student_gpa', 'VARCHAR(20)')
             _safe_add_column(conn, 'users', 'graduation_year', 'INTEGER')
             _safe_add_column(conn, 'users', 'student_id_number', 'VARCHAR(50)')
+            _safe_add_column(conn, 'universities', 'banner_filename', 'VARCHAR(200)')
             # University coordinator scope fields
             _safe_add_column(conn, 'university_members', 'department_id', 'INTEGER')
             _safe_add_column(conn, 'university_members', 'class_scope', 'VARCHAR(100)')

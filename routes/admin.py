@@ -2007,6 +2007,13 @@ def university_edit(univ_id):
         except ValueError as e:
             flash(str(e), 'warning')
 
+    banner = request.files.get('banner')
+    if banner and banner.filename:
+        try:
+            univ.banner_filename = save_company_image(banner)
+        except ValueError as e:
+            flash(str(e), 'warning')
+
     _audit('university.edit', univ.name)
     db.session.commit()
     flash('University updated.', 'success')
