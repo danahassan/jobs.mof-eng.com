@@ -93,6 +93,7 @@ def create_app(config_name=None):
     from routes.university_apply  import university_apply_bp
     from routes.university        import university_bp
     from routes.student           import student_bp
+    from routes.reports           import reports_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(admin_bp,             url_prefix='/admin')
@@ -111,6 +112,7 @@ def create_app(config_name=None):
     app.register_blueprint(university_apply_bp)
     app.register_blueprint(university_bp,        url_prefix='/university')
     app.register_blueprint(student_bp,           url_prefix='/student')
+    app.register_blueprint(reports_bp,           url_prefix='/reports')
 
     # Root redirect
     @app.route('/')
@@ -209,7 +211,7 @@ def create_app(config_name=None):
         _migrate_db(app)
         _seed_admin(app)
         # Ensure all upload folders exist
-        for folder_key in ('UPLOAD_FOLDER', 'AVATAR_FOLDER', 'PORTFOLIO_FOLDER', 'COMPANY_LOGO_FOLDER'):
+        for folder_key in ('UPLOAD_FOLDER', 'AVATAR_FOLDER', 'PORTFOLIO_FOLDER', 'COMPANY_LOGO_FOLDER', 'REPORTS_FOLDER'):
             folder = app.config.get(folder_key)
             if folder:
                 os.makedirs(folder, exist_ok=True)

@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+{% block title %}Reports — MOF Jobs{% endblock %}
+{% block page_title %}Internship Reports{% endblock %}
+
+{% block content %}
+<style>
+.rep-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:18px}
+.rep-kpi{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;box-shadow:var(--shadow);display:flex;align-items:center;gap:12px}
+.rep-kpi-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.rep-kpi-val{font-size:20px;font-weight:800;color:var(--text);line-height:1.05}
+.rep-kpi-lbl{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-top:2px}
+
+.rep-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.rep-filters .form-control,.rep-filters select{min-width:140px}
+
+.rep-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+.rep-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:8px;transition:transform .15s,box-shadow .15s}
+.rep-card:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.08)}
+.rep-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.rep-type-badge{font-size:10px;font-weight:700;padding:3px 9px;border-radius:99px;background:var(--green-light);color:var(--green);text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
+.rep-status-pill{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:99px;color:#fff;white-space:nowrap}
+.rep-title{font-size:15px;font-weight:700;color:var(--text);line-height:1.3;text-decoration:none;display:block}
+.rep-title:hover{color:var(--green)}
+.rep-meta{display:flex;flex-wrap:wrap;gap:10px;font-size:11.5px;color:var(--text3)}
+.rep-meta span{display:inline-flex;align-items:center;gap:3px}
+.rep-grade{display:inline-flex;align-items:center;gap:6px;background:#f0fdf4;color:#16a34a;padding:4px 12px;border-radius:99px;font-weight:700;font-size:13px;width:fit-content}
+.rep-grade.warn{background:#fff7ed;color:#ea580c}
+.rep-grade.danger{background:#fee2e2;color:#dc2626}
+.rep-snippet{font-size:12.5px;color:var(--text2);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.rep-card-bot{display:flex;justify-content:space-between;align-items:center;margin-top:6px;padding-top:10px;border-top:1px solid var(--border)}
+.rep-student{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2)}
+.rep-avatar{width:24px;height:24px;border-radius:50%;background:var(--green-light);color:var(--green);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}
+
+.rep-empty{background:var(--card);border:1px dashed var(--border);border-radius:var(--radius-lg);padding:48px 20px;text-align:center;color:var(--text3)}
+.rep-empty i{font-size:42px;display:block;margin-bottom:10px;opacity:.45}
+</style>
+
+<!-- Header -->
+<div class="section-header" style="margin-bottom:14px;flex-wrap:wrap;gap:10px">
+  <span class="text-muted text-sm">
+    {% if role == 'student' %}Your submitted internship reports{% else %}Reports from your students{% endif %}
+  </span>
+  {% if role == 'student' %}
+  <a href="{{ url_for('reports.submit') }}" class="btn btn-primary btn-sm">
+    <i class="bi bi-cloud-upload-fill"></i> Submit New Report
+  </a>
+  {% endif %}
+</div>
+
+<!-- KPIs -->
+<div class="rep-kpis">
+  <div class="rep-kpi">
+    <div class="rep-kpi-icon" style="background:#eff6ff;color:#2563eb"><i class="bi bi-files"></i></div>
+    <div><div class="rep-kpi-val">{{ stats.total }}</div><div class="rep-kpi-lbl">Total</div></div>
+  </div>
+  <div class="rep-kpi">
+    <div class="rep-kpi-icon" style="background:#fff7ed;color:#ea580c"><i class="bi bi-hourglass-split"></i></div>
+    <div><div class="rep-kpi-val">{{ stats.pending }}</div><div class="rep-kpi-lbl">{% if role == 'student' %}Awaiting Review{% else %}Need Your Review{% endif %}</div></div>
+  </div>
+  <div class="rep-kpi">
+    <div class="rep-kpi-icon" style="background:#f0fdf4;color:#16a34a"><i class="bi bi-patch-check-fill"></i></div>
+    <div><div class="rep-kpi-val">{{ stats.graded }}</div><div class="rep-kpi-lbl">Graded</div></div>
+  </div>
+  <div class="rep-kpi">
+    <div class="rep-kpi-icon" style="background:#ede9fe;color:#7c3aed"><i class="bi bi-bar-chart-fill"></i></div>
+    <div>
+      <div class="rep-kpi-val">{% if stats.avg_grade is not none %}{{ stats.avg_grade }}{% else %}—{% endif %}</div>
+      <div class="rep-kpi-lbl">Avg. Grade</div>
+    </div>
+  </div>
+</div>
+
+<!-- Filters -->
+<form method="GET" class="rep-filters">
+  <input type="text" name="q" class="form-control" placeholder="Search title or notes…" value="{{ search }}" style="flex:1;min-width:200px">
+  <select name="type" class="form-control">
+    <option value="">All types</option>
+    {% for t, label, _ in REPORT_TYPES %}
+      <option value="{{ t }}" {% if type_f == t %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  <select name="status" class="form-control">
+    <option value="">All statuses</option>
+    {% for s in ALL_REPORT_STATUSES %}
+      <option value="{{ s }}" {% if status_f == s %}selected{% endif %}>{{ s }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-funnel"></i> Filter</button>
+  {% if status_f or type_f or search %}
+    <a href="{{ url_for('reports.index') }}" class="btn btn-outline btn-sm">Reset</a>
+  {% endif %}
+</form>
+
+<!-- List -->
+{% if reports %}
+<div class="rep-grid">
+  {% for r in reports %}
+  <div class="rep-card">
+    <div class="rep-card-top">
+      <span class="rep-type-badge">{{ r.type_label.split(' ')[0] }}</span>
+      <span class="rep-status-pill" style="background:{{ r.status_color }}">{{ r.status }}</span>
+    </div>
+    <a href="{{ url_for('reports.detail', report_id=r.id) }}" class="rep-title">{{ r.title }}</a>
+    <div class="rep-meta">
+      <span><i class="bi bi-file-earmark-text"></i> {{ r.file_name }}</span>
+      <span><i class="bi bi-clock"></i> {{ (r.submitted_at | localdt).strftime('%b %d, %Y') }}</span>
+      {% if r.period_start and r.period_end %}
+      <span><i class="bi bi-calendar3"></i> {{ r.period_start.strftime('%b %d') }} – {{ r.period_end.strftime('%b %d') }}</span>
+      {% endif %}
+    </div>
+    {% if r.description %}<div class="rep-snippet">{{ r.description }}</div>{% endif %}
+    {% if r.grade is not none %}
+      {% set tone = 'rep-grade' if r.grade >= 70 else ('rep-grade warn' if r.grade >= 50 else 'rep-grade danger') %}
+      <div class="{{ tone }}"><i class="bi bi-award-fill"></i> {{ r.grade }}/100</div>
+    {% endif %}
+    <div class="rep-card-bot">
+      {% if role == 'student' %}
+      <div class="rep-student">
+        <i class="bi bi-mortarboard-fill" style="color:var(--text3)"></i>
+        {% if r.coordinator %}{{ r.coordinator.full_name }}{% else %}<em>Awaiting coordinator</em>{% endif %}
+      </div>
+      {% else %}
+      <div class="rep-student">
+        <div class="rep-avatar">{{ r.student.full_name[:1].upper() }}</div>
+        {{ r.student.full_name }}
+      </div>
+      {% endif %}
+      <a href="{{ url_for('reports.detail', report_id=r.id) }}" class="btn btn-outline btn-sm">
+        {% if role == 'student' %}View{% else %}Review<i class="bi bi-arrow-right"></i>{% endif %}
+      </a>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="rep-empty">
+  <i class="bi bi-folder2-open"></i>
+  <h3 style="font-size:16px;margin:0 0 6px">No reports yet</h3>
+  {% if role == 'student' %}
+    <p style="margin:0 0 14px">Submit your first internship report to your coordinator.</p>
+    <a href="{{ url_for('reports.submit') }}" class="btn btn-primary btn-sm"><i class="bi bi-cloud-upload-fill"></i> Submit a Report</a>
+  {% else %}
+    <p style="margin:0">Your students haven't submitted any reports yet. They will appear here once they do.</p>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

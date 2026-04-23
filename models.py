@@ -879,6 +879,92 @@ class UniversityRequest(db.Model):
         self.password_hash = generate_password_hash(pw)
 
 
+# ─── Internship Reports ───────────────────────────────────────────────────────
+
+REPORT_TYPE_FINAL       = 'final'
+REPORT_TYPE_PROGRESS    = 'progress'
+REPORT_TYPE_RESEARCH    = 'research'
+REPORT_TYPE_AFFILIATION = 'affiliation'
+
+REPORT_TYPES = [
+    (REPORT_TYPE_FINAL,       'Final Internship Report',
+     'Comprehensive document at the end of the internship — role, projects, structure, growth.'),
+    (REPORT_TYPE_PROGRESS,    'Progress / Interim Report',
+     'Short, periodic report (weekly or monthly) tracking ongoing tasks and challenges.'),
+    (REPORT_TYPE_RESEARCH,    'Research-Based Report',
+     'Formal research focus — proposal, literature review, methodology, and data analysis.'),
+    (REPORT_TYPE_AFFILIATION, 'Affiliation (Experiential) Report',
+     'Day-to-day operations and administrative experience at the host organization.'),
+]
+
+REPORT_STATUS_SUBMITTED      = 'Submitted'
+REPORT_STATUS_UNDER_REVIEW   = 'Under Review'
+REPORT_STATUS_GRADED         = 'Graded'
+REPORT_STATUS_NEEDS_REVISION = 'Needs Revision'
+
+ALL_REPORT_STATUSES = [REPORT_STATUS_SUBMITTED, REPORT_STATUS_UNDER_REVIEW,
+                       REPORT_STATUS_GRADED, REPORT_STATUS_NEEDS_REVISION]
+
+
+class InternshipReport(db.Model):
+    __tablename__ = 'internship_reports'
+
+    id              = db.Column(db.Integer, primary_key=True)
+    student_id      = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    coordinator_id  = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True, index=True)
+    application_id  = db.Column(db.Integer, db.ForeignKey('applications.id'), nullable=True)
+
+    report_type     = db.Column(db.String(32), nullable=False, default=REPORT_TYPE_PROGRESS)
+    title           = db.Column(db.String(255), nullable=False)
+    description     = db.Column(db.Text)              # student's notes / summary
+    period_start    = db.Column(db.Date)              # for progress reports
+    period_end      = db.Column(db.Date)
+
+    file_path       = db.Column(db.String(255), nullable=False)   # stored uuid filename
+    file_name       = db.Column(db.String(255), nullable=False)   # original filename
+    file_size       = db.Column(db.Integer)
+    file_mime       = db.Column(db.String(120))
+
+    status          = db.Column(db.String(32), nullable=False, default=REPORT_STATUS_SUBMITTED)
+    grade           = db.Column(db.Integer)            # 0..100
+    coordinator_comment = db.Column(db.Text)
+    reviewed_by_id  = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    reviewed_at     = db.Column(db.DateTime)
+
+    submitted_at    = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    updated_at      = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    student      = db.relationship('User', foreign_keys=[student_id], backref=db.backref('internship_reports', lazy='dynamic'))
+    coordinator  = db.relationship('User', foreign_keys=[coordinator_id])
+    reviewed_by  = db.relationship('User', foreign_keys=[reviewed_by_id])
+    application  = db.relationship('Application', foreign_keys=[application_id])
+
+    @property
+    def type_label(self):
+        for t, label, _hint in REPORT_TYPES:
+            if t == self.report_type:
+                return label
+        return self.report_type
+
+    @property
+    def status_color(self):
+        return {
+            REPORT_STATUS_SUBMITTED:      '#2563eb',
+            REPORT_STATUS_UNDER_REVIEW:   '#7c3aed',
+            REPORT_STATUS_GRADED:         '#16a34a',
+            REPORT_STATUS_NEEDS_REVISION: '#ea580c',
+        }.get(self.status, '#64748b')
+
+    @property
+    def file_size_human(self):
+        s = self.file_size or 0
+        for unit in ('B', 'KB', 'MB', 'GB'):
+            if s < 1024:
+                return f"{s:.1f} {unit}" if unit != 'B' else f"{s} {unit}"
+            s /= 1024
+        return f"{s:.1f} TB"
+
+
 from sqlalchemy.orm import configure_mappers  # noqa: E402
 configure_mappers()
 

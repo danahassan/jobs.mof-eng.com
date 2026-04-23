@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width,initial-scale=1"><meta charset="UTF-8"><style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+body{font-family:'Inter',Arial,sans-serif;background:#f4f6f8;margin:0;padding:24px}
+.wrap{max-width:580px;margin:0 auto;background:#fff;border-radius:10px;overflow:hidden;border:1px solid #e0e0e0}
+.header{background:#1a2332;padding:24px 28px;display:flex;align-items:center;justify-content:space-between}
+.header-name{color:#fff;font-size:18px;font-weight:600}
+.header-badge{color:#fff;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;letter-spacing:.5px}
+.body{padding:28px}
+.section-title{font-size:11px;font-weight:700;color:#8a9aaa;letter-spacing:.8px;text-transform:uppercase;margin:20px 0 8px}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid #e8ecf0;border-radius:8px;overflow:hidden;margin-bottom:16px}
+.info-cell{padding:11px 14px;border-bottom:1px solid #e8ecf0;border-right:1px solid #e8ecf0}
+.info-cell:nth-child(2n){border-right:none}
+.info-cell:nth-last-child(-n+2){border-bottom:none}
+.info-lbl{font-size:11px;color:#8a9aaa;margin-bottom:2px}
+.info-val{font-size:13px;font-weight:600;color:#1a2332}
+.cta{display:inline-block;margin-top:20px;background:#198754;color:#fff;text-decoration:none;padding:11px 22px;border-radius:8px;font-size:13px;font-weight:600}
+.footer{background:#f8f9fa;padding:16px 28px;font-size:12px;color:#8a9aaa;border-top:1px solid #e0e0e0;text-align:center}
+.grade-display{text-align:center;background:#f0fdf4;border:2px solid #16a34a;border-radius:12px;padding:18px;margin:14px 0}
+.grade-display.warn{background:#fff7ed;border-color:#ea580c}
+.grade-display.danger{background:#fee2e2;border-color:#dc2626}
+.grade-display .grade-num{font-size:36px;font-weight:800;color:#16a34a;line-height:1}
+.grade-display.warn .grade-num{color:#ea580c}
+.grade-display.danger .grade-num{color:#dc2626}
+.grade-display .grade-lbl{font-size:11px;color:#5a6a7a;text-transform:uppercase;letter-spacing:.6px;margin-top:6px;font-weight:600}
+.comment-block{background:#f8f9fa;border-left:4px solid #198754;border-radius:4px 8px 8px 4px;padding:14px 16px;font-size:13.5px;color:#1a2332;line-height:1.6;white-space:pre-wrap}
+@media (max-width: 600px){
+  body{padding:0!important}
+  .wrap{width:100%!important;max-width:100%!important;margin:0!important;border-radius:0!important;border:none!important}
+  .header,.body,.footer{padding:20px 24px!important}
+  .info-grid{grid-template-columns:1fr!important}
+  .info-cell{border-right:none!important;border-bottom:1px solid #e8ecf0!important}
+  .info-cell:last-child{border-bottom:none!important}
+  .cta{display:block!important;text-align:center!important}
+}
+</style></head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div class="header-name">Report Reviewed</div>
+    <div class="header-badge" style="background:{{ report.status_color }}">{{ report.status }}</div>
+  </div>
+  <div class="body">
+    <p>Hi <strong>{{ student.full_name.split()[0] }}</strong>,</p>
+    <p style="margin-top:8px;color:#3a4a5a;font-size:14px">
+      Your coordinator <strong>{{ coordinator.full_name }}</strong> has just reviewed your internship report.
+    </p>
+
+    {% if report.grade is not none %}
+      {% set tone = '' if report.grade >= 70 else ('warn' if report.grade >= 50 else 'danger') %}
+      <div class="grade-display {{ tone }}">
+        <div class="grade-num">{{ report.grade }}<span style="font-size:20px;color:#8a9aaa;font-weight:600">/100</span></div>
+        <div class="grade-lbl">Your Grade</div>
+      </div>
+    {% endif %}
+
+    <div class="section-title">Report</div>
+    <div class="info-grid">
+      <div class="info-cell"><div class="info-lbl">Title</div><div class="info-val">{{ report.title }}</div></div>
+      <div class="info-cell"><div class="info-lbl">Type</div><div class="info-val">{{ report.type_label }}</div></div>
+      <div class="info-cell"><div class="info-lbl">Status</div><div class="info-val">{{ report.status }}</div></div>
+      <div class="info-cell"><div class="info-lbl">Reviewed</div><div class="info-val">{{ report.reviewed_at.strftime('%b %d, %Y') if report.reviewed_at else '—' }}</div></div>
+    </div>
+
+    {% if report.coordinator_comment %}
+    <div class="section-title">Coordinator's Comments</div>
+    <div class="comment-block">{{ report.coordinator_comment }}</div>
+    {% endif %}
+
+    {% if report.status == 'Needs Revision' %}
+    <p style="margin-top:14px;background:#fff8e6;border:1px solid #f5d97a;border-radius:8px;padding:11px 14px;font-size:13px;color:#92650a">
+      &#9888;&#65039; Your coordinator has asked for revisions. Please update your report based on the feedback above and submit a new version.
+    </p>
+    {% endif %}
+
+    <a href="{{ site_url }}/reports/{{ report.id }}" class="cta">View Full Review &rarr;</a>
+
+    <p style="margin-top:24px;font-size:13px;color:#5a6a7a">
+      Best regards,<br>
+      <strong>MOF Engineering &mdash; Careers Team</strong>
+    </p>
+  </div>
+  <div class="footer">
+    <img src="https://mof-eng.com/wp-content/uploads/2025/05/cropped-MOF-LOGO-transparent--100x46.png"
+         alt="MOF Engineering" width="72" style="display:block;margin:0 auto 10px;filter:brightness(0);opacity:.55"
+         onerror="this.style.display='none'">
+    Notification for students.<br>
+    MOF Engineering Company &middot; Slemani, Iraq &middot; <a href="https://mof-eng.com" style="color:#198754">mof-eng.com</a>
+  </div>
+</div>
+</body>
+</html>

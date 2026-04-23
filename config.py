@@ -23,8 +23,12 @@ class Config:
     PORTFOLIO_FOLDER     = os.path.join(BASE_DIR, 'static', 'uploads', 'portfolio')
     COMPANY_LOGO_FOLDER   = os.path.join(BASE_DIR, 'static', 'uploads', 'company')
     COMPANY_PHOTOS_FOLDER  = os.path.join(BASE_DIR, 'static', 'uploads', 'company_photos')
+    REPORTS_FOLDER         = os.path.join(BASE_DIR, 'static', 'uploads', 'reports')
     MAX_CONTENT_LENGTH   = 10 * 1024 * 1024  # 10 MB
     ALLOWED_EXTENSIONS   = {'pdf', 'doc', 'docx'}
+    REPORT_ALLOWED_EXTENSIONS = {'pdf', 'doc', 'docx', 'odt', 'rtf', 'txt',
+                                 'ppt', 'pptx', 'xls', 'xlsx', 'csv',
+                                 'jpg', 'jpeg', 'png', 'zip'}
 
     # Email (uses your existing no-reply@mof-eng.com setup)
     MAIL_SERVER = os.environ.get('MAIL_SERVER', 'mail.mof-eng.com')

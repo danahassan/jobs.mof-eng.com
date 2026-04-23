@@ -1,0 +1,219 @@
+{% extends 'base.html' %}
+{% block title %}{{ report.title }} — Report — MOF Jobs{% endblock %}
+{% block page_title %}Report Detail{% endblock %}
+
+{% block content %}
+<style>
+.det-wrap{max-width:920px;margin:0 auto}
+.det-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:22px 26px;box-shadow:var(--shadow);margin-bottom:14px}
+.det-head{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;align-items:flex-start;margin-bottom:14px}
+.det-title{font-size:20px;font-weight:800;color:var(--text);line-height:1.25;margin:0 0 6px}
+.det-type{display:inline-flex;align-items:center;gap:6px;background:var(--green-light);color:var(--green);font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;text-transform:uppercase;letter-spacing:.4px}
+.det-status{font-size:11.5px;font-weight:700;padding:5px 12px;border-radius:99px;color:#fff;white-space:nowrap}
+
+.det-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--border);border-radius:10px;overflow:hidden;margin:14px 0}
+.det-cell{padding:11px 14px;border-bottom:1px solid var(--border);border-right:1px solid var(--border)}
+.det-cell:nth-child(2n){border-right:none}
+.det-cell:nth-last-child(-n+2){border-bottom:none}
+.det-cell-lbl{font-size:10.5px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px;font-weight:600}
+.det-cell-val{font-size:13.5px;font-weight:600;color:var(--text);line-height:1.35}
+.det-cell-val a{color:var(--green);text-decoration:none}
+
+.det-section-title{font-size:11.5px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin:16px 0 8px}
+.det-desc{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px 16px;font-size:13.5px;color:var(--text);line-height:1.6;white-space:pre-wrap}
+
+.det-file-row{display:flex;align-items:center;gap:14px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px 18px}
+.det-file-icon{width:46px;height:46px;border-radius:10px;background:#fef2f2;color:#dc2626;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.det-file-icon.word{background:#eff6ff;color:#2563eb}
+.det-file-icon.pdf{background:#fef2f2;color:#dc2626}
+.det-file-icon.image{background:#f0fdf4;color:#16a34a}
+.det-file-icon.archive{background:#fef3c7;color:#b45309}
+.det-file-icon.other{background:#f3f4f6;color:#64748b}
+.det-file-info{flex:1;min-width:0}
+.det-file-name{font-size:13.5px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.det-file-meta{font-size:11.5px;color:var(--text3);margin-top:2px}
+
+.review-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px 24px;box-shadow:var(--shadow)}
+.grade-bar{height:10px;background:var(--border);border-radius:99px;overflow:hidden;margin-top:6px}
+.grade-bar-fill{height:100%;border-radius:99px;transition:width .4s}
+.review-existing{background:var(--bg);border-left:4px solid var(--green);padding:14px 18px;border-radius:8px;margin-bottom:16px}
+.review-existing-meta{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--text3);margin-bottom:8px}
+.review-existing-grade{display:inline-flex;align-items:center;gap:6px;background:var(--green-light);color:var(--green);padding:3px 12px;border-radius:99px;font-size:13px;font-weight:700;margin-bottom:8px}
+.review-existing-grade.warn{background:#fff7ed;color:#ea580c}
+.review-existing-grade.danger{background:#fee2e2;color:#dc2626}
+.review-comment{font-size:13.5px;color:var(--text);line-height:1.6;white-space:pre-wrap}
+.review-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:14px;border-top:1px solid var(--border);padding-top:14px;flex-wrap:wrap}
+.status-btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.status-btn{padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:var(--card);font-size:12px;font-weight:600;color:var(--text2);cursor:pointer;transition:all .15s}
+.status-btn:hover{border-color:var(--green)}
+.status-btn.active{background:var(--green);color:#fff;border-color:var(--green)}
+@media(max-width:560px){.det-grid{grid-template-columns:1fr}.det-cell{border-right:none}}
+</style>
+
+<div class="det-wrap">
+  <a href="{{ url_for('reports.index') }}" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--text3);text-decoration:none;margin-bottom:14px">
+    <i class="bi bi-arrow-left"></i> Back to all reports
+  </a>
+
+  <div class="det-card">
+    <div class="det-head">
+      <div style="flex:1;min-width:0">
+        <div class="det-type">
+          <i class="bi bi-{% if report.report_type == 'final' %}journal-check{% elif report.report_type == 'progress' %}clock-history{% elif report.report_type == 'research' %}flask-fill{% else %}building-fill-check{% endif %}"></i>
+          {{ report.type_label }}
+        </div>
+        <h1 class="det-title" style="margin-top:8px">{{ report.title }}</h1>
+        <div style="font-size:12px;color:var(--text3)">
+          Submitted {{ (report.submitted_at | localdt).strftime('%b %d, %Y at %H:%M') }}
+          {% if not is_student %} by <b style="color:var(--text2)">{{ report.student.full_name }}</b>{% endif %}
+        </div>
+      </div>
+      <span class="det-status" style="background:{{ report.status_color }}">{{ report.status }}</span>
+    </div>
+
+    <!-- Info grid -->
+    <div class="det-grid">
+      <div class="det-cell">
+        <div class="det-cell-lbl">Student</div>
+        <div class="det-cell-val">{{ report.student.full_name }}<br>
+          <span style="font-size:11px;color:var(--text3);font-weight:400">{{ report.student.email }}</span></div>
+      </div>
+      <div class="det-cell">
+        <div class="det-cell-lbl">Coordinator</div>
+        <div class="det-cell-val">
+          {% if report.coordinator %}
+            {{ report.coordinator.full_name }}<br>
+            <span style="font-size:11px;color:var(--text3);font-weight:400">{{ report.coordinator.email }}</span>
+          {% else %}
+            <em style="color:var(--text3);font-weight:400">Not assigned yet</em>
+          {% endif %}
+        </div>
+      </div>
+      {% if report.period_start or report.period_end %}
+      <div class="det-cell">
+        <div class="det-cell-lbl">Reporting Period</div>
+        <div class="det-cell-val">
+          {{ report.period_start.strftime('%b %d, %Y') if report.period_start else '—' }}
+          to
+          {{ report.period_end.strftime('%b %d, %Y') if report.period_end else '—' }}
+        </div>
+      </div>
+      {% endif %}
+      {% if report.application %}
+      <div class="det-cell">
+        <div class="det-cell-lbl">Linked Application</div>
+        <div class="det-cell-val">
+          {{ report.application.position.title }}
+          {% if report.application.position.company %} · {{ report.application.position.company.name }}{% endif %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Description -->
+    {% if report.description %}
+    <div class="det-section-title">Notes from the student</div>
+    <div class="det-desc">{{ report.description }}</div>
+    {% endif %}
+
+    <!-- File -->
+    <div class="det-section-title">Attached file</div>
+    {% set ext = report.file_name.rsplit('.', 1)[-1].lower() if '.' in report.file_name else '' %}
+    {% set icon_class = 'pdf' if ext == 'pdf' else 'word' if ext in ['doc','docx','odt','rtf'] else 'image' if ext in ['jpg','jpeg','png','gif'] else 'archive' if ext in ['zip','rar','7z'] else 'other' %}
+    {% set icon_name = 'file-pdf-fill' if ext == 'pdf' else 'file-word-fill' if ext in ['doc','docx'] else 'file-earmark-image-fill' if ext in ['jpg','jpeg','png','gif'] else 'file-zip-fill' if ext in ['zip','rar','7z'] else 'file-earmark-fill' %}
+    <div class="det-file-row">
+      <div class="det-file-icon {{ icon_class }}"><i class="bi bi-{{ icon_name }}"></i></div>
+      <div class="det-file-info">
+        <div class="det-file-name">{{ report.file_name }}</div>
+        <div class="det-file-meta">{{ report.file_size_human }} · {{ ext.upper() if ext else 'FILE' }}</div>
+      </div>
+      <a href="{{ url_for('reports.download', report_id=report.id) }}" class="btn btn-primary btn-sm">
+        <i class="bi bi-download"></i> Download
+      </a>
+    </div>
+
+    <!-- Delete (student, while not graded) -->
+    {% if is_student and report.status != 'Graded' %}
+    <form method="POST" action="{{ url_for('reports.delete', report_id=report.id) }}"
+          onsubmit="return confirm('Delete this report? This cannot be undone.')"
+          style="margin-top:14px;text-align:right">
+      <button type="submit" class="btn btn-sm" style="background:transparent;color:#dc2626;border:1px solid #fca5a5">
+        <i class="bi bi-trash"></i> Delete report
+      </button>
+    </form>
+    {% endif %}
+  </div>
+
+  {# ─── Existing review ─── #}
+  {% if report.coordinator_comment or report.grade is not none or report.reviewed_at %}
+  <div class="review-card">
+    <h2 style="font-size:15px;margin:0 0 12px;color:var(--text);display:flex;align-items:center;gap:7px">
+      <i class="bi bi-clipboard-check-fill" style="color:var(--green)"></i> Coordinator Review
+    </h2>
+    <div class="review-existing">
+      {% if report.reviewed_by %}
+      <div class="review-existing-meta">
+        <i class="bi bi-person-check-fill"></i>
+        Reviewed by <b style="color:var(--text2)">{{ report.reviewed_by.full_name }}</b>
+        on {{ (report.reviewed_at | localdt).strftime('%b %d, %Y at %H:%M') }}
+      </div>
+      {% endif %}
+      {% if report.grade is not none %}
+        {% set tone = '' if report.grade >= 70 else ('warn' if report.grade >= 50 else 'danger') %}
+        <div class="review-existing-grade {{ tone }}">
+          <i class="bi bi-award-fill"></i> Grade: {{ report.grade }}/100
+        </div>
+        <div class="grade-bar">
+          <div class="grade-bar-fill" style="width:{{ report.grade }}%;background:{% if report.grade >= 70 %}#16a34a{% elif report.grade >= 50 %}#ea580c{% else %}#dc2626{% endif %}"></div>
+        </div>
+      {% endif %}
+      {% if report.coordinator_comment %}
+      <div class="review-comment" style="margin-top:10px">{{ report.coordinator_comment }}</div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  {# ─── Review form (coordinator / admin) ─── #}
+  {% if can_grade %}
+  <form method="POST" action="{{ url_for('reports.review', report_id=report.id) }}" class="review-card">
+    <h2 style="font-size:15px;margin:0 0 12px;color:var(--text);display:flex;align-items:center;gap:7px">
+      <i class="bi bi-pencil-square" style="color:var(--green)"></i>
+      {% if report.coordinator_comment or report.grade is not none %}Update review{% else %}Evaluate this report{% endif %}
+    </h2>
+
+    <!-- Status quick-buttons -->
+    <div style="font-size:11.5px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Status</div>
+    <div class="status-btn-row">
+      {% for s in ['Under Review', 'Needs Revision', 'Graded'] %}
+      <label class="status-btn {% if report.status == s %}active{% endif %}">
+        <input type="radio" name="status" value="{{ s }}" {% if report.status == s %}checked{% endif %} style="display:none"
+               onchange="document.querySelectorAll('.status-btn').forEach(function(b){b.classList.remove('active');});this.parentNode.classList.add('active');">
+        {{ s }}
+      </label>
+      {% endfor %}
+    </div>
+
+    <div class="form-group">
+      <label>Grade <span class="text-muted">(0–100, optional)</span></label>
+      <input type="number" name="grade" class="form-control" min="0" max="100" step="1"
+             value="{{ report.grade if report.grade is not none else '' }}"
+             placeholder="e.g. 85" style="max-width:160px">
+    </div>
+
+    <div class="form-group">
+      <label>Comment to the student <span class="text-muted">(optional)</span></label>
+      <textarea name="comment" class="form-control" rows="5"
+                placeholder="Strengths, areas to improve, what's missing, next steps…">{{ report.coordinator_comment or '' }}</textarea>
+    </div>
+
+    <div class="review-actions">
+      <a href="{{ url_for('reports.index') }}" class="btn btn-outline btn-sm">Cancel</a>
+      <button type="submit" class="btn btn-primary btn-sm">
+        <i class="bi bi-check2-circle"></i> Save Review &amp; Notify Student
+      </button>
+    </div>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}
