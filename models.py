@@ -965,6 +965,65 @@ class InternshipReport(db.Model):
         return f"{s:.1f} TB"
 
 
+# ─── Ads (admin-managed top banner) ──────────────────────────────────────────
+
+class Ad(db.Model):
+    """Image banner shown at the top of every page.
+
+    Admin uploads an image, sets a date window and an optional click URL.
+    The system shows the highest-priority active ad whose date window covers
+    `now`. Views are tracked via a 1×1 pixel beacon, clicks via a redirect.
+    """
+    __tablename__ = 'ads'
+
+    id           = db.Column(db.Integer, primary_key=True)
+    title        = db.Column(db.String(200), nullable=False)
+    image_path   = db.Column(db.String(255), nullable=False)   # stored uuid filename
+    image_name   = db.Column(db.String(255))                    # original filename
+    image_mime   = db.Column(db.String(80))
+    link_url     = db.Column(db.String(500))                    # optional click target
+    start_at     = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    end_at       = db.Column(db.DateTime, index=True)           # inclusive end
+    is_active    = db.Column(db.Boolean, default=True, index=True)
+    priority     = db.Column(db.Integer, default=0)             # higher wins
+    view_count   = db.Column(db.Integer, default=0)
+    click_count  = db.Column(db.Integer, default=0)
+    created_by_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    created_at   = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at   = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    created_by = db.relationship('User', foreign_keys=[created_by_id])
+
+    @property
+    def is_live(self):
+        """True if the ad is enabled and inside its date window."""
+        if not self.is_active:
+            return False
+        now = datetime.utcnow()
+        if self.start_at and now < self.start_at:
+            return False
+        if self.end_at and now > self.end_at:
+            return False
+        return True
+
+    @property
+    def status_label(self):
+        if not self.is_active:
+            return 'Disabled'
+        now = datetime.utcnow()
+        if self.start_at and now < self.start_at:
+            return 'Scheduled'
+        if self.end_at and now > self.end_at:
+            return 'Expired'
+        return 'Live'
+
+    @property
+    def ctr(self):
+        """Click-through rate as a percentage."""
+        return round((self.click_count or 0) / self.view_count * 100, 2) if self.view_count else 0
+
+
 from sqlalchemy.orm import configure_mappers  # noqa: E402
 configure_mappers()
+
 

@@ -106,6 +106,17 @@ nav.sidebar-nav{padding:8px 10px;flex:1}
 .pwa-guide-actions{display:flex;justify-content:flex-end;gap:10px}
 .pwa-guide-actions .btn{min-width:96px;justify-content:center}
 .topbar-divider{width:1px;height:24px;background:var(--border)}
+
+/* ═══ AD BANNER ═══ */
+.ad-banner{position:relative;margin:14px 24px 0;border-radius:12px;overflow:hidden;background:#f1f5f9;border:1px solid var(--border);box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.ad-banner-link{display:block;line-height:0}
+.ad-banner-img{width:100%;height:auto;max-height:160px;object-fit:cover;display:block}
+.ad-banner-close{position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;border:none;background:rgba(0,0,0,.55);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;transition:background .15s;z-index:2}
+.ad-banner-close:hover{background:rgba(0,0,0,.8)}
+@media(max-width:640px){
+  .ad-banner{margin:10px 12px 0;border-radius:10px}
+  .ad-banner-img{max-height:110px}
+}
 .avatar-wrap{display:flex;align-items:center;gap:8px;cursor:pointer;padding:5px 10px;border-radius:8px;transition:background 0.15s;text-decoration:none}
 .avatar-wrap:hover{background:#f8f9fa;text-decoration:none}
 .avatar{width:34px;height:34px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;border:2px solid var(--green-light)}
@@ -522,6 +533,7 @@ html.dark select.form-control option{background:#1e293b}
         </a>
         <a href="{{ url_for('messages.inbox') }}" class="nav-item {% if request.blueprint == 'messages' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-chat-dots-fill"></i> Messages{% if unread_count %}<span class="nav-badge">{{ unread_count }}</span>{% endif %}</a>
         <a href="{{ url_for('admin.audit_trail') }}" class="nav-item {% if request.endpoint == 'admin.audit_trail' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-clock-history"></i> Audit Trail</a>
+        <a href="{{ url_for('ads.admin_list') }}" class="nav-item {% if request.blueprint == 'ads' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-megaphone-fill"></i> Ads / Banners</a>
         <a href="{{ url_for('admin.settings') }}" class="nav-item {% if request.endpoint == 'admin.settings' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-gear-fill"></i> Settings</a>
 
       {% elif current_user.role == 'supervisor' %}
@@ -623,6 +635,21 @@ html.dark select.form-control option{background:#1e293b}
     </div>
 
     <div class="content">
+      {% if current_ad %}
+      <div class="ad-banner" id="adBanner-{{ current_ad.id }}">
+        {% if current_ad.link_url %}
+        <a href="{{ url_for('ads.click', ad_id=current_ad.id) }}" target="_blank" rel="noopener" class="ad-banner-link">
+          <img src="{{ url_for('ads.serve_image', filename=current_ad.image_path) }}" alt="{{ current_ad.title }}" class="ad-banner-img">
+        </a>
+        {% else %}
+        <img src="{{ url_for('ads.serve_image', filename=current_ad.image_path) }}" alt="{{ current_ad.title }}" class="ad-banner-img">
+        {% endif %}
+        <button type="button" class="ad-banner-close" onclick="document.getElementById('adBanner-{{ current_ad.id }}').remove()" title="Dismiss" aria-label="Dismiss ad">
+          <i class="bi bi-x-lg"></i>
+        </button>
+        <img src="{{ url_for('ads.view_pixel', ad_id=current_ad.id) }}" alt="" width="1" height="1" style="position:absolute;left:-9999px" aria-hidden="true">
+      </div>
+      {% endif %}
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
           <div class="flash-wrap">

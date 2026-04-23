@@ -94,6 +94,7 @@ def create_app(config_name=None):
     from routes.university        import university_bp
     from routes.student           import student_bp
     from routes.reports           import reports_bp
+    from routes.ads               import ads_bp, get_current_ad
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(admin_bp,             url_prefix='/admin')
@@ -113,6 +114,7 @@ def create_app(config_name=None):
     app.register_blueprint(university_bp,        url_prefix='/university')
     app.register_blueprint(student_bp,           url_prefix='/student')
     app.register_blueprint(reports_bp,           url_prefix='/reports')
+    app.register_blueprint(ads_bp,               url_prefix='/ads')
 
     # Root redirect
     @app.route('/')
@@ -163,6 +165,12 @@ def create_app(config_name=None):
         return redirect(url_for('user.dashboard'))
 
     # Context processor — available in all templates
+    def _safe_current_ad():
+        try:
+            return get_current_ad()
+        except Exception:
+            return None
+
     @app.context_processor
     def inject_globals():
         unread_messages = 0
@@ -203,6 +211,7 @@ def create_app(config_name=None):
             SALARY_RANGES=SALARY_RANGES,
             pending_sup_requests=pending_sup_requests,
             pending_univ_requests=pending_univ_requests,
+            current_ad=_safe_current_ad(),
         )
 
     # Create DB tables and seed admin on first run
@@ -211,7 +220,7 @@ def create_app(config_name=None):
         _migrate_db(app)
         _seed_admin(app)
         # Ensure all upload folders exist
-        for folder_key in ('UPLOAD_FOLDER', 'AVATAR_FOLDER', 'PORTFOLIO_FOLDER', 'COMPANY_LOGO_FOLDER', 'REPORTS_FOLDER'):
+        for folder_key in ('UPLOAD_FOLDER', 'AVATAR_FOLDER', 'PORTFOLIO_FOLDER', 'COMPANY_LOGO_FOLDER', 'REPORTS_FOLDER', 'ADS_FOLDER'):
             folder = app.config.get(folder_key)
             if folder:
                 os.makedirs(folder, exist_ok=True)
