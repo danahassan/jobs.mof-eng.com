@@ -132,7 +132,7 @@
         <i class="bi bi-file-earmark-pdf"></i> {{ app.cv_original or 'Download CV' }}
       </a>
       {% endif %}
-      <a href="{{ url_for('admin.applications') }}" class="app-hero-back">
+      <a href="{{ url_for(back_endpoint or 'admin.applications') }}" class="app-hero-back">
         <i class="bi bi-arrow-left"></i> Back to Applications
       </a>
     </div>

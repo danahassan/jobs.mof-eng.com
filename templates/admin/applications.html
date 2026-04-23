@@ -1,6 +1,6 @@
 ﻿{% extends 'base.html' %}
-{% block title %}Applications — MOF Jobs{% endblock %}
-{% block page_title %}Applications{% endblock %}
+{% block title %}{{ scope_title or 'Applications' }} — MOF Jobs{% endblock %}
+{% block page_title %}{{ scope_title or 'Applications' }}{% endblock %}
 
 {% block content %}
 <!-- KPI Strip -->
@@ -76,7 +76,7 @@
     </div>
     <div class="filter-actions">
       <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-funnel"></i> Filter</button>
-      <a href="{{ url_for('admin.applications') }}" class="btn btn-outline btn-sm">Reset</a>
+      <a href="{{ url_for(applications_base_endpoint) }}" class="btn btn-outline btn-sm">Reset</a>
     </div>
   </div>
 </form>
@@ -87,18 +87,18 @@
 
   {% if position_f %}<span class="filter-chip"><i class="bi bi-briefcase"></i> Position filter active</span>{% endif %}
   {% if assigned_f %}<span class="filter-chip"><i class="bi bi-person"></i> Assigned filter active</span>{% endif %}
-  <a href="{{ url_for('admin.applications') }}" class="filter-chip" style="background:#fee2e2;color:#991b1b;border-color:#fca5a5"><i class="bi bi-x-lg"></i> Clear all</a>
+  <a href="{{ url_for(applications_base_endpoint) }}" class="filter-chip" style="background:#fee2e2;color:#991b1b;border-color:#fca5a5"><i class="bi bi-x-lg"></i> Clear all</a>
 </div>
 {% endif %}
 
 <div class="table-card">
   <div class="table-head">
     <span style="font-family:var(--font-head);font-size:13px;font-weight:600">
-      {{ apps.total }} application{{ 's' if apps.total != 1 }}
+      {{ apps.total }} {{ item_plural if apps.total != 1 else item_singular }}
     </span>
     <div class="export-group">
-      <a href="{{ url_for('admin.applications_export', fmt='csv') }}" class="btn-export csv"><i class="bi bi-filetype-csv"></i> CSV</a>
-      <a href="{{ url_for('admin.applications_export', fmt='xlsx') }}" class="btn-export xlsx"><i class="bi bi-file-earmark-excel"></i> Excel</a>
+      <a href="{{ url_for('admin.applications_export', fmt='csv', scope=scope) }}" class="btn-export csv"><i class="bi bi-filetype-csv"></i> CSV</a>
+      <a href="{{ url_for('admin.applications_export', fmt='xlsx', scope=scope) }}" class="btn-export xlsx"><i class="bi bi-file-earmark-excel"></i> Excel</a>
     </div>
   </div>
   <div class="table-responsive">
@@ -126,7 +126,7 @@
           <td data-label="Assigned" class="text-muted">{{ app.assigned_to.full_name if app.assigned_to else '—' }}</td>
           <td data-label="Action">
             <div class="d-flex gap-2">
-              <a href="{{ url_for('admin.application_detail', app_id=app.id) }}" class="btn btn-outline btn-sm"><i class="bi bi-eye"></i> View</a>
+              <a href="{{ url_for('admin.application_detail', app_id=app.id, scope=scope) }}" class="btn btn-outline btn-sm"><i class="bi bi-eye"></i> View</a>
               <form method="POST" action="{{ url_for('admin.application_delete', app_id=app.id) }}"
                     onsubmit="return confirm('Permanently delete this application from {{ app.applicant.full_name|e }}?')">
                 <button type="submit" class="btn btn-danger btn-sm"><i class="bi bi-trash"></i></button>
@@ -144,17 +144,17 @@
 
 {% if apps.pages > 1 %}
 <div class="pagination">
-  <a href="{{ url_for('admin.applications', page=apps.prev_num, q=search, position_id=position_f, assigned_to=assigned_f) }}"
+  <a href="{{ url_for(applications_base_endpoint, page=apps.prev_num, q=search, position_id=position_f, assigned_to=assigned_f) }}"
      class="page-link {% if not apps.has_prev %}disabled{% endif %}"><i class="bi bi-chevron-left"></i></a>
   {% for p in apps.iter_pages() %}
     {% if p %}
-      <a href="{{ url_for('admin.applications', page=p, q=search, position_id=position_f, assigned_to=assigned_f) }}"
+      <a href="{{ url_for(applications_base_endpoint, page=p, q=search, position_id=position_f, assigned_to=assigned_f) }}"
          class="page-link {% if p == apps.page %}active{% endif %}">{{ p }}</a>
     {% else %}
       <span class="page-link">…</span>
     {% endif %}
   {% endfor %}
-  <a href="{{ url_for('admin.applications', page=apps.next_num, q=search, position_id=position_f, assigned_to=assigned_f) }}"
+  <a href="{{ url_for(applications_base_endpoint, page=apps.next_num, q=search, position_id=position_f, assigned_to=assigned_f) }}"
      class="page-link {% if not apps.has_next %}disabled{% endif %}"><i class="bi bi-chevron-right"></i></a>
 </div>
 {% endif %}

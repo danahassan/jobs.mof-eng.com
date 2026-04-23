@@ -66,7 +66,7 @@
       </div>
     </div>
     <div class="pos-hero-actions">
-      <a href="{{ url_for('admin.positions') }}"
+      <a href="{{ url_for(back_endpoint or 'admin.positions') }}"
          class="btn btn-sm" style="background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);color:#fff">
         <i class="bi bi-arrow-left"></i> Back
       </a>

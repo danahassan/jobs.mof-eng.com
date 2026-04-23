@@ -1,6 +1,6 @@
 ﻿{% extends 'base.html' %}
-{% block title %}Positions — MOF Jobs{% endblock %}
-{% block page_title %}Positions{% endblock %}
+{% block title %}{{ scope_title or 'Positions' }} — MOF Jobs{% endblock %}
+{% block page_title %}{{ scope_title or 'Positions' }}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -124,7 +124,7 @@
     </div>
     <div class="filter-actions">
       <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-funnel"></i> Filter</button>
-      <a href="{{ url_for('admin.positions') }}" class="btn btn-outline btn-sm">Reset</a>
+      <a href="{{ url_for(positions_base_endpoint) }}" class="btn btn-outline btn-sm">Reset</a>
     </div>
   </div>
 </form>
@@ -134,16 +134,16 @@
   {% for t in types_f %}<span class="filter-chip"><i class="bi bi-briefcase"></i> {{ t }}</span>{% endfor %}
   {% if company_f %}<span class="filter-chip"><i class="bi bi-building"></i> Company filter active</span>{% endif %}
   {% if status_f %}<span class="filter-chip"><i class="bi bi-circle-fill" style="font-size:8px"></i> {{ status_f|capitalize }}</span>{% endif %}
-  <a href="{{ url_for('admin.positions') }}" class="filter-chip" style="background:#fee2e2;color:#991b1b;border-color:#fca5a5"><i class="bi bi-x-lg"></i> Clear all</a>
+  <a href="{{ url_for(positions_base_endpoint) }}" class="filter-chip" style="background:#fee2e2;color:#991b1b;border-color:#fca5a5"><i class="bi bi-x-lg"></i> Clear all</a>
 </div>
 {% endif %}
 
 <div class="section-header">
-  <span class="text-muted text-sm">{{ positions.total }} position{{ 's' if positions.total != 1 }}</span>
+  <span class="text-muted text-sm">{{ positions.total }} {{ item_plural if positions.total != 1 else item_singular }}</span>
   <div class="d-flex gap-2 align-center">
     <div class="export-group">
-      <a href="{{ url_for('admin.positions_export', fmt='csv') }}" class="btn-export csv"><i class="bi bi-filetype-csv"></i> CSV</a>
-      <a href="{{ url_for('admin.positions_export', fmt='xlsx') }}" class="btn-export xlsx"><i class="bi bi-file-earmark-excel"></i> Excel</a>
+      <a href="{{ url_for('admin.positions_export', fmt='csv', scope=scope) }}" class="btn-export csv"><i class="bi bi-filetype-csv"></i> CSV</a>
+      <a href="{{ url_for('admin.positions_export', fmt='xlsx', scope=scope) }}" class="btn-export xlsx"><i class="bi bi-file-earmark-excel"></i> Excel</a>
     </div>
     <a href="{{ url_for('admin.position_new') }}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> New Position</a>
   </div>
@@ -171,7 +171,7 @@
       {% endif %}
     </div>
     <div class="pos-card-actions">
-      <a href="{{ url_for('admin.position_detail', pos_id=pos.id) }}" class="btn btn-outline btn-sm"><i class="bi bi-eye"></i> View</a>
+      <a href="{{ url_for('admin.position_detail', pos_id=pos.id, scope=scope) }}" class="btn btn-outline btn-sm"><i class="bi bi-eye"></i> View</a>
       <a href="{{ url_for('admin.position_edit', pos_id=pos.id) }}" class="btn btn-outline btn-sm"><i class="bi bi-pencil"></i> Edit</a>
       <form method="POST" action="{{ url_for('admin.position_delete', pos_id=pos.id) }}" class="delete-form"
             onsubmit="return confirm('Delete \'{{ pos.title|e }}\'? This will remove all {{ pos.application_count }} application(s) too.')">
@@ -186,7 +186,7 @@
     </div>
   </div>
   {% else %}
-  <div class="empty-state"><i class="bi bi-briefcase"></i><p>No positions found. <a href="{{ url_for('admin.positions') }}">Clear filters</a> or <a href="{{ url_for('admin.position_new') }}">create one</a>.</p></div>
+  <div class="empty-state"><i class="bi bi-briefcase"></i><p>No positions found. <a href="{{ url_for(positions_base_endpoint) }}">Clear filters</a> or <a href="{{ url_for('admin.position_new') }}">create one</a>.</p></div>
   {% endfor %}
 </div>
 
@@ -214,7 +214,7 @@
           </td>
           <td data-label="Actions">
             <div class="pos-actions">
-              <a href="{{ url_for('admin.position_detail', pos_id=pos.id) }}" class="btn btn-outline btn-sm"><i class="bi bi-eye"></i> View</a>
+              <a href="{{ url_for('admin.position_detail', pos_id=pos.id, scope=scope) }}" class="btn btn-outline btn-sm"><i class="bi bi-eye"></i> View</a>
               <a href="{{ url_for('admin.position_edit', pos_id=pos.id) }}" class="btn btn-outline btn-sm"><i class="bi bi-pencil"></i> Edit</a>
               <form method="POST" action="{{ url_for('admin.position_toggle', pos_id=pos.id) }}">
                 <button type="submit" class="btn btn-outline btn-sm">
@@ -230,7 +230,7 @@
           </td>
         </tr>
         {% else %}
-        <tr><td colspan="7"><div class="empty-state"><i class="bi bi-briefcase"></i>No positions found. <a href="{{ url_for('admin.positions') }}">Clear filters</a> or <a href="{{ url_for('admin.position_new') }}">create one</a>.</div></td></tr>
+        <tr><td colspan="7"><div class="empty-state"><i class="bi bi-briefcase"></i>No positions found. <a href="{{ url_for(positions_base_endpoint) }}">Clear filters</a> or <a href="{{ url_for('admin.position_new') }}">create one</a>.</div></td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -240,15 +240,15 @@
 
 {% if positions.pages > 1 %}
 <div class="pagination">
-  <a href="{{ url_for('admin.positions', page=positions.prev_num, q=q_str, status=status_f, company_id=company_f) }}"
+  <a href="{{ url_for(positions_base_endpoint, page=positions.prev_num, q=q_str, status=status_f, company_id=company_f) }}"
      class="page-link {% if not positions.has_prev %}disabled{% endif %}"><i class="bi bi-chevron-left"></i></a>
   {% for p in positions.iter_pages() %}
     {% if p %}
-      <a href="{{ url_for('admin.positions', page=p, q=q_str, status=status_f, company_id=company_f) }}"
+      <a href="{{ url_for(positions_base_endpoint, page=p, q=q_str, status=status_f, company_id=company_f) }}"
          class="page-link {% if p == positions.page %}active{% endif %}">{{ p }}</a>
     {% else %}<span class="page-link">…</span>{% endif %}
   {% endfor %}
-  <a href="{{ url_for('admin.positions', page=positions.next_num, q=q_str, status=status_f, company_id=company_f) }}"
+  <a href="{{ url_for(positions_base_endpoint, page=positions.next_num, q=q_str, status=status_f, company_id=company_f) }}"
      class="page-link {% if not positions.has_next %}disabled{% endif %}"><i class="bi bi-chevron-right"></i></a>
 </div>
 {% endif %}

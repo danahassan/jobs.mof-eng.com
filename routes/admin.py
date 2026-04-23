@@ -191,17 +191,75 @@ def dashboard():
 
 POSITION_TYPES = ['Full-time', 'Part-time', 'Contract', 'Internship', 'Remote', 'Freelance']
 
-@admin_bp.route('/positions')
-@admin_required
-def positions():
+
+def _normalize_scope(scope):
+    scope = (scope or 'all').strip().lower()
+    return scope if scope in ('all', 'job', 'internship') else 'all'
+
+
+def _apply_position_scope(query, scope):
+    if scope == 'internship':
+        return query.filter(Position.type == 'Internship')
+    if scope == 'job':
+        return query.filter(Position.type != 'Internship')
+    return query
+
+
+def _scope_meta(scope, kind='positions'):
+    if kind == 'positions':
+        if scope == 'job':
+            return {
+                'title': 'Job Positions',
+                'item_singular': 'job position',
+                'item_plural': 'job positions',
+                'base_endpoint': 'admin.positions_jobs',
+            }
+        if scope == 'internship':
+            return {
+                'title': 'Internship Positions',
+                'item_singular': 'internship position',
+                'item_plural': 'internship positions',
+                'base_endpoint': 'admin.positions_internships',
+            }
+        return {
+            'title': 'Positions',
+            'item_singular': 'position',
+            'item_plural': 'positions',
+            'base_endpoint': 'admin.positions',
+        }
+
+    if scope == 'job':
+        return {
+            'title': 'Job Applications',
+            'item_singular': 'job application',
+            'item_plural': 'job applications',
+            'base_endpoint': 'admin.applications_jobs',
+        }
+    if scope == 'internship':
+        return {
+            'title': 'Internship Applications',
+            'item_singular': 'internship application',
+            'item_plural': 'internship applications',
+            'base_endpoint': 'admin.applications_internships',
+        }
+    return {
+        'title': 'Applications',
+        'item_singular': 'application',
+        'item_plural': 'applications',
+        'base_endpoint': 'admin.applications',
+    }
+
+
+def _positions_list(scope='all'):
+    scope = _normalize_scope(scope)
     page       = request.args.get('page', 1, type=int)
     q_str      = request.args.get('q', '').strip()
-    status_f   = request.args.get('status', '')       # 'active'|'inactive'|''
-    types_f    = request.args.getlist('type')          # multi
+    status_f   = request.args.get('status', '')
+    types_f    = request.args.getlist('type')
     company_f  = request.args.get('company_id', 0, type=int)
     dept_f     = request.args.get('dept', '').strip()
 
-    q = Position.query
+    q = _apply_position_scope(Position.query, scope)
     if q_str:
         q = q.filter(or_(Position.title.ilike(f'%{q_str}%'),
                          Position.department.ilike(f'%{q_str}%')))
@@ -220,26 +278,140 @@ def positions():
         page=page, per_page=current_app.config.get('POSITIONS_PER_PAGE', 25))
 
     all_companies = Company.query.filter_by(is_active=True).order_by(Company.name).all()
+    scope_q = _apply_position_scope(Position.query, scope)
 
-    kpi_active    = Position.query.filter_by(is_active=True).count()
-    kpi_inactive  = Position.query.filter_by(is_active=False).count()
-    kpi_total_apps = Application.query.count()
-    kpi_closing   = Position.query.filter(
+    kpi_active    = scope_q.filter_by(is_active=True).count()
+    kpi_inactive  = scope_q.filter_by(is_active=False).count()
+    if scope == 'internship':
+        kpi_total_apps = (Application.query
+                          .join(Position, Application.position_id == Position.id)
+                          .filter(Position.type == 'Internship')
+                          .count())
+    elif scope == 'job':
+        kpi_total_apps = (Application.query
+                          .join(Position, Application.position_id == Position.id)
+                          .filter(Position.type != 'Internship')
+                          .count())
+    else:
+        kpi_total_apps = Application.query.count()
+    kpi_closing   = scope_q.filter(
         Position.is_active == True,
         Position.closes_at != None,
         Position.closes_at <= datetime.utcnow() + timedelta(days=14)
     ).count()
-    kpi_new_30d   = Position.query.filter(
+    kpi_new_30d   = scope_q.filter(
         Position.created_at >= datetime.utcnow() - timedelta(days=30)
     ).count()
 
-    return render_template('admin/positions.html', positions=positions,
-                           q_str=q_str, status_f=status_f, types_f=types_f,
-                           company_f=company_f, dept_f=dept_f,
-                           all_companies=all_companies, POSITION_TYPES=POSITION_TYPES,
-                           kpi_active=kpi_active, kpi_inactive=kpi_inactive,
-                           kpi_total_apps=kpi_total_apps, kpi_closing=kpi_closing,
-                           kpi_new_30d=kpi_new_30d)
+    meta = _scope_meta(scope, kind='positions')
+    return render_template(
+        'admin/positions.html',
+        positions=positions,
+        q_str=q_str,
+        status_f=status_f,
+        types_f=types_f,
+        company_f=company_f,
+        dept_f=dept_f,
+        all_companies=all_companies,
+        POSITION_TYPES=POSITION_TYPES,
+        kpi_active=kpi_active,
+        kpi_inactive=kpi_inactive,
+        kpi_total_apps=kpi_total_apps,
+        kpi_closing=kpi_closing,
+        kpi_new_30d=kpi_new_30d,
+        scope=scope,
+        scope_title=meta['title'],
+        item_singular=meta['item_singular'],
+        item_plural=meta['item_plural'],
+        positions_base_endpoint=meta['base_endpoint'],
+    )
+
+
+def _applications_list(scope='all'):
+    scope = _normalize_scope(scope)
+    page       = request.args.get('page', 1, type=int)
+    status_f   = request.args.getlist('status')
+    position_f = request.args.get('position_id', 0, type=int)
+    source_f   = request.args.getlist('source')
+    assigned_f = request.args.get('assigned_to', 0, type=int)
+    search     = request.args.get('q', '').strip()
+
+    q = (Application.query
+         .join(User, Application.applicant_id == User.id)
+         .join(Position, Application.position_id == Position.id))
+    q = _apply_position_scope(q, scope)
+
+    if status_f:
+        q = q.filter(Application.status.in_(status_f))
+    if position_f:
+        q = q.filter(Application.position_id == position_f)
+    if source_f:
+        q = q.filter(Application.source.in_(source_f))
+    if assigned_f:
+        q = q.filter(Application.assigned_to_id == assigned_f)
+    if search:
+        q = q.filter(or_(User.full_name.ilike(f'%{search}%'),
+                         User.email.ilike(f'%{search}%')))
+
+    apps = q.order_by(Application.applied_at.desc()).paginate(
+        page=page, per_page=current_app.config.get('APPLICATIONS_PER_PAGE', 25))
+
+    all_positions = _apply_position_scope(Position.query, scope).order_by(Position.title).all()
+    supervisors = User.query.filter_by(role=ROLE_SUPERVISOR, is_active=True).order_by(User.full_name).all()
+
+    scope_apps = _apply_position_scope(
+        Application.query.join(Position, Application.position_id == Position.id), scope
+    )
+    kpi_total      = scope_apps.count()
+    kpi_new_7d     = scope_apps.filter(
+        Application.applied_at >= datetime.utcnow() - timedelta(days=7)).count()
+    kpi_interview  = scope_apps.filter_by(status='Interview').count()
+    kpi_hired      = scope_apps.filter_by(status='Hired').count()
+    kpi_rejected   = scope_apps.filter_by(status='Rejected').count()
+    kpi_pending    = scope_apps.filter_by(status='New').count()
+
+    meta = _scope_meta(scope, kind='applications')
+    return render_template(
+        'admin/applications.html',
+        apps=apps,
+        all_positions=all_positions,
+        supervisors=supervisors,
+        ALL_STATUSES=ALL_STATUSES,
+        SOURCES=SOURCES,
+        status_f=status_f,
+        position_f=position_f,
+        source_f=source_f,
+        assigned_f=assigned_f,
+        search=search,
+        kpi_total=kpi_total,
+        kpi_new_7d=kpi_new_7d,
+        kpi_interview=kpi_interview,
+        kpi_hired=kpi_hired,
+        kpi_rejected=kpi_rejected,
+        kpi_pending=kpi_pending,
+        scope=scope,
+        scope_title=meta['title'],
+        item_singular=meta['item_singular'],
+        item_plural=meta['item_plural'],
+        applications_base_endpoint=meta['base_endpoint'],
+    )
+
+@admin_bp.route('/positions')
+@admin_required
+def positions():
+    return _positions_list(scope='all')
+
+
+@admin_bp.route('/positions/jobs')
+@admin_required
+def positions_jobs():
+    return _positions_list(scope='job')
+
+
+@admin_bp.route('/positions/internships')
+@admin_required
+def positions_internships():
+    return _positions_list(scope='internship')
 
 
 @admin_bp.route('/positions/<int:pos_id>')
@@ -247,14 +419,18 @@ def positions():
 def position_detail(pos_id):
     pos = db.get_or_404(Position, pos_id)
     recent_apps = pos.applications.order_by(Application.applied_at.desc()).limit(5).all()
-    return render_template('admin/position_detail.html', pos=pos, recent_apps=recent_apps)
+    scope = _normalize_scope(request.args.get('scope', 'all'))
+    back_endpoint = _scope_meta(scope, kind='positions')['base_endpoint']
+    return render_template('admin/position_detail.html', pos=pos, recent_apps=recent_apps,
+                           scope=scope, back_endpoint=back_endpoint)
 
 
 @admin_bp.route('/positions/export')
 @admin_required
 def positions_export():
     fmt = request.args.get('fmt', 'csv')
-    rows = Position.query.order_by(Position.created_at.desc()).all()
+    scope = _normalize_scope(request.args.get('scope', 'all'))
+    rows = _apply_position_scope(Position.query, scope).order_by(Position.created_at.desc()).all()
     headers = ['ID', 'Title', 'Department', 'Type', 'Location', 'Company',
                'Status', 'Applications', 'Views', 'Created', 'Closes']
     data = [[
@@ -265,7 +441,12 @@ def positions_export():
         p.created_at.strftime('%Y-%m-%d'),
         p.closes_at.strftime('%Y-%m-%d') if p.closes_at else ''
     ] for p in rows]
-    return _export(headers, data, 'positions', fmt)
+    filename = 'positions'
+    if scope == 'job':
+        filename = 'job_positions'
+    elif scope == 'internship':
+        filename = 'internship_positions'
+    return _export(headers, data, filename, fmt)
 
 
 @admin_bp.route('/positions/new', methods=['GET', 'POST'])
@@ -364,48 +545,19 @@ def position_delete(pos_id):
 @admin_bp.route('/applications')
 @admin_required
 def applications():
-    page       = request.args.get('page', 1, type=int)
-    status_f   = request.args.getlist('status')        # multi-select list
-    position_f = request.args.get('position_id', 0, type=int)
-    source_f   = request.args.getlist('source')        # multi-select list
-    assigned_f = request.args.get('assigned_to', 0, type=int)
-    search     = request.args.get('q', '').strip()
+    return _applications_list(scope='all')
 
-    q = Application.query.join(User, Application.applicant_id == User.id)
 
-    if status_f:
-        q = q.filter(Application.status.in_(status_f))
-    if position_f:
-        q = q.filter(Application.position_id == position_f)
-    if source_f:
-        q = q.filter(Application.source.in_(source_f))
-    if assigned_f:
-        q = q.filter(Application.assigned_to_id == assigned_f)
-    if search:
-        q = q.filter(or_(User.full_name.ilike(f'%{search}%'),
-                         User.email.ilike(f'%{search}%')))
+@admin_bp.route('/applications/jobs')
+@admin_required
+def applications_jobs():
+    return _applications_list(scope='job')
 
-    apps = q.order_by(Application.applied_at.desc()).paginate(
-        page=page, per_page=current_app.config.get('APPLICATIONS_PER_PAGE', 25))
 
-    all_positions  = Position.query.order_by(Position.title).all()
-    supervisors    = User.query.filter_by(role=ROLE_SUPERVISOR, is_active=True).order_by(User.full_name).all()
-
-    kpi_total      = Application.query.count()
-    kpi_new_7d     = Application.query.filter(
-        Application.applied_at >= datetime.utcnow() - timedelta(days=7)).count()
-    kpi_interview  = Application.query.filter_by(status='Interview').count()
-    kpi_hired      = Application.query.filter_by(status='Hired').count()
-    kpi_rejected   = Application.query.filter_by(status='Rejected').count()
-    kpi_pending    = Application.query.filter_by(status='New').count()
-
-    return render_template('admin/applications.html',
-        apps=apps, all_positions=all_positions, supervisors=supervisors,
-        ALL_STATUSES=ALL_STATUSES, SOURCES=SOURCES,
-        status_f=status_f, position_f=position_f, source_f=source_f,
-        assigned_f=assigned_f, search=search,
-        kpi_total=kpi_total, kpi_new_7d=kpi_new_7d, kpi_interview=kpi_interview,
-        kpi_hired=kpi_hired, kpi_rejected=kpi_rejected, kpi_pending=kpi_pending)
+@admin_bp.route('/applications/internships')
+@admin_required
+def applications_internships():
+    return _applications_list(scope='internship')
 
 
 @admin_bp.route('/applications/export')
@@ -413,7 +565,10 @@ def applications():
 def applications_export():
     from models import UserSkill, UserExperience, UserEducation
     fmt = request.args.get('fmt', 'csv')
-    rows = Application.query.order_by(Application.applied_at.desc()).all()
+    scope = _normalize_scope(request.args.get('scope', 'all'))
+    rows = (_apply_position_scope(
+        Application.query.join(Position, Application.position_id == Position.id), scope
+    ).order_by(Application.applied_at.desc()).all())
 
     headers = [
         # ── Application submission info ──────────────────────────────────
@@ -517,13 +672,20 @@ def applications_export():
             (u.bio or '').replace('\n', ' '),
         ])
 
-    return _export(headers, data, 'applications', fmt)
+    filename = 'applications'
+    if scope == 'job':
+        filename = 'job_applications'
+    elif scope == 'internship':
+        filename = 'internship_applications'
+    return _export(headers, data, filename, fmt)
 
 
 @admin_bp.route('/applications/<int:app_id>')
 @admin_required
 def application_detail(app_id):
     app = db.get_or_404(Application, app_id)
+    scope = _normalize_scope(request.args.get('scope', 'all'))
+    back_endpoint = _scope_meta(scope, kind='applications')['base_endpoint']
     supervisors = User.query.filter_by(role=ROLE_SUPERVISOR, is_active=True).all()
     # Admins see all status changes + admin-authored entries (notes without status change)
     admin_ids = [u.id for u in User.query.filter_by(role=ROLE_ADMIN).with_entities(User.id).all()]
@@ -586,7 +748,8 @@ def application_detail(app_id):
         history=history, interviews=interviews,
         skills=skills, experiences=experiences, educations=educations,
         languages=languages, certifications=certifications,
-        thread_messages=thread_messages, supervisor_thread=supervisor_thread)
+        thread_messages=thread_messages, supervisor_thread=supervisor_thread,
+        scope=scope, back_endpoint=back_endpoint)
 
 
 @admin_bp.route('/applications/<int:app_id>/update', methods=['POST'])
@@ -646,7 +809,7 @@ def application_delete(app_id):
     _audit('application.delete', f'#{app_id} {application.position.title}')
     db.session.commit()
     flash('Application permanently deleted.', 'success')
-    return redirect(url_for('admin.applications'))
+    return redirect(request.referrer or url_for('admin.applications'))
 
 
 @admin_bp.route('/applications/<int:app_id>/history/<int:history_id>/delete', methods=['POST'])

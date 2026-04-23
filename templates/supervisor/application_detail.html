@@ -85,7 +85,7 @@
         <i class="bi bi-file-earmark-pdf"></i> {{ app.cv_original or 'Download CV' }}
       </a>
       {% endif %}
-      <a href="{{ url_for('supervisor.applications') }}" style="color:rgba(255,255,255,.5);font-size:12px">
+      <a href="{{ url_for(back_endpoint or 'supervisor.applications') }}" style="color:rgba(255,255,255,.5);font-size:12px">
         <i class="bi bi-arrow-left"></i> Back to Applications
       </a>
     </div>

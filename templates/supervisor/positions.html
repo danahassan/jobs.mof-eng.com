@@ -1,6 +1,6 @@
 ﻿{% extends 'base.html' %}
-{% block title %}Positions — MOF Jobs{% endblock %}
-{% block page_title %}Positions{% endblock %}
+{% block title %}{{ scope_title or 'Positions' }} — MOF Jobs{% endblock %}
+{% block page_title %}{{ scope_title or 'Positions' }}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -66,7 +66,7 @@
 
     <div class="filter-actions">
       <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-funnel"></i> Filter</button>
-      <a href="{{ url_for('supervisor.positions') }}" class="btn btn-outline btn-sm"><i class="bi bi-x"></i> Reset</a>
+      <a href="{{ url_for(positions_base_endpoint) }}" class="btn btn-outline btn-sm"><i class="bi bi-x"></i> Reset</a>
     </div>
 
   </div>
@@ -76,14 +76,14 @@
   {% if q_str %}<span class="filter-chip"><i class="bi bi-search"></i> {{ q_str }}</span>{% endif %}
   {% for t in types_f %}<span class="filter-chip"><i class="bi bi-briefcase"></i> {{ t }}</span>{% endfor %}
   {% if status_f %}<span class="filter-chip"><i class="bi bi-circle-fill" style="font-size:8px"></i> {{ status_f|capitalize }}</span>{% endif %}
-  <a href="{{ url_for('supervisor.positions') }}" class="filter-chip" style="background:#fee2e2;color:#991b1b;border-color:#fca5a5"><i class="bi bi-x-lg"></i> Clear all</a>
+  <a href="{{ url_for(positions_base_endpoint) }}" class="filter-chip" style="background:#fee2e2;color:#991b1b;border-color:#fca5a5"><i class="bi bi-x-lg"></i> Clear all</a>
 </div>
 {% endif %}
 
 <!-- Section header -->
 <div class="section-header">
   <span style="font-size:13px;color:var(--text3)">
-    {{ positions.total }} position{{ 's' if positions.total != 1 }}
+    {{ positions.total }} {{ item_plural if positions.total != 1 else 'position' }}
   </span>
   {% if managed_companies %}
   <div style="display:flex;flex-wrap:wrap;gap:8px">
@@ -162,7 +162,7 @@
           <td colspan="8">
             <div class="empty-state">
               <i class="bi bi-briefcase"></i>
-              <p>No positions found.{% if q_str or types_f or status_f %} <a href="{{ url_for('supervisor.positions') }}">Clear filters</a>.{% endif %}</p>
+              <p>No positions found.{% if q_str or types_f or status_f %} <a href="{{ url_for(positions_base_endpoint) }}">Clear filters</a>.{% endif %}</p>
             </div>
           </td>
         </tr>
@@ -175,19 +175,19 @@
 <!-- Pagination -->
 {% if positions.pages > 1 %}
 <div class="pagination">
-  <a href="{{ url_for('supervisor.positions') }}?{{ qs }}&page={{ positions.prev_num }}"
+  <a href="{{ url_for(positions_base_endpoint) }}?{{ qs }}&page={{ positions.prev_num }}"
      class="page-link {% if not positions.has_prev %}disabled{% endif %}">
     <i class="bi bi-chevron-left"></i>
   </a>
   {% for p in positions.iter_pages() %}
     {% if p %}
-      <a href="{{ url_for('supervisor.positions') }}?{{ qs }}&page={{ p }}"
+      <a href="{{ url_for(positions_base_endpoint) }}?{{ qs }}&page={{ p }}"
          class="page-link {% if p == positions.page %}active{% endif %}">{{ p }}</a>
     {% else %}
       <span class="page-link" style="border:none;background:none">…</span>
     {% endif %}
   {% endfor %}
-  <a href="{{ url_for('supervisor.positions') }}?{{ qs }}&page={{ positions.next_num }}"
+  <a href="{{ url_for(positions_base_endpoint) }}?{{ qs }}&page={{ positions.next_num }}"
      class="page-link {% if not positions.has_next %}disabled{% endif %}">
     <i class="bi bi-chevron-right"></i>
   </a>

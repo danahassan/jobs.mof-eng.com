@@ -12,6 +12,116 @@ from flask_login import current_user
 supervisor_bp = Blueprint('supervisor', __name__)
 
 
+def _normalize_scope(scope):
+    scope = (scope or 'all').strip().lower()
+    return scope if scope in ('all', 'job', 'internship') else 'all'
+
+
+def _apply_position_scope(query, scope):
+    if scope == 'internship':
+        return query.filter(Position.type == 'Internship')
+    if scope == 'job':
+        return query.filter(Position.type != 'Internship')
+    return query
+
+
+def _scope_meta(scope, kind='positions'):
+    if kind == 'positions':
+        if scope == 'job':
+            return {'title': 'Job Positions', 'item_plural': 'job positions', 'base_endpoint': 'supervisor.positions_jobs'}
+        if scope == 'internship':
+            return {'title': 'Internship Positions', 'item_plural': 'internship positions', 'base_endpoint': 'supervisor.positions_internships'}
+        return {'title': 'Positions', 'item_plural': 'positions', 'base_endpoint': 'supervisor.positions'}
+    if scope == 'job':
+        return {'title': 'Job Applications', 'item_plural': 'job applications', 'base_endpoint': 'supervisor.applications_jobs'}
+    if scope == 'internship':
+        return {'title': 'Internship Applications', 'item_plural': 'internship applications', 'base_endpoint': 'supervisor.applications_internships'}
+    return {'title': 'Applications', 'item_plural': 'applications', 'base_endpoint': 'supervisor.applications'}
+
+
+def _applications_list(scope='all'):
+    scope = _normalize_scope(scope)
+    page     = request.args.get('page', 1, type=int)
+    status_f = request.args.getlist('status')
+    q_str    = request.args.get('q', '').strip()
+
+    managed_pos_ids = _get_managed_pos_ids()
+
+    q = (Application.query
+         .join(User, Application.applicant_id == User.id)
+         .join(Position, Application.position_id == Position.id)
+         .filter(or_(
+             Application.position_id.in_(managed_pos_ids),
+             Application.assigned_to_id == current_user.id
+         )))
+    q = _apply_position_scope(q, scope)
+
+    if status_f:
+        q = q.filter(Application.status.in_(status_f))
+    if q_str:
+        q = q.filter(or_(User.full_name.ilike(f'%{q_str}%'),
+                         User.email.ilike(f'%{q_str}%')))
+
+    apps = q.order_by(Application.applied_at.desc()).paginate(page=page, per_page=20)
+    meta = _scope_meta(scope, kind='applications')
+    return render_template(
+        'supervisor/applications.html',
+        apps=apps,
+        ALL_STATUSES=ALL_STATUSES,
+        status_f=status_f,
+        q_str=q_str,
+        scope=scope,
+        scope_title=meta['title'],
+        item_plural=meta['item_plural'],
+        applications_base_endpoint=meta['base_endpoint'],
+    )
+
+
+def _positions_list(scope='all'):
+    scope = _normalize_scope(scope)
+    page     = request.args.get('page', 1, type=int)
+    q_str    = request.args.get('q', '').strip()
+    types_f  = request.args.getlist('type')
+    status_f = request.args.get('status', '')
+
+    managed_company_ids = _get_managed_company_ids()
+    if managed_company_ids:
+        q = Position.query.filter(Position.company_id.in_(managed_company_ids))
+    else:
+        q = Position.query.filter(db.false())
+    q = _apply_position_scope(q, scope)
+
+    if q_str:
+        q = q.filter(or_(Position.title.ilike(f'%{q_str}%'),
+                         Position.department.ilike(f'%{q_str}%')))
+    if types_f:
+        q = q.filter(Position.type.in_(types_f))
+    if status_f == 'active':
+        q = q.filter_by(is_active=True)
+    elif status_f == 'inactive':
+        q = q.filter_by(is_active=False)
+
+    positions = q.order_by(Position.created_at.desc()).paginate(page=page, per_page=25)
+    managed_companies = [m.company for m in
+                         CompanyMember.query.filter_by(user_id=current_user.id, role='manager').all()
+                         if m.company]
+
+    meta = _scope_meta(scope, kind='positions')
+    return render_template(
+        'supervisor/positions.html',
+        positions=positions,
+        q_str=q_str,
+        types_f=types_f,
+        status_f=status_f,
+        managed_companies=managed_companies,
+        POSITION_TYPES=POSITION_TYPES,
+        scope=scope,
+        scope_title=meta['title'],
+        item_plural=meta['item_plural'],
+        positions_base_endpoint=meta['base_endpoint'],
+    )
+
+
 @supervisor_bp.route('/')
 @supervisor_or_admin_required
 def dashboard():
@@ -41,28 +151,19 @@ def dashboard():
 @supervisor_bp.route('/applications')
 @supervisor_or_admin_required
 def applications():
-    page     = request.args.get('page', 1, type=int)
-    status_f = request.args.getlist('status')   # multi-select
-    q_str    = request.args.get('q', '').strip()
+    return _applications_list(scope='all')
 
-    managed_pos_ids = _get_managed_pos_ids()
 
-    q = (Application.query
-         .join(User, Application.applicant_id == User.id)
-         .filter(or_(
-             Application.position_id.in_(managed_pos_ids),
-             Application.assigned_to_id == current_user.id
-         )))
+@supervisor_bp.route('/applications/jobs')
+@supervisor_or_admin_required
+def applications_jobs():
+    return _applications_list(scope='job')
 
-    if status_f:
-        q = q.filter(Application.status.in_(status_f))
-    if q_str:
-        q = q.filter(or_(User.full_name.ilike(f'%{q_str}%'),
-                         User.email.ilike(f'%{q_str}%')))
 
-    apps = q.order_by(Application.applied_at.desc()).paginate(page=page, per_page=20)
-    return render_template('supervisor/applications.html',
-        apps=apps, ALL_STATUSES=ALL_STATUSES, status_f=status_f, q_str=q_str)
+@supervisor_bp.route('/applications/internships')
+@supervisor_or_admin_required
+def applications_internships():
+    return _applications_list(scope='internship')
 
 
 @supervisor_bp.route('/applications/export')
@@ -74,14 +175,17 @@ def applications_export():
     fmt      = request.args.get('fmt', 'csv')
     status_f = request.args.getlist('status')
     q_str    = request.args.get('q', '').strip()
+    scope    = _normalize_scope(request.args.get('scope', 'all'))
 
     managed_pos_ids = _get_managed_pos_ids()
     q = (Application.query
          .join(User, Application.applicant_id == User.id)
+         .join(Position, Application.position_id == Position.id)
          .filter(or_(
              Application.position_id.in_(managed_pos_ids),
              Application.assigned_to_id == current_user.id
          )))
+    q = _apply_position_scope(q, scope)
     if status_f:
         q = q.filter(Application.status.in_(status_f))
     if q_str:
@@ -237,7 +341,7 @@ def applications_export():
         return Response(
             output.getvalue(),
             mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            headers={'Content-Disposition': 'attachment; filename="applications.xlsx"'}
+            headers={'Content-Disposition': f'attachment; filename="{scope if scope != "all" else "all"}_applications.xlsx"'}
         )
 
     output = io.StringIO()
@@ -248,7 +352,7 @@ def applications_export():
     return Response(
         output.getvalue(),
         mimetype='text/csv',
-        headers={'Content-Disposition': 'attachment; filename="applications.csv"'}
+        headers={'Content-Disposition': f'attachment; filename="{scope if scope != "all" else "all"}_applications.csv"'}
     )
 
 
@@ -256,12 +360,14 @@ def applications_export():
 @supervisor_or_admin_required
 def application_detail(app_id):
     app = db.get_or_404(Application, app_id)
+    scope = _normalize_scope(request.args.get('scope', 'all'))
+    back_endpoint = _scope_meta(scope, kind='applications')['base_endpoint']
     # Supervisors can view apps assigned to them OR for positions in their managed companies
     if current_user.role != 'admin':
         managed_pos_ids = _get_managed_pos_ids()
         if app.assigned_to_id != current_user.id and app.position_id not in managed_pos_ids:
             flash('You do not have access to this application.', 'danger')
-            return redirect(url_for('supervisor.applications'))
+            return redirect(url_for(back_endpoint))
 
     # Supervisors see all status changes + their own entries (notes without status change)
     history = app.history.filter(
@@ -322,7 +428,8 @@ def application_detail(app_id):
         skills=skills, experiences=experiences, educations=educations,
         # Removed languages and certifications (rollback)
         thread_messages=thread_messages,
-        admin_users=admin_users, admin_thread=admin_thread)
+        admin_users=admin_users, admin_thread=admin_thread,
+        scope=scope, back_endpoint=back_endpoint)
 
 
 @supervisor_bp.route('/applications/<int:app_id>/update', methods=['POST'])
@@ -377,7 +484,7 @@ def application_delete(app_id):
     log_audit('supervisor.application_delete', f'#{app_id}', user_id=current_user.id)
     db.session.commit()
     flash('Application permanently deleted.', 'success')
-    return redirect(url_for('supervisor.applications'))
+    return redirect(request.referrer or url_for('supervisor.applications'))
 
 
 @supervisor_bp.route('/applications/<int:app_id>/history/<int:history_id>/delete', methods=['POST'])
@@ -400,36 +507,19 @@ def history_delete(app_id, history_id):
 @supervisor_bp.route('/positions')
 @supervisor_or_admin_required
 def positions():
-    page     = request.args.get('page', 1, type=int)
-    q_str    = request.args.get('q', '').strip()
-    types_f  = request.args.getlist('type')
-    status_f = request.args.get('status', '')
+    return _positions_list(scope='all')
 
-    managed_company_ids = _get_managed_company_ids()
-    if managed_company_ids:
-        q = Position.query.filter(Position.company_id.in_(managed_company_ids))
-    else:
-        q = Position.query.filter(db.false())
 
-    if q_str:
-        q = q.filter(or_(Position.title.ilike(f'%{q_str}%'),
-                         Position.department.ilike(f'%{q_str}%')))
-    if types_f:
-        q = q.filter(Position.type.in_(types_f))
-    if status_f == 'active':
-        q = q.filter_by(is_active=True)
-    elif status_f == 'inactive':
-        q = q.filter_by(is_active=False)
+@supervisor_bp.route('/positions/jobs')
+@supervisor_or_admin_required
+def positions_jobs():
+    return _positions_list(scope='job')
 
-    positions = q.order_by(Position.created_at.desc()).paginate(page=page, per_page=25)
-    managed_companies = [m.company for m in
-                         CompanyMember.query.filter_by(user_id=current_user.id, role='manager').all()
-                         if m.company]
 
-    return render_template('supervisor/positions.html',
-                           positions=positions, q_str=q_str, types_f=types_f,
-                           status_f=status_f, managed_companies=managed_companies,
-                           POSITION_TYPES=POSITION_TYPES)
+@supervisor_bp.route('/positions/internships')
+@supervisor_or_admin_required
+def positions_internships():
+    return _positions_list(scope='internship')
 
 
 @supervisor_bp.route('/positions/<int:pos_id>/toggle', methods=['POST'])

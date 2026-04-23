@@ -496,10 +496,13 @@ html.dark select.form-control option{background:#1e293b}
       <a href="{{ url_for('auth.profile') }}" class="nav-item {% if request.blueprint == 'auth' and request.endpoint == 'auth.profile' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-person-circle"></i> My Profile</a>
       <div style="height:1px;background:rgba(255,255,255,0.07);margin:4px 0 6px"></div>
       {% if current_user.role == 'admin' %}
+        {% set admin_scope = request.args.get('scope', '') %}
         <div class="nav-section">Main</div>
         <a href="{{ url_for('admin.dashboard') }}" class="nav-item {% if request.endpoint == 'admin.dashboard' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
-        <a href="{{ url_for('admin.positions') }}" class="nav-item {% if 'position' in request.endpoint %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-briefcase-fill"></i> Positions</a>
-        <a href="{{ url_for('admin.applications') }}" class="nav-item {% if 'application' in request.endpoint and request.blueprint == 'admin' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-file-earmark-person-fill"></i> Applications</a>
+        <a href="{{ url_for('admin.positions_jobs') }}" class="nav-item {% if request.endpoint == 'admin.positions_jobs' or (request.endpoint in ['admin.position_detail','admin.position_edit'] and admin_scope == 'job') %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-briefcase-fill"></i> Job Positions</a>
+        <a href="{{ url_for('admin.positions_internships') }}" class="nav-item {% if request.endpoint == 'admin.positions_internships' or (request.endpoint in ['admin.position_detail','admin.position_edit'] and admin_scope == 'internship') %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-mortarboard-fill"></i> Internship Positions</a>
+        <a href="{{ url_for('admin.applications_jobs') }}" class="nav-item {% if request.endpoint == 'admin.applications_jobs' or (request.endpoint == 'admin.application_detail' and admin_scope == 'job') %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-file-earmark-person-fill"></i> Job Applications</a>
+        <a href="{{ url_for('admin.applications_internships') }}" class="nav-item {% if request.endpoint == 'admin.applications_internships' or (request.endpoint == 'admin.application_detail' and admin_scope == 'internship') %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-file-earmark-medical-fill"></i> Internship Applications</a>
         <div class="nav-section">Management</div>
         <a href="{{ url_for('admin.companies') }}" class="nav-item {% if request.blueprint == 'admin' and 'compan' in request.endpoint %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-building"></i> Companies</a>
         <a href="{{ url_for('admin.universities') }}" class="nav-item {% if request.blueprint == 'admin' and 'universit' in request.endpoint and 'request' not in request.endpoint %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-mortarboard"></i> Universities</a>
@@ -517,11 +520,14 @@ html.dark select.form-control option{background:#1e293b}
         <a href="{{ url_for('admin.settings') }}" class="nav-item {% if request.endpoint == 'admin.settings' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-gear-fill"></i> Settings</a>
 
       {% elif current_user.role == 'supervisor' %}
+        {% set sup_scope = request.args.get('scope', '') %}
         <div class="nav-section">Main</div>
         <a href="{{ url_for('supervisor.dashboard') }}" class="nav-item {% if request.endpoint == 'supervisor.dashboard' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
-        <a href="{{ url_for('supervisor.applications') }}" class="nav-item {% if request.blueprint == 'supervisor' and 'application' in request.endpoint %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-file-earmark-person-fill"></i> Applications</a>
+        <a href="{{ url_for('supervisor.applications_jobs') }}" class="nav-item {% if request.endpoint == 'supervisor.applications_jobs' or (request.endpoint == 'supervisor.application_detail' and sup_scope == 'job') %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-file-earmark-person-fill"></i> Job Applications</a>
+        <a href="{{ url_for('supervisor.applications_internships') }}" class="nav-item {% if request.endpoint == 'supervisor.applications_internships' or (request.endpoint == 'supervisor.application_detail' and sup_scope == 'internship') %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-file-earmark-medical-fill"></i> Internship Applications</a>
         <a href="{{ url_for('supervisor.users') }}" class="nav-item {% if request.endpoint == 'supervisor.users' or request.endpoint == 'supervisor.users_export' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-people-fill"></i> Applicants</a>
-        <a href="{{ url_for('supervisor.positions') }}" class="nav-item {% if request.blueprint == 'supervisor' and 'position' in request.endpoint %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-briefcase-fill"></i> Positions</a>
+        <a href="{{ url_for('supervisor.positions_jobs') }}" class="nav-item {% if request.endpoint == 'supervisor.positions_jobs' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-briefcase-fill"></i> Job Positions</a>
+        <a href="{{ url_for('supervisor.positions_internships') }}" class="nav-item {% if request.endpoint == 'supervisor.positions_internships' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-mortarboard-fill"></i> Internship Positions</a>
         <div class="nav-section">Management</div>
         <a href="{{ url_for('supervisor.companies') }}" class="nav-item {% if request.blueprint == 'supervisor' and 'compan' in request.endpoint %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-building"></i> Companies</a>
         <div class="nav-section">Other</div>
