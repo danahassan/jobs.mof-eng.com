@@ -29,8 +29,10 @@ def push_status():
         try:
             from py_vapid import Vapid01
             raw = (cfg.get('VAPID_PRIVATE_KEY', '') or '').strip()
-            cand = raw.replace('\\n', '\n') if '-----BEGIN' in raw else raw
-            Vapid01.from_string(private_key=cand)
+            if '-----BEGIN' in raw:
+                Vapid01.from_string(private_key=raw.replace('\\n', '\n'))
+            else:
+                Vapid01.from_raw(private_raw=raw.encode('utf-8'))
             private_key_loadable = True
         except Exception as e:
             private_key_error = str(e)[:200]

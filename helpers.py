@@ -224,29 +224,27 @@ def _send_web_push(user_id, message, link=None):
                 '[push] VAPID keys not configured (VAPID_PRIVATE_KEY / VAPID_PUBLIC_KEY env vars missing) — push disabled'
             )
             return [{'ok': False, 'error': 'VAPID keys missing on server'}]
-        # Normalize the private key: env vars often mangle PEM newlines. Try in order:
-        #   1) PEM as given,
-        #   2) Convert literal "\n" to real newlines,
-        #   3) If it has no PEM headers, wrap as base64url raw key (pywebpush accepts that).
-        candidates = []
-        if '-----BEGIN' in private_key_raw:
-            # already looks like PEM; normalize escaped newlines if any
-            candidates.append(private_key_raw.replace('\\n', '\n'))
-            candidates.append(private_key_raw)
-        else:
-            # raw base64/base64url body — pywebpush accepts urlsafe-b64 of the 32-byte priv
-            candidates.append(private_key_raw)
-            # also try wrapping into a fake PEM in case it was pasted without headers
-        # Try each
-        last_exc = None
+        # Normalize the private key. Two formats are supported in env vars:
+        #   1) Raw single-line base64url of the 32-byte EC scalar (preferred — what
+        #      scripts/gen_vapid_keys.py now prints). Loaded via Vapid01.from_raw.
+        #   2) PEM (multi-line) — possibly with literal "\n" sequences if the env
+        #      editor stripped real newlines. Loaded via Vapid01.from_string.
+        from py_vapid import Vapid01
         ok_pk = None
-        for cand in candidates:
+        last_exc = None
+        attempts = []
+        if '-----BEGIN' in private_key_raw:
+            attempts.append(('pem', private_key_raw.replace('\\n', '\n')))
+            attempts.append(('pem-as-given', private_key_raw))
+        else:
+            attempts.append(('raw', private_key_raw))
+        for kind, cand in attempts:
             try:
-                # Quick smoke test: build a small webpush call but only as far as key load
-                from py_vapid import Vapid01
-                v = Vapid01.from_string(private_key=cand)  # raises on bad key
+                if kind == 'raw':
+                    Vapid01.from_raw(private_raw=cand.encode('utf-8'))
+                else:
+                    Vapid01.from_string(private_key=cand)
                 ok_pk = cand
-                _ = v
                 break
             except Exception as e:
                 last_exc = e
