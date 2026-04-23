@@ -14,8 +14,19 @@ from flask import (Blueprint, render_template, request, redirect, url_for,
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 
-from models import db, Ad, ROLE_ADMIN
+from models import (db, Ad, ROLE_ADMIN, ROLE_STUDENT, ROLE_UNIVERSITY_COORD,
+                    ROLE_SUPERVISOR, ROLE_EMPLOYER, ROLE_USER)
 from helpers import log_audit
+
+# Roles selectable as ad audience (in display order)
+_AUDIENCE_ROLES = [
+    (ROLE_STUDENT,            'Students'),
+    (ROLE_UNIVERSITY_COORD,   'University coordinators'),
+    (ROLE_SUPERVISOR,         'Supervisors'),
+    (ROLE_EMPLOYER,           'Employers'),
+    (ROLE_USER,               'Job seekers'),
+    (ROLE_ADMIN,              'Admins'),
+]
 
 ads_bp = Blueprint('ads', __name__)
 
@@ -52,15 +63,23 @@ def _parse_dt(s, default=None):
     return default
 
 
-def get_current_ad():
-    """Return the single highest-priority *live* ad to show right now."""
+def get_current_ad(user=None):
+    """Return the single highest-priority *live* ad targeted at this user.
+
+    If ``user`` is None (anonymous visitor) only ads targeting 'all' are
+    considered. Authenticated users see ads matching their role or 'all'.
+    """
     now = datetime.utcnow()
-    return (Ad.query
-            .filter(Ad.is_active == True)
-            .filter((Ad.start_at == None) | (Ad.start_at <= now))   # noqa: E711
-            .filter((Ad.end_at == None) | (Ad.end_at >= now))
-            .order_by(Ad.priority.desc(), Ad.created_at.desc())
-            .first())
+    candidates = (Ad.query
+                  .filter(Ad.is_active == True)
+                  .filter((Ad.start_at == None) | (Ad.start_at <= now))   # noqa: E711
+                  .filter((Ad.end_at == None) | (Ad.end_at >= now))
+                  .order_by(Ad.priority.desc(), Ad.created_at.desc())
+                  .all())
+    for ad in candidates:
+        if ad.is_visible_to(user):
+            return ad
+    return None
 
 
 # ─── Public tracking endpoints ───────────────────────────────────────────────
@@ -120,7 +139,8 @@ def admin_list():
 def admin_new():
     if request.method == 'POST':
         return _save_ad(None)
-    return render_template('ads/admin_form.html', ad=None)
+    return render_template('ads/admin_form.html', ad=None,
+                           audience_roles=_AUDIENCE_ROLES)
 
 
 @ads_bp.route('/admin/<int:ad_id>/edit', methods=['GET', 'POST'])
@@ -129,7 +149,8 @@ def admin_edit(ad_id):
     ad = Ad.query.get_or_404(ad_id)
     if request.method == 'POST':
         return _save_ad(ad)
-    return render_template('ads/admin_form.html', ad=ad)
+    return render_template('ads/admin_form.html', ad=ad,
+                           audience_roles=_AUDIENCE_ROLES)
 
 
 def _save_ad(ad):
@@ -140,6 +161,14 @@ def _save_ad(ad):
     end_s    = request.form.get('end_at', '').strip()
     priority = request.form.get('priority', '0').strip()
     is_active = bool(request.form.get('is_active'))
+
+    # Audience targeting — checkboxes named audience[] OR special 'all'
+    selected = request.form.getlist('audience')
+    valid_roles = {r for r, _ in _AUDIENCE_ROLES}
+    if not selected or 'all' in selected:
+        audience = 'all'
+    else:
+        audience = ','.join(r for r in selected if r in valid_roles) or 'all'
 
     if not title:
         flash('Please give the ad a title.', 'danger')
@@ -240,6 +269,7 @@ def _save_ad(ad):
             mobile_image_path = mobile_image_path,
             mobile_image_name = mobile_image_name,
             mobile_image_mime = mobile_image_mime,
+            audience      = audience,
             link_url      = link_url,
             start_at      = start_at,
             end_at        = end_at,
@@ -257,6 +287,7 @@ def _save_ad(ad):
         ad.mobile_image_path = mobile_image_path
         ad.mobile_image_name = mobile_image_name
         ad.mobile_image_mime = mobile_image_mime
+        ad.audience  = audience
         ad.link_url   = link_url
         ad.start_at   = start_at
         ad.end_at     = end_at

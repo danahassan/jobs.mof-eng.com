@@ -112,6 +112,29 @@
       </div>
     </div>
 
+    {# ── Audience targeting ───────────────────────────────────────── #}
+    {% set _aud = (ad.audience_list if ad else ['all']) %}
+    <div class="form-group">
+      <label><i class="bi bi-people-fill"></i> Target audience</label>
+      <div style="display:flex;flex-wrap:wrap;gap:10px 18px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:#f9fafb">
+        <label class="toggle-row" style="cursor:pointer">
+          <input type="checkbox" name="audience" value="all" id="aud_all"
+                 {% if 'all' in _aud %}checked{% endif %}
+                 onchange="document.querySelectorAll('.aud-role').forEach(el=>{el.checked=false;el.disabled=this.checked})">
+          <span><b>All users</b></span>
+        </label>
+        {% for role, label in audience_roles %}
+        <label class="toggle-row" style="cursor:pointer">
+          <input type="checkbox" class="aud-role" name="audience" value="{{ role }}"
+                 {% if role in _aud %}checked{% endif %}
+                 {% if 'all' in _aud %}disabled{% endif %}>
+          <span>{{ label }}</span>
+        </label>
+        {% endfor %}
+      </div>
+      <div class="hint">Tick "All users" to show this ad to everyone, or pick one or more specific roles. Anonymous visitors only see "All users" ads.</div>
+    </div>
+
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;border-top:1px solid var(--border);padding-top:16px">
       <a href="{{ url_for('ads.admin_list') }}" class="btn btn-outline btn-sm">Cancel</a>
       <button type="submit" class="btn btn-primary btn-sm">

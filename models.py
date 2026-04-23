@@ -984,6 +984,7 @@ class Ad(db.Model):
     mobile_image_path = db.Column(db.String(255))               # optional separate mobile image
     mobile_image_name = db.Column(db.String(255))
     mobile_image_mime = db.Column(db.String(80))
+    audience     = db.Column(db.String(255), default='all')     # CSV of roles, or 'all'
     link_url     = db.Column(db.String(500))                    # optional click target
     start_at     = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     end_at       = db.Column(db.DateTime, index=True)           # inclusive end
@@ -1024,6 +1025,38 @@ class Ad(db.Model):
     def ctr(self):
         """Click-through rate as a percentage."""
         return round((self.click_count or 0) / self.view_count * 100, 2) if self.view_count else 0
+
+    @property
+    def audience_list(self):
+        """Return the list of role tokens this ad targets ('all' = everyone)."""
+        raw = (self.audience or 'all').strip()
+        if not raw:
+            return ['all']
+        return [r.strip() for r in raw.split(',') if r.strip()]
+
+    @property
+    def audience_label(self):
+        roles = self.audience_list
+        if 'all' in roles:
+            return 'All users'
+        labels = {
+            ROLE_ADMIN: 'Admins',
+            ROLE_STUDENT: 'Students',
+            ROLE_UNIVERSITY_COORD: 'Coordinators',
+            ROLE_SUPERVISOR: 'Supervisors',
+            ROLE_EMPLOYER: 'Employers',
+            ROLE_USER: 'Job seekers',
+        }
+        return ', '.join(labels.get(r, r) for r in roles)
+
+    def is_visible_to(self, user):
+        """True if this ad targets the given user (or anonymous when 'all')."""
+        roles = self.audience_list
+        if 'all' in roles:
+            return True
+        if user is None or not getattr(user, 'is_authenticated', False):
+            return False
+        return user.role in roles
 
 
 from sqlalchemy.orm import configure_mappers  # noqa: E402

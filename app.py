@@ -167,7 +167,7 @@ def create_app(config_name=None):
     # Context processor — available in all templates
     def _safe_current_ad():
         try:
-            return get_current_ad()
+            return get_current_ad(current_user if current_user.is_authenticated else None)
         except Exception:
             return None
 
@@ -284,6 +284,8 @@ def _migrate_db(app):
             _safe_add_column(conn, 'ads', 'mobile_image_path', 'VARCHAR(255)')
             _safe_add_column(conn, 'ads', 'mobile_image_name', 'VARCHAR(255)')
             _safe_add_column(conn, 'ads', 'mobile_image_mime', 'VARCHAR(80)')
+            # Ads — audience targeting (CSV of roles or 'all')
+            _safe_add_column(conn, 'ads', 'audience', "VARCHAR(255) DEFAULT 'all'")
 
 
 def _safe_add_column(conn, table, column, col_type):

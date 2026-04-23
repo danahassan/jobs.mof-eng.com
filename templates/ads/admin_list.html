@@ -73,6 +73,7 @@ form.inline{display:inline}
         <span><i class="bi bi-calendar-event"></i> {{ a.start_at.strftime('%b %d, %Y') if a.start_at else '—' }}
           → {{ a.end_at.strftime('%b %d, %Y') if a.end_at else 'no end' }}</span>
         <span><i class="bi bi-stars"></i> Priority {{ a.priority }}</span>
+        <span><i class="bi bi-people"></i> {{ a.audience_label }}</span>
         {% if a.link_url %}
         <span><i class="bi bi-link-45deg"></i> <a href="{{ a.link_url }}" target="_blank" rel="noopener" style="color:var(--green);text-decoration:none">link</a></span>
         {% endif %}
