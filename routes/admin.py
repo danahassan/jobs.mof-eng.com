@@ -165,6 +165,15 @@ def dashboard():
     total_positions   = Position.query.filter_by(is_active=True).count()
     total_users       = User.query.filter_by(role=ROLE_USER, is_active=True).count()
 
+    # University-related metrics
+    universities_count  = University.query.filter_by(is_active=True).count()
+    students_count      = User.query.filter_by(role=ROLE_STUDENT, is_active=True).count()
+    coordinators_count  = User.query.filter_by(role=ROLE_UNIVERSITY_COORD, is_active=True).count()
+    internships_count   = (Application.query
+                           .join(Position, Application.position_id == Position.id)
+                           .filter(Position.type == 'Internship').count())
+    univ_pending_count  = Application.query.filter_by(status=STATUS_UNIV_PENDING).count()
+
     recent_companies  = (Company.query
                          .filter_by(is_active=True)
                          .order_by(Company.id.desc())
@@ -183,6 +192,11 @@ def dashboard():
         supervisors_count=supervisors_count,
         total_positions=total_positions,
         total_users=total_users,
+        universities_count=universities_count,
+        students_count=students_count,
+        coordinators_count=coordinators_count,
+        internships_count=internships_count,
+        univ_pending_count=univ_pending_count,
         recent_companies=recent_companies,
         recent_supervisors=recent_supervisors)
 
