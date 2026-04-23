@@ -686,7 +686,10 @@ def application_detail(app_id):
     app = db.get_or_404(Application, app_id)
     scope = _normalize_scope(request.args.get('scope', 'all'))
     back_endpoint = _scope_meta(scope, kind='applications')['base_endpoint']
-    supervisors = User.query.filter_by(role=ROLE_SUPERVISOR, is_active=True).all()
+    is_internship = bool(app.position and app.position.type == 'Internship')
+    assignee_role = ROLE_UNIVERSITY_COORD if is_internship else ROLE_SUPERVISOR
+    assignee_label = 'Coordinator' if is_internship else 'Supervisor'
+    supervisors = User.query.filter_by(role=assignee_role, is_active=True).all()
     # Admins see all status changes + admin-authored entries (notes without status change)
     admin_ids = [u.id for u in User.query.filter_by(role=ROLE_ADMIN).with_entities(User.id).all()]
     history   = app.history.filter(
@@ -749,7 +752,8 @@ def application_detail(app_id):
         skills=skills, experiences=experiences, educations=educations,
         languages=languages, certifications=certifications,
         thread_messages=thread_messages, supervisor_thread=supervisor_thread,
-        scope=scope, back_endpoint=back_endpoint)
+        scope=scope, back_endpoint=back_endpoint,
+        is_internship=is_internship, assignee_label=assignee_label)
 
 
 @admin_bp.route('/applications/<int:app_id>/update', methods=['POST'])
