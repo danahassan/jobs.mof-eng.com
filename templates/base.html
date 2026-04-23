@@ -758,23 +758,16 @@ function isAndroidChrome() {
 (function(){
   const buttons = getInstallButtons();
   if (!buttons.length) return;
-  if (isStandalonePWA()) {
-    buttons.forEach(btn => btn.style.display = 'none');
-    return;
-  }
+  // Hide by default. We will reveal it only when:
+  //  • iOS Safari (no native install prompt — instructions are the only path), OR
+  //  • Android/desktop Chrome AFTER beforeinstallprompt has fired (real native install).
+  buttons.forEach(btn => btn.style.display = 'none');
+  if (isStandalonePWA()) return;
   if (isIosSafari()) {
     buttons.forEach(btn => {
       btn.style.display = 'inline-flex';
       btn.title = 'Add to Home Screen';
       btn.innerHTML = '<i class="bi bi-plus-square"></i> Add to Home Screen';
-    });
-    return;
-  }
-  if (isAndroidChrome()) {
-    buttons.forEach(btn => {
-      btn.style.display = 'inline-flex';
-      btn.title = 'Install as App';
-      btn.innerHTML = '<i class="bi bi-box-arrow-down"></i> Install';
     });
   }
 })();
