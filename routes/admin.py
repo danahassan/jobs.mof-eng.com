@@ -4,7 +4,7 @@ import secrets
 from datetime import datetime, timedelta
 from flask import (Blueprint, render_template, redirect, url_for,
                    flash, request, abort, current_app, send_from_directory,
-                   Response, send_file)
+                   Response, send_file, jsonify)
 from flask_login import current_user
 
 from models import (db, User, Position, Application, ApplicationHistory,
@@ -1160,9 +1160,7 @@ def user_send_reminder_test(user_id):
         is_sample = True
 
     if not apps:
-        flash('No applications exist in the system at all — cannot generate a preview email. '
-              'Create at least one test application first.', 'warning')
-        return redirect(url_for('admin.user_edit', user_id=user.id))
+        return jsonify({'ok': False, 'error': 'No applications exist in the system at all — cannot generate a preview.'}), 400
 
     # Send to the admin's own email (so they can preview without needing the supervisor's mailbox)
     target_email = current_user.email
@@ -1175,17 +1173,16 @@ def user_send_reminder_test(user_id):
         prefix = '[TEST · SAMPLE DATA] ' if is_sample else '[TEST] '
         subject = f'{prefix}Reminder: {len(apps)} applicant{"s" if len(apps) != 1 else ""} waiting for review'
         send_email(target_email, subject, html)
-        if is_sample:
-            flash(f'Preview email sent to YOUR address ({target_email}). '
-                  f'Note: {user.full_name} has no "New" applications visible to them, '
-                  f'so the email shows {len(apps)} sample application(s) for layout preview.', 'info')
-        else:
-            flash(f'Preview email sent to YOUR address ({target_email}) — showing {len(apps)} '
-                  f'real "New" application(s) visible to {user.full_name}.', 'success')
+        return jsonify({
+            'ok': True,
+            'sent_to': target_email,
+            'count': len(apps),
+            'is_sample': is_sample,
+            'message': f'Preview sent to {target_email}' + (' (using sample data)' if is_sample else ''),
+        })
     except Exception as ex:
         current_app.logger.exception('Test reminder email failed: %s', ex)
-        flash(f'Failed to send test email: {ex}', 'danger')
-    return redirect(url_for('admin.user_edit', user_id=user.id))
+        return jsonify({'ok': False, 'error': str(ex)}), 500
 
 
 @admin_bp.route('/users/<int:user_id>/delete', methods=['POST'])

@@ -144,15 +144,13 @@
           </label>
         </div>
         {% if user %}
-        <div id="uf-reminder-test" style="margin:6px 0 0 28px">
-          <form method="POST" action="{{ url_for('admin.user_send_reminder_test', user_id=user.id) }}"
-                style="display:inline" onsubmit="return confirm('Send a preview email to YOUR address ({{ current_user.email }}) showing what {{ user.full_name }} would see?');">
-            <button type="submit" class="btn btn-outline btn-xs">
-              <i class="bi bi-send"></i> Send preview to my email
-            </button>
-          </form>
-          <span style="font-size:11px;color:var(--text3);margin-left:6px">
-            Sends to <b>{{ current_user.email }}</b> (your address). Uses sample data if no real "New" applications exist.
+        <div id="uf-reminder-test" style="margin:6px 0 0 28px;{% if user.role != 'supervisor' %}display:none{% endif %}">
+          <button type="button" class="btn btn-outline btn-xs"
+                  onclick="sendReminderPreview(this, '{{ url_for('admin.user_send_reminder_test', user_id=user.id) }}', '{{ current_user.email }}', '{{ user.full_name|e }}')">
+            <i class="bi bi-send"></i> Send preview to my email
+          </button>
+          <span id="uf-reminder-test-status" style="font-size:11px;color:var(--text3);margin-left:6px">
+            Sends to <b>{{ current_user.email }}</b>. Uses sample data if no real "New" applications exist.
           </span>
         </div>
         {% endif %}
@@ -659,10 +657,49 @@ function addCert() {
 (function(){
   const roleSel = document.querySelector('select[name="role"]');
   const remRow  = document.getElementById('uf-reminder-row');
-  if(!roleSel || !remRow) return;
-  function sync(){ remRow.style.display = (roleSel.value === 'supervisor') ? '' : 'none'; }
+  const testRow = document.getElementById('uf-reminder-test');
+  if(!roleSel) return;
+  function sync(){
+    const isSup = (roleSel.value === 'supervisor');
+    if(remRow)  remRow.style.display  = isSup ? '' : 'none';
+    if(testRow) testRow.style.display = isSup ? '' : 'none';
+  }
   roleSel.addEventListener('change', sync);
   sync();
 })();
+
+// Trigger the preview email via AJAX (avoids nested-form submit hijack)
+function sendReminderPreview(btn, url, adminEmail, userName){
+  if(!confirm('Send a preview email to ' + adminEmail + ' showing what ' + userName + ' would see?')) return;
+  const status = document.getElementById('uf-reminder-test-status');
+  const orig = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Sending...';
+  if(status) status.innerHTML = 'Sending preview email to <b>' + adminEmail + '</b>...';
+
+  // Get CSRF token if Flask-WTF is in use; otherwise this is a no-op
+  const csrf = document.querySelector('meta[name="csrf-token"]');
+  const headers = {'Accept':'application/json'};
+  if(csrf) headers['X-CSRFToken'] = csrf.getAttribute('content');
+
+  fetch(url, {method:'POST', headers, credentials:'same-origin'})
+    .then(r => r.text().then(t => ({ok:r.ok, status:r.status, text:t})))
+    .then(res => {
+      btn.disabled = false;
+      btn.innerHTML = orig;
+      if(res.ok){
+        if(status) status.innerHTML = '<span style="color:#16a34a;font-weight:600"><i class="bi bi-check-circle-fill"></i> Sent! Check ' + adminEmail + ' inbox (give it ~30s).</span>';
+      } else {
+        if(status) status.innerHTML = '<span style="color:#dc2626;font-weight:600"><i class="bi bi-x-circle-fill"></i> Failed (HTTP ' + res.status + '). Check server logs.</span>';
+        console.error('Reminder preview failed:', res.text);
+      }
+    })
+    .catch(err => {
+      btn.disabled = false;
+      btn.innerHTML = orig;
+      if(status) status.innerHTML = '<span style="color:#dc2626;font-weight:600"><i class="bi bi-x-circle-fill"></i> Network error: ' + err.message + '</span>';
+      console.error(err);
+    });
+}
 </script>
 {% endblock %}
