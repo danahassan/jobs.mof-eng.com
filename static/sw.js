@@ -1,5 +1,5 @@
 ﻿/* ─── MOF Jobs Service Worker ─────────────────────────────────────────── */
-const VER          = 'mof-v14';
+const VER          = 'mof-v15';
 const STATIC_CACHE = `${VER}-static`;
 const DYNAMIC_CACHE= `${VER}-dynamic`;
 const ICON         = '/static/icons/icon-192.png';
