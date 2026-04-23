@@ -365,10 +365,10 @@ def _applications_list(scope='all'):
     kpi_total      = scope_apps.count()
     kpi_new_7d     = scope_apps.filter(
         Application.applied_at >= datetime.utcnow() - timedelta(days=7)).count()
-    kpi_interview  = scope_apps.filter_by(status='Interview').count()
-    kpi_hired      = scope_apps.filter_by(status='Hired').count()
-    kpi_rejected   = scope_apps.filter_by(status='Rejected').count()
-    kpi_pending    = scope_apps.filter_by(status='New').count()
+    kpi_interview  = scope_apps.filter(Application.status == 'Interview').count()
+    kpi_hired      = scope_apps.filter(Application.status == 'Hired').count()
+    kpi_rejected   = scope_apps.filter(Application.status == 'Rejected').count()
+    kpi_pending    = scope_apps.filter(Application.status == 'New').count()
 
     meta = _scope_meta(scope, kind='applications')
     return render_template(
