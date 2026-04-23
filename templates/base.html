@@ -109,13 +109,15 @@ nav.sidebar-nav{padding:8px 10px;flex:1}
 
 /* ═══ AD BANNER ═══ */
 .ad-banner{position:relative;margin:14px 24px 0;border-radius:12px;overflow:hidden;background:#f1f5f9;border:1px solid var(--border);box-shadow:0 1px 3px rgba(0,0,0,.04)}
-.ad-banner-link{display:block;line-height:0}
-.ad-banner-img{width:100%;height:auto;max-height:160px;object-fit:cover;display:block}
+.ad-banner picture,.ad-banner-link{display:block;line-height:0}
+.ad-banner-img{width:100%;height:auto;max-height:160px;object-fit:contain;display:block;background:#f1f5f9}
 .ad-banner-close{position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;border:none;background:rgba(0,0,0,.55);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;transition:background .15s;z-index:2}
 .ad-banner-close:hover{background:rgba(0,0,0,.8)}
 @media(max-width:640px){
   .ad-banner{margin:10px 12px 0;border-radius:10px}
-  .ad-banner-img{max-height:110px}
+  /* Allow more vertical room when a dedicated mobile image is supplied */
+  .ad-banner-img{max-height:120px}
+  .ad-banner.has-mobile .ad-banner-img{max-height:280px;object-fit:cover}
 }
 .avatar-wrap{display:flex;align-items:center;gap:8px;cursor:pointer;padding:5px 10px;border-radius:8px;transition:background 0.15s;text-decoration:none}
 .avatar-wrap:hover{background:#f8f9fa;text-decoration:none}
@@ -636,13 +638,19 @@ html.dark select.form-control option{background:#1e293b}
 
     <div class="content">
       {% if current_ad %}
-      <div class="ad-banner" id="adBanner-{{ current_ad.id }}">
-        {% if current_ad.link_url %}
-        <a href="{{ url_for('ads.click', ad_id=current_ad.id) }}" target="_blank" rel="noopener" class="ad-banner-link">
+      {% set _ad_img %}
+        <picture>
+          {% if current_ad.mobile_image_path %}
+          <source media="(max-width: 640px)" srcset="{{ url_for('ads.serve_image', filename=current_ad.mobile_image_path) }}">
+          {% endif %}
           <img src="{{ url_for('ads.serve_image', filename=current_ad.image_path) }}" alt="{{ current_ad.title }}" class="ad-banner-img">
-        </a>
+        </picture>
+      {% endset %}
+      <div class="ad-banner {% if current_ad.mobile_image_path %}has-mobile{% endif %}" id="adBanner-{{ current_ad.id }}">
+        {% if current_ad.link_url %}
+        <a href="{{ url_for('ads.click', ad_id=current_ad.id) }}" target="_blank" rel="noopener" class="ad-banner-link">{{ _ad_img }}</a>
         {% else %}
-        <img src="{{ url_for('ads.serve_image', filename=current_ad.image_path) }}" alt="{{ current_ad.title }}" class="ad-banner-img">
+        {{ _ad_img }}
         {% endif %}
         <button type="button" class="ad-banner-close" onclick="document.getElementById('adBanner-{{ current_ad.id }}').remove()" title="Dismiss" aria-label="Dismiss ad">
           <i class="bi bi-x-lg"></i>

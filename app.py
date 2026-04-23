@@ -280,6 +280,10 @@ def _migrate_db(app):
             # University coordinator weekly digest preferences
             _safe_add_column(conn, 'users', 'weekly_coord_digest', 'BOOLEAN')
             _safe_add_column(conn, 'users', 'coord_digest_last_sent', 'DATETIME')
+            # Ads — separate mobile image
+            _safe_add_column(conn, 'ads', 'mobile_image_path', 'VARCHAR(255)')
+            _safe_add_column(conn, 'ads', 'mobile_image_name', 'VARCHAR(255)')
+            _safe_add_column(conn, 'ads', 'mobile_image_mime', 'VARCHAR(80)')
 
 
 def _safe_add_column(conn, table, column, col_type):

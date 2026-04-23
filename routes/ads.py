@@ -189,6 +189,45 @@ def _save_ad(ad):
         image_name = original
         image_mime = f.mimetype
 
+    # Mobile image (optional)
+    mf = request.files.get('mobile_image')
+    mobile_image_path = ad.mobile_image_path if ad else None
+    mobile_image_name = ad.mobile_image_name if ad else None
+    mobile_image_mime = ad.mobile_image_mime if ad else None
+
+    if mf and mf.filename:
+        if not _allowed(mf.filename):
+            flash('Unsupported mobile image type. Allowed: PNG, JPG, GIF, WebP, SVG.', 'danger')
+            return redirect(request.url)
+        original = secure_filename(mf.filename)
+        ext = original.rsplit('.', 1)[-1].lower()
+        stored = f"{uuid.uuid4().hex}.{ext}"
+        folder = current_app.config['ADS_FOLDER']
+        os.makedirs(folder, exist_ok=True)
+        mf.save(os.path.join(folder, stored))
+        if ad and ad.mobile_image_path:
+            try:
+                old = os.path.join(folder, ad.mobile_image_path)
+                if os.path.isfile(old):
+                    os.remove(old)
+            except OSError:
+                pass
+        mobile_image_path = stored
+        mobile_image_name = original
+        mobile_image_mime = mf.mimetype
+
+    # Allow clearing the mobile image explicitly
+    if request.form.get('remove_mobile') and ad and ad.mobile_image_path:
+        try:
+            old = os.path.join(current_app.config['ADS_FOLDER'], ad.mobile_image_path)
+            if os.path.isfile(old):
+                os.remove(old)
+        except OSError:
+            pass
+        mobile_image_path = None
+        mobile_image_name = None
+        mobile_image_mime = None
+
     if ad is None:
         if not image_path:
             flash('Please upload an image for the ad.', 'danger')
@@ -198,6 +237,9 @@ def _save_ad(ad):
             image_path    = image_path,
             image_name    = image_name,
             image_mime    = image_mime,
+            mobile_image_path = mobile_image_path,
+            mobile_image_name = mobile_image_name,
+            mobile_image_mime = mobile_image_mime,
             link_url      = link_url,
             start_at      = start_at,
             end_at        = end_at,
@@ -212,6 +254,9 @@ def _save_ad(ad):
         ad.image_path = image_path
         ad.image_name = image_name
         ad.image_mime = image_mime
+        ad.mobile_image_path = mobile_image_path
+        ad.mobile_image_name = mobile_image_name
+        ad.mobile_image_mime = mobile_image_mime
         ad.link_url   = link_url
         ad.start_at   = start_at
         ad.end_at     = end_at
@@ -239,12 +284,16 @@ def admin_toggle(ad_id):
 @admin_required
 def admin_delete(ad_id):
     ad = Ad.query.get_or_404(ad_id)
-    try:
-        path = os.path.join(current_app.config['ADS_FOLDER'], ad.image_path)
-        if os.path.isfile(path):
-            os.remove(path)
-    except OSError:
-        pass
+    folder = current_app.config['ADS_FOLDER']
+    for fname in (ad.image_path, ad.mobile_image_path):
+        if not fname:
+            continue
+        try:
+            path = os.path.join(folder, fname)
+            if os.path.isfile(path):
+                os.remove(path)
+        except OSError:
+            pass
     log_audit('ad.delete', f'#{ad.id} {ad.title}')
     db.session.delete(ad)
     db.session.commit()

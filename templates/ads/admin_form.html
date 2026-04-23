@@ -37,15 +37,31 @@
     </div>
 
     <div class="form-group">
-      <label>Banner image {% if not ad %}<span style="color:#dc2626">*</span>{% endif %}</label>
+      <label>Banner image — desktop {% if not ad %}<span style="color:#dc2626">*</span>{% endif %}</label>
       <input type="file" name="image" class="form-control"
              accept=".png,.jpg,.jpeg,.gif,.webp,.svg"
              {% if not ad %}required{% endif %}>
-      <div class="hint">PNG, JPG, GIF, WebP or SVG · max 10 MB · recommended 1200×160 px or wider.</div>
+      <div class="hint">PNG, JPG, GIF, WebP or SVG · max 10 MB · recommended 1200×160 px or wider for desktop screens.</div>
       {% if ad %}
       <div class="preview">
-        <img src="{{ url_for('ads.serve_image', filename=ad.image_path) }}" alt="Current">
-        <div class="hint" style="margin-top:6px">Current image: {{ ad.image_name }}</div>
+        <img src="{{ url_for('ads.serve_image', filename=ad.image_path) }}" alt="Current desktop">
+        <div class="hint" style="margin-top:6px">Current: {{ ad.image_name }}</div>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="form-group">
+      <label>Banner image — mobile <span class="text-muted">(optional, recommended)</span></label>
+      <input type="file" name="mobile_image" class="form-control"
+             accept=".png,.jpg,.jpeg,.gif,.webp,.svg">
+      <div class="hint">Recommended 600×300 px (square-ish/taller). If left empty, the desktop image is shown on mobile (cropped to fit).</div>
+      {% if ad and ad.mobile_image_path %}
+      <div class="preview">
+        <img src="{{ url_for('ads.serve_image', filename=ad.mobile_image_path) }}" alt="Current mobile" style="max-height:120px">
+        <div class="hint" style="margin-top:6px">Current: {{ ad.mobile_image_name }}</div>
+        <label style="display:inline-flex;align-items:center;gap:6px;font-size:12px;margin-top:8px;color:#dc2626;cursor:pointer">
+          <input type="checkbox" name="remove_mobile" value="1"> Remove mobile image
+        </label>
       </div>
       {% endif %}
     </div>

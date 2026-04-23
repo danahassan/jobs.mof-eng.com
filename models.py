@@ -978,9 +978,12 @@ class Ad(db.Model):
 
     id           = db.Column(db.Integer, primary_key=True)
     title        = db.Column(db.String(200), nullable=False)
-    image_path   = db.Column(db.String(255), nullable=False)   # stored uuid filename
+    image_path   = db.Column(db.String(255), nullable=False)   # stored uuid filename (desktop)
     image_name   = db.Column(db.String(255))                    # original filename
     image_mime   = db.Column(db.String(80))
+    mobile_image_path = db.Column(db.String(255))               # optional separate mobile image
+    mobile_image_name = db.Column(db.String(255))
+    mobile_image_mime = db.Column(db.String(80))
     link_url     = db.Column(db.String(500))                    # optional click target
     start_at     = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     end_at       = db.Column(db.DateTime, index=True)           # inclusive end
