@@ -108,16 +108,15 @@ nav.sidebar-nav{padding:8px 10px;flex:1}
 .topbar-divider{width:1px;height:24px;background:var(--border)}
 
 /* ═══ AD BANNER ═══ */
-.ad-banner{position:relative;margin:14px 24px 0;border-radius:12px;overflow:hidden;background:#f1f5f9;border:1px solid var(--border);box-shadow:0 1px 3px rgba(0,0,0,.04)}
-.ad-banner picture,.ad-banner-link{display:block;line-height:0}
-.ad-banner-img{width:100%;height:auto;max-height:160px;object-fit:contain;display:block;background:#f1f5f9}
+.ad-banner{position:relative;margin:14px 24px 0;border-radius:12px;overflow:hidden;text-align:center}
+.ad-banner picture,.ad-banner-link{display:inline-block;line-height:0;max-width:100%}
+.ad-banner-img{display:block;max-width:100%;width:auto;height:auto;max-height:200px;margin:0 auto;border-radius:12px}
 .ad-banner-close{position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;border:none;background:rgba(0,0,0,.55);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;transition:background .15s;z-index:2}
 .ad-banner-close:hover{background:rgba(0,0,0,.8)}
 @media(max-width:640px){
-  .ad-banner{margin:10px 12px 0;border-radius:10px}
-  /* Allow more vertical room when a dedicated mobile image is supplied */
-  .ad-banner-img{max-height:120px}
-  .ad-banner.has-mobile .ad-banner-img{max-height:280px;object-fit:cover}
+  .ad-banner{margin:10px 12px 0}
+  .ad-banner-img{max-height:140px}
+  .ad-banner.has-mobile .ad-banner-img{max-height:280px}
 }
 .avatar-wrap{display:flex;align-items:center;gap:8px;cursor:pointer;padding:5px 10px;border-radius:8px;transition:background 0.15s;text-decoration:none}
 .avatar-wrap:hover{background:#f8f9fa;text-decoration:none}
