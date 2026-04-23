@@ -156,6 +156,7 @@
     <div class="pos-card-top">
       <div>
         <div class="pos-card-title">{{ pos.title }}</div>
+        {% if pos.company %}<div class="pos-card-dept"><i class="bi bi-building"></i> {{ pos.company.name }}</div>{% endif %}
         {% if pos.department %}<div class="pos-card-dept"><i class="bi bi-diagram-3"></i> {{ pos.department }}</div>{% endif %}
       </div>
       {% if pos.is_active %}<span class="badge badge-active">Active</span>
@@ -196,12 +197,13 @@
   <div class="table-responsive">
     <table class="tbl">
       <thead>
-        <tr><th>Title</th><th>Department</th><th>Type</th><th>Apps</th><th>Closes</th><th>Status</th><th>Actions</th></tr>
+        <tr><th>Title</th><th>Company</th><th>Department</th><th>Type</th><th>Apps</th><th>Closes</th><th>Status</th><th>Actions</th></tr>
       </thead>
       <tbody>
         {% for pos in positions.items %}
         <tr>
           <td data-label="Title" class="td-name">{{ pos.title }}</td>
+          <td data-label="Company" class="text-muted">{% if pos.company %}<i class="bi bi-building" style="margin-right:4px"></i>{{ pos.company.name }}{% else %}—{% endif %}</td>
           <td data-label="Dept" class="text-muted">{{ pos.department or '—' }}</td>
           <td data-label="Type" class="text-muted"><span class="type-pill">{{ pos.type }}</span></td>
           <td data-label="Apps"><span class="badge badge-future apps-pill">{{ pos.application_count }}</span></td>
