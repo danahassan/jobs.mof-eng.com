@@ -99,72 +99,152 @@
   </a>
 </div>
 
-<!-- Middle row: Status + Source (compact) -->
+<!-- Applications Overview: Status segmented bar + Source donut in ONE card -->
 <style>
-.dash-compact{gap:12px;margin-bottom:14px}
-.dash-compact .card{padding:12px 14px}
-.dash-compact .card-title{margin-bottom:8px;font-size:13px}
-.stat-row{display:flex;align-items:center;gap:8px;padding:4px 0}
-.stat-row .sr-lbl{font-size:12px;color:var(--text2);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.stat-row .sr-num{font-size:12px;font-weight:700;color:var(--text);min-width:28px;text-align:right}
-.stat-row .mini-bar{flex:2;height:5px;margin:0}
-.src-chips{display:flex;flex-wrap:wrap;gap:6px}
-.src-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:16px;background:var(--bg);border:1px solid var(--border);font-size:12px;color:var(--text2)}
-.src-chip .sc-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-.src-chip .sc-num{font-weight:700;color:var(--text);font-size:12px}
-.list-compact .row-item{display:flex;align-items:center;gap:9px;padding:6px 0;border-bottom:1px solid var(--border)}
-.list-compact .row-item:last-of-type{border-bottom:0}
-.list-compact .ri-main{flex:1;min-width:0}
-.list-compact .ri-name{font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.25}
-.list-compact .ri-sub{font-size:10.5px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.25}
-.list-compact .ri-thumb{width:28px;height:28px;border-radius:7px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}
-.list-compact .ri-act{padding:3px 7px;font-size:11px}
-.card-hdr-compact{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
-.card-hdr-compact .card-title{margin:0;font-size:13px}
+.overview-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 18px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.03)}
+.overview-grid{display:grid;grid-template-columns:1fr 280px;gap:22px;align-items:start}
+.ov-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.ov-title{font-size:14px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:7px}
+.ov-total{font-size:12px;color:var(--text3)}
+.ov-total b{color:var(--text);font-weight:700}
+/* Segmented status bar */
+.seg-bar{display:flex;height:10px;border-radius:6px;overflow:hidden;background:var(--bg);margin-bottom:12px}
+.seg-bar .seg{transition:filter .15s;cursor:default}
+.seg-bar .seg:hover{filter:brightness(1.15)}
+.seg-legend{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px 14px}
+.seg-item{display:flex;align-items:center;gap:8px;font-size:12px}
+.seg-item .dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+.seg-item .lbl{color:var(--text2);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.seg-item .num{font-weight:700;color:var(--text);font-size:12px}
+.seg-item .pct{font-size:10.5px;color:var(--text3);margin-left:3px}
+/* Donut */
+.donut-wrap{display:flex;align-items:center;gap:14px}
+.donut-svg{width:110px;height:110px;flex-shrink:0}
+.donut-center{font-size:22px;font-weight:800;fill:var(--text)}
+.donut-sub{font-size:9px;fill:var(--text3);text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+.donut-legend{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.donut-row{display:flex;align-items:center;gap:7px;font-size:11.5px}
+.donut-row .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.donut-row .lbl{flex:1;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.donut-row .num{font-weight:700;color:var(--text)}
+.ov-divider{width:1px;background:var(--border);align-self:stretch;margin:0 4px}
+@media(max-width:900px){
+  .overview-grid{grid-template-columns:1fr;gap:16px}
+  .ov-divider{display:none}
+}
 @media(max-width:768px){
-  .dash-compact .card{padding:10px 12px}
-  .stat-row .sr-lbl{font-size:11.5px}
-  .list-compact .row-item{padding:5px 0}
+  .overview-card{padding:12px 14px}
+  .donut-svg{width:90px;height:90px}
+}
+
+/* List cards */
+.dash-compact{gap:12px;margin-bottom:14px}
+.dash-compact .card{padding:14px 16px;border-radius:14px}
+.card-hdr-compact{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.card-hdr-compact .card-title{margin:0;font-size:14px;display:flex;align-items:center;gap:6px}
+.card-hdr-compact .hdr-count{background:var(--bg);color:var(--text2);font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;border:1px solid var(--border)}
+.list-compact .row-item{display:flex;align-items:center;gap:10px;padding:8px 2px;border-radius:8px;transition:background .15s}
+.list-compact .row-item:hover{background:var(--bg)}
+.list-compact .row-item + .row-item{border-top:1px solid var(--border)}
+.list-compact .ri-main{flex:1;min-width:0}
+.list-compact .ri-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3;color:var(--text);display:flex;align-items:center;gap:5px}
+.list-compact .ri-sub{font-size:11px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3;margin-top:1px}
+.list-compact .ri-thumb{width:32px;height:32px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.list-compact .ri-act{padding:4px 8px;font-size:11px;opacity:.75;transition:opacity .15s}
+.list-compact .row-item:hover .ri-act{opacity:1}
+.list-add-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:8px;margin-top:10px;background:transparent;border:1px dashed var(--border);border-radius:8px;color:var(--text3);font-size:12px;font-weight:600;text-decoration:none;transition:all .15s}
+.list-add-btn:hover{border-color:var(--green);color:var(--green);background:var(--green-light)}
+@media(max-width:768px){
+  .dash-compact .card{padding:12px}
+  .list-compact .ri-thumb{width:28px;height:28px;border-radius:7px}
+  .list-compact .ri-name{font-size:12.5px}
+  .list-compact .row-item{padding:7px 2px}
 }
 </style>
-<div class="dash-two-col dash-compact dashboard-mid">
-  <!-- By Status -->
-  <div class="card">
-    <div class="card-title"><i class="bi bi-bar-chart-fill"></i> By Status</div>
-    {% set status_colors = {
-      'New': '#16a34a', 'Under Review': '#2563eb', 'Interview': '#7c3aed',
-      'Offer': '#d97706', 'Hired': '#198754', 'Rejected': '#dc2626', 'Future Consideration': '#64748b'
-    } %}
-    {% for s, count in status_counts.items() %}{% if count > 0 %}
-    <div class="stat-row">
-      <span class="sr-lbl">{{ s }}</span>
-      <div class="mini-bar"><div class="mini-bar-fill" style="width:{{ count * 100 // [total_apps, 1]|max }}%;background:{{ status_colors.get(s, '#64748b') }}"></div></div>
-      <span class="sr-num">{{ count }}</span>
-    </div>
-    {% endif %}{% endfor %}
+
+{% set status_colors = {
+  'New': '#16a34a', 'Under Review': '#2563eb', 'Interview': '#7c3aed',
+  'Offer': '#d97706', 'Hired': '#198754', 'Rejected': '#dc2626', 'Future Consideration': '#64748b'
+} %}
+{% set source_colors = ['#16a34a','#0284c7','#7c3aed','#d97706','#dc2626','#64748b'] %}
+{% set status_total = namespace(v=0) %}{% for s,c in status_counts.items() %}{% set status_total.v = status_total.v + c %}{% endfor %}
+{% set source_total = namespace(v=0) %}{% for s,c in source_counts.items() %}{% set source_total.v = source_total.v + c %}{% endfor %}
+
+<div class="overview-card">
+  <div class="ov-hdr">
+    <div class="ov-title"><i class="bi bi-graph-up-arrow" style="color:var(--green)"></i> Applications Overview</div>
+    <div class="ov-total"><b>{{ total_apps }}</b> total · <b>{{ new_last_7 }}</b> this week</div>
   </div>
 
-  <!-- By Source -->
-  <div class="card">
-    <div class="card-title"><i class="bi bi-pie-chart-fill"></i> By Source</div>
-    {% set source_colors = ['#198754','#0284c7','#7c3aed','#d97706','#dc2626'] %}
-    <div class="src-chips">
-      {% for src, count in source_counts.items() %}{% if count > 0 %}
-      <span class="src-chip">
-        <span class="sc-dot" style="background:{{ source_colors[loop.index0 % 5] }}"></span>
-        {{ src }} <span class="sc-num">{{ count }}</span>
-      </span>
-      {% endif %}{% endfor %}
+  <div class="overview-grid">
+    <!-- Left: By Status segmented bar -->
+    <div>
+      <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">By Status</div>
+      <div class="seg-bar" role="img" aria-label="Applications by status">
+        {% for s, count in status_counts.items() %}{% if count > 0 and status_total.v > 0 %}
+        <div class="seg" style="width:{{ count * 100 / status_total.v }}%;background:{{ status_colors.get(s,'#64748b') }}" title="{{ s }}: {{ count }}"></div>
+        {% endif %}{% endfor %}
+      </div>
+      <div class="seg-legend">
+        {% for s, count in status_counts.items() %}{% if count > 0 %}
+        <div class="seg-item">
+          <span class="dot" style="background:{{ status_colors.get(s,'#64748b') }}"></span>
+          <span class="lbl">{{ s }}</span>
+          <span class="num">{{ count }}</span>
+          {% if status_total.v > 0 %}<span class="pct">{{ (count * 100 / status_total.v) | round(0, 'floor') | int }}%</span>{% endif %}
+        </div>
+        {% endif %}{% endfor %}
+      </div>
+    </div>
+
+    <div class="ov-divider"></div>
+
+    <!-- Right: By Source donut -->
+    <div>
+      <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">By Source</div>
+      {% if source_total.v > 0 %}
+      <div class="donut-wrap">
+        {# SVG donut: circumference = 2*pi*r ≈ 251.3274 at r=40 #}
+        {% set circ = 251.3274 %}
+        {% set offset = namespace(v=0) %}
+        <svg class="donut-svg" viewBox="0 0 110 110">
+          <circle cx="55" cy="55" r="40" fill="none" stroke="var(--bg)" stroke-width="14"/>
+          {% for src, count in source_counts.items() %}{% if count > 0 %}
+          {% set frac = count / source_total.v %}
+          {% set dash = frac * circ %}
+          <circle cx="55" cy="55" r="40" fill="none"
+                  stroke="{{ source_colors[loop.index0 % 6] }}" stroke-width="14"
+                  stroke-dasharray="{{ dash }} {{ circ - dash }}"
+                  stroke-dashoffset="{{ -offset.v }}"
+                  transform="rotate(-90 55 55)"/>
+          {% set offset.v = offset.v + dash %}
+          {% endif %}{% endfor %}
+          <text x="55" y="54" text-anchor="middle" class="donut-center">{{ source_total.v }}</text>
+          <text x="55" y="68" text-anchor="middle" class="donut-sub">Sources</text>
+        </svg>
+        <div class="donut-legend">
+          {% for src, count in source_counts.items() %}{% if count > 0 %}
+          <div class="donut-row">
+            <span class="dot" style="background:{{ source_colors[loop.index0 % 6] }}"></span>
+            <span class="lbl">{{ src }}</span>
+            <span class="num">{{ count }}</span>
+          </div>
+          {% endif %}{% endfor %}
+        </div>
+      </div>
+      {% else %}
+      <div style="color:var(--text3);font-size:12px;padding:20px 0;text-align:center">No source data yet.</div>
+      {% endif %}
     </div>
   </div>
 </div>
 
-<!-- Companies + Supervisors (compact) -->
+<!-- Companies + Supervisors (refined) -->
 <div class="dash-two-col dash-compact list-compact">
   <!-- Recent Companies -->
   <div class="card">
     <div class="card-hdr-compact">
-      <div class="card-title"><i class="bi bi-buildings-fill"></i> Companies <span style="font-size:11px;font-weight:500;color:var(--text3)">({{ companies_count }})</span></div>
+      <div class="card-title"><i class="bi bi-buildings-fill" style="color:var(--green)"></i> Companies <span class="hdr-count">{{ companies_count }}</span></div>
       <a href="{{ url_for('admin.companies') }}" class="btn btn-outline btn-xs">View All</a>
     </div>
     {% for company in recent_companies %}
@@ -175,7 +255,7 @@
       <div class="ri-thumb" style="background:var(--green-light);color:var(--green)"><i class="bi bi-building"></i></div>
       {% endif %}
       <div class="ri-main">
-        <div class="ri-name">{{ company.name }}{% if company.is_verified %} <i class="bi bi-patch-check-fill" title="Verified" style="color:#2563eb;font-size:11px"></i>{% endif %}</div>
+        <div class="ri-name">{{ company.name }}{% if company.is_verified %}<i class="bi bi-patch-check-fill" title="Verified" style="color:#2563eb;font-size:11px"></i>{% endif %}</div>
         <div class="ri-sub">{{ company.industry or 'General' }} · {{ company.open_jobs_count }} open</div>
       </div>
       <a href="{{ url_for('admin.company_detail', company_id=company.id) }}" class="btn btn-outline btn-xs ri-act"><i class="bi bi-eye"></i></a>
@@ -183,19 +263,19 @@
     {% else %}
     <div class="empty-state" style="padding:14px"><i class="bi bi-buildings"></i><p>No companies yet.</p></div>
     {% endfor %}
-    <a href="{{ url_for('admin.company_new') }}" class="btn btn-outline btn-xs" style="width:100%;text-align:center;justify-content:center;margin-top:8px"><i class="bi bi-plus-lg"></i> Add Company</a>
+    <a href="{{ url_for('admin.company_new') }}" class="list-add-btn"><i class="bi bi-plus-lg"></i> Add Company</a>
   </div>
 
   <!-- Recent Supervisors -->
   <div class="card">
     <div class="card-hdr-compact">
-      <div class="card-title"><i class="bi bi-people-fill"></i> Supervisors <span style="font-size:11px;font-weight:500;color:var(--text3)">({{ supervisors_count }})</span></div>
+      <div class="card-title"><i class="bi bi-people-fill" style="color:var(--green)"></i> Supervisors <span class="hdr-count">{{ supervisors_count }}</span></div>
       <a href="{{ url_for('admin.users') }}" class="btn btn-outline btn-xs">View All</a>
     </div>
     {% for sup in recent_supervisors %}
     {% set sup_companies = sup.company_memberships | list %}
     <div class="row-item">
-      <div class="ri-thumb avatar" style="width:28px;height:28px">{{ sup.initials }}</div>
+      <div class="ri-thumb avatar">{{ sup.initials }}</div>
       <div class="ri-main">
         <div class="ri-name">{{ sup.full_name }}</div>
         <div class="ri-sub">
@@ -208,7 +288,7 @@
     {% else %}
     <div class="empty-state" style="padding:14px"><i class="bi bi-people"></i><p>No supervisors yet.</p></div>
     {% endfor %}
-    <a href="{{ url_for('admin.user_new') }}" class="btn btn-outline btn-xs" style="width:100%;text-align:center;justify-content:center;margin-top:8px"><i class="bi bi-person-plus-fill"></i> Add Supervisor</a>
+    <a href="{{ url_for('admin.user_new') }}" class="list-add-btn"><i class="bi bi-person-plus-fill"></i> Add Supervisor</a>
   </div>
 </div>
 
