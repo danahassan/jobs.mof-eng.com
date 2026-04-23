@@ -154,6 +154,34 @@
           </span>
         </div>
         {% endif %}
+
+        {# ── Weekly job-match digest (students only) ── #}
+        <div class="uf-check-row" id="uf-jobmatch-row" style="{% if user and user.role != 'student' %}display:none{% endif %}">
+          <input type="checkbox" name="weekly_job_match_digest" id="weekly_job_match_digest"
+                 {% if not user or user.weekly_job_match_digest %}checked{% endif %}>
+          <label for="weekly_job_match_digest">
+            <i class="bi bi-envelope-paper-fill" style="color:var(--green);margin-right:4px"></i>
+            Send weekly internship match digest
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;font-weight:normal">
+              Student only. Each Monday morning, sends up to 12 new internships matched against
+              the student's skills and major (from postings in the last 14 days).
+            </div>
+          </label>
+        </div>
+
+        {# ── Weekly cohort digest (university coordinators only) ── #}
+        <div class="uf-check-row" id="uf-coord-row" style="{% if user and user.role != 'university_coordinator' %}display:none{% endif %}">
+          <input type="checkbox" name="weekly_coord_digest" id="weekly_coord_digest"
+                 {% if not user or user.weekly_coord_digest %}checked{% endif %}>
+          <label for="weekly_coord_digest">
+            <i class="bi bi-mortarboard-fill" style="color:var(--green);margin-right:4px"></i>
+            Send weekly coordinator cohort digest
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;font-weight:normal">
+              University coordinator only. Each Monday morning, summarises pending approvals,
+              at-risk students with no applications, recent placements, and weekly activity.
+            </div>
+          </label>
+        </div>
       </div>
 
       {% if user %}
@@ -653,16 +681,23 @@ function addCert() {
 {% endif %}
 
 <script>
-// Show/hide the supervisor daily reminder row depending on selected role
+// Show/hide role-scoped opt-in rows depending on selected role
 (function(){
   const roleSel = document.querySelector('select[name="role"]');
   const remRow  = document.getElementById('uf-reminder-row');
   const testRow = document.getElementById('uf-reminder-test');
+  const jmRow   = document.getElementById('uf-jobmatch-row');
+  const coRow   = document.getElementById('uf-coord-row');
   if(!roleSel) return;
   function sync(){
-    const isSup = (roleSel.value === 'supervisor');
-    if(remRow)  remRow.style.display  = isSup ? '' : 'none';
-    if(testRow) testRow.style.display = isSup ? '' : 'none';
+    const role = roleSel.value;
+    const isSup     = (role === 'supervisor');
+    const isStudent = (role === 'student');
+    const isCoord   = (role === 'university_coordinator');
+    if(remRow)  remRow.style.display  = isSup     ? '' : 'none';
+    if(testRow) testRow.style.display = isSup     ? '' : 'none';
+    if(jmRow)   jmRow.style.display   = isStudent ? '' : 'none';
+    if(coRow)   coRow.style.display   = isCoord   ? '' : 'none';
   }
   roleSel.addEventListener('change', sync);
   sync();

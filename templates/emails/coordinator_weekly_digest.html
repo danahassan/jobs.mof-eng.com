@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width,initial-scale=1"><meta charset="UTF-8"><style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+body{font-family:'Inter',Arial,sans-serif;background:#f4f6f8;margin:0;padding:24px}
+.wrap{max-width:580px;margin:0 auto;background:#fff;border-radius:10px;overflow:hidden;border:1px solid #e0e0e0}
+.header{background:#1a2332;padding:24px 28px;display:flex;align-items:center;justify-content:space-between}
+.header-name{color:#fff;font-size:18px;font-weight:600}
+.header-badge{background:#198754;color:#fff;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;letter-spacing:.5px}
+.body{padding:28px}
+.section-title{font-size:11px;font-weight:700;color:#8a9aaa;letter-spacing:.8px;text-transform:uppercase;margin:20px 0 8px}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid #e8ecf0;border-radius:8px;overflow:hidden;margin-bottom:16px}
+.info-cell{padding:11px 14px;border-bottom:1px solid #e8ecf0;border-right:1px solid #e8ecf0}
+.info-cell:nth-child(2n){border-right:none}
+.info-cell:nth-last-child(-n+2){border-bottom:none}
+.info-lbl{font-size:11px;color:#8a9aaa;margin-bottom:2px}
+.info-val{font-size:13px;font-weight:600;color:#1a2332}
+.cta{display:inline-block;margin-top:20px;background:#198754;color:#fff;text-decoration:none;padding:11px 22px;border-radius:8px;font-size:13px;font-weight:600}
+.footer{background:#f8f9fa;padding:16px 28px;font-size:12px;color:#8a9aaa;border-top:1px solid #e0e0e0;text-align:center}
+.tip-note{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 14px;font-size:12.5px;color:#1d4ed8;margin-top:14px;line-height:1.55}
+.warn-note{background:#fff8e6;border:1px solid #f5d97a;border-radius:8px;padding:10px 14px;font-size:12.5px;color:#92650a;margin-top:14px;line-height:1.55}
+
+.list-card{border:1px solid #e8ecf0;border-radius:8px;overflow:hidden;margin-bottom:14px}
+.list-row{padding:11px 14px;border-bottom:1px solid #e8ecf0;display:flex;align-items:center;gap:12px}
+.list-row:last-child{border-bottom:none}
+.list-avatar{width:32px;height:32px;border-radius:50%;background:#fff7ed;color:#c2410c;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.list-avatar.success{background:#dcfce7;color:#16a34a}
+.list-avatar.info{background:#dbeafe;color:#2563eb}
+.list-main{flex:1;min-width:0}
+.list-name{font-size:13px;font-weight:600;color:#1a2332;line-height:1.3}
+.list-meta{font-size:11.5px;color:#5a6a7a;margin-top:2px;line-height:1.3}
+.list-pill{font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:99px;flex-shrink:0;white-space:nowrap}
+.list-pill.success{background:#dcfce7;color:#16a34a}
+.list-pill.warn{background:#fed7aa;color:#9a3412}
+.list-pill.info{background:#dbeafe;color:#1e40af}
+
+  @media (max-width: 600px) {
+    body { padding: 0 !important; }
+    .wrap, .wrapper { width: 100% !important; max-width: 100% !important; margin: 0 !important; border-radius: 0 !important; border: none !important; box-shadow: none !important; }
+    .header { padding: 20px 24px !important; }
+    .body { padding: 20px 24px !important; }
+    .footer { padding: 20px 24px !important; }
+    .info-grid { grid-template-columns: 1fr !important; }
+    .info-cell { border-right: none !important; border-bottom: 1px solid #e8ecf0 !important; }
+    .info-cell:last-child { border-bottom: none !important; }
+    .cta, .cta-btn { display: block !important; text-align: center !important; }
+  }
+</style></head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div class="header-name">Weekly Cohort Digest</div>
+    <div class="header-badge">{{ univ.name[:18] if univ else 'Coordinator' }}</div>
+  </div>
+  <div class="body">
+    <p>Hi <strong>{{ coordinator.full_name }}</strong>,</p>
+    <p style="margin-top:8px;color:#3a4a5a;font-size:14px">
+      Here's a summary of your cohort's activity over the past week.
+      A quick check-in keeps your students engaged and your placement numbers strong.
+    </p>
+
+    <div class="section-title">This Week at a Glance</div>
+    <div class="info-grid">
+      <div class="info-cell"><div class="info-lbl">Total Students</div><div class="info-val">{{ stats.total_students }}</div></div>
+      <div class="info-cell"><div class="info-lbl">Apps Last 7 Days</div><div class="info-val">{{ stats.apps_last_7 }}</div></div>
+      <div class="info-cell"><div class="info-lbl">Pending Your Approval</div><div class="info-val">{{ stats.pending_approvals }}</div></div>
+      <div class="info-cell"><div class="info-lbl">Hired (All Time)</div><div class="info-val">{{ stats.hired_total }}</div></div>
+      <div class="info-cell"><div class="info-lbl">Placement Rate</div><div class="info-val">{{ stats.placement_rate }}%</div></div>
+      <div class="info-cell"><div class="info-lbl">Inactive Students</div><div class="info-val">{{ stats.inactive_students }}</div></div>
+    </div>
+
+    {% if pending_apps %}
+    <div class="section-title">Awaiting Your Approval</div>
+    <div class="warn-note" style="margin-top:0;margin-bottom:10px">
+      &#9203; <strong>{{ pending_apps|length }} application{{ 's' if pending_apps|length != 1 else '' }}</strong> need{{ 's' if pending_apps|length == 1 else '' }} your review before they can move forward to companies.
+    </div>
+    <div class="list-card">
+      {% for app in pending_apps[:6] %}
+      <div class="list-row">
+        <div class="list-avatar">{{ app.applicant.full_name[:1].upper() }}</div>
+        <div class="list-main">
+          <div class="list-name">{{ app.applicant.full_name }}</div>
+          <div class="list-meta">
+            {{ app.position.title }}{% if app.position.company %} &middot; {{ app.position.company.name }}{% endif %}
+          </div>
+        </div>
+        <span class="list-pill warn">{{ ((now - app.applied_at).days) }}d waiting</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if at_risk %}
+    <div class="section-title">Students Needing Outreach</div>
+    <p style="font-size:12.5px;color:#5a6a7a;margin:0 0 8px;line-height:1.5">
+      These students haven't applied to any internships yet. A short message from you can make the difference.
+    </p>
+    <div class="list-card">
+      {% for s in at_risk[:6] %}
+      <div class="list-row">
+        <div class="list-avatar">{{ s.full_name[:1].upper() }}</div>
+        <div class="list-main">
+          <div class="list-name">{{ s.full_name }}</div>
+          <div class="list-meta">{{ s.university_major or 'No major listed' }} &middot; Profile {{ s.profile_strength }}%</div>
+        </div>
+        <span class="list-pill info">No apps</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if recent_progress %}
+    <div class="section-title">Recent Progress</div>
+    <div class="list-card">
+      {% for evt in recent_progress[:5] %}
+      <div class="list-row">
+        <div class="list-avatar success">&#10003;</div>
+        <div class="list-main">
+          <div class="list-name">{{ evt.name }}</div>
+          <div class="list-meta">{{ evt.detail }}</div>
+        </div>
+        <span class="list-pill success">{{ evt.status }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if not pending_apps and not at_risk and not recent_progress %}
+    <div class="tip-note">
+      &#128161; <strong>Quiet week!</strong> No pending approvals, no inactive students, and no major status changes. A great chance to reach out to companies for new internship opportunities.
+    </div>
+    {% endif %}
+
+    <a href="{{ site_url }}/university/" class="cta">Open Coordinator Dashboard &rarr;</a>
+
+    <p style="margin-top:24px;font-size:13px;color:#5a6a7a">
+      Best regards,<br>
+      <strong>MOF Engineering &mdash; Careers Team</strong>
+    </p>
+  </div>
+  <div class="footer">
+    <img src="https://mof-eng.com/wp-content/uploads/2025/05/cropped-MOF-LOGO-transparent--100x46.png"
+         alt="MOF Engineering" width="72" style="display:block;margin:0 auto 10px;filter:brightness(0);opacity:.55"
+         onerror="this.style.display='none'">
+    Weekly digest for university coordinators. To opt out, ask an administrator to disable<br>
+    "Weekly cohort digest" on your profile.<br>
+    MOF Engineering Company &middot; Slemani, Iraq &middot; <a href="https://mof-eng.com" style="color:#198754">mof-eng.com</a>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width,initial-scale=1"><meta charset="UTF-8"><style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+body{font-family:'Inter',Arial,sans-serif;background:#f4f6f8;margin:0;padding:24px}
+.wrap{max-width:580px;margin:0 auto;background:#fff;border-radius:10px;overflow:hidden;border:1px solid #e0e0e0}
+.header{background:#1a2332;padding:24px 28px;display:flex;align-items:center;justify-content:space-between}
+.header-name{color:#fff;font-size:18px;font-weight:600}
+.header-badge{background:#198754;color:#fff;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;letter-spacing:.5px}
+.body{padding:28px}
+.section-title{font-size:11px;font-weight:700;color:#8a9aaa;letter-spacing:.8px;text-transform:uppercase;margin:20px 0 8px}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid #e8ecf0;border-radius:8px;overflow:hidden;margin-bottom:16px}
+.info-cell{padding:11px 14px;border-bottom:1px solid #e8ecf0;border-right:1px solid #e8ecf0}
+.info-cell:nth-child(2n){border-right:none}
+.info-cell:nth-last-child(-n+2){border-bottom:none}
+.info-lbl{font-size:11px;color:#8a9aaa;margin-bottom:2px}
+.info-val{font-size:13px;font-weight:600;color:#1a2332}
+.cta{display:inline-block;margin-top:20px;background:#198754;color:#fff;text-decoration:none;padding:11px 22px;border-radius:8px;font-size:13px;font-weight:600}
+.footer{background:#f8f9fa;padding:16px 28px;font-size:12px;color:#8a9aaa;border-top:1px solid #e0e0e0;text-align:center}
+.tip-note{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 14px;font-size:12.5px;color:#1d4ed8;margin-top:14px;line-height:1.55}
+
+.job-list{border:1px solid #e8ecf0;border-radius:8px;overflow:hidden;margin-bottom:6px}
+.job-row{padding:14px;border-bottom:1px solid #e8ecf0;display:flex;align-items:flex-start;gap:12px}
+.job-row:last-child{border-bottom:none}
+.job-logo{width:40px;height:40px;border-radius:8px;background:#e8f5ee;color:#16a34a;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0;border:1px solid #d1fae5}
+.job-main{flex:1;min-width:0}
+.job-title{font-size:14px;font-weight:700;color:#1a2332;line-height:1.3}
+.job-company{font-size:12px;color:#5a6a7a;margin-top:2px}
+.job-meta{font-size:11px;color:#8a9aaa;margin-top:5px;display:flex;flex-wrap:wrap;gap:8px}
+.job-meta span{display:inline-flex;align-items:center;gap:3px}
+.job-match{font-size:10px;font-weight:700;color:#16a34a;background:#dcfce7;padding:2px 8px;border-radius:99px;display:inline-block;margin-top:5px}
+.job-cta{display:inline-block;margin-top:8px;background:#198754;color:#fff;text-decoration:none;padding:6px 12px;border-radius:6px;font-size:11.5px;font-weight:600}
+
+  @media (max-width: 600px) {
+    body { padding: 0 !important; }
+    .wrap, .wrapper { width: 100% !important; max-width: 100% !important; margin: 0 !important; border-radius: 0 !important; border: none !important; box-shadow: none !important; }
+    .header { padding: 20px 24px !important; }
+    .body { padding: 20px 24px !important; }
+    .footer { padding: 20px 24px !important; }
+    .info-grid { grid-template-columns: 1fr !important; }
+    .info-cell { border-right: none !important; border-bottom: 1px solid #e8ecf0 !important; }
+    .info-cell:last-child { border-bottom: none !important; }
+    .cta, .cta-btn { display: block !important; text-align: center !important; }
+    .job-row { padding: 12px !important; gap: 10px !important; }
+  }
+</style></head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div class="header-name">Internships Matching Your Profile</div>
+    <div class="header-badge">{{ count }} new</div>
+  </div>
+  <div class="body">
+    <p>Hi <strong>{{ student.full_name.split()[0] }}</strong>,</p>
+    <p style="margin-top:8px;color:#3a4a5a;font-size:14px">
+      We found <strong>{{ count }}</strong> new internship{{ 's' if count != 1 else '' }} posted in the last week that match your skills, major, and interests.
+      Here {{ 'are the' if count != 1 else 'is the' }} top {{ 'matches' if count != 1 else 'match' }}:
+    </p>
+
+    <div class="section-title">Recommended For You</div>
+    <div class="job-list">
+      {% for j in jobs[:6] %}
+      <div class="job-row">
+        <div class="job-logo">{{ (j.position.company.name[:1] if j.position.company else j.position.title[:1]).upper() }}</div>
+        <div class="job-main">
+          <div class="job-title">{{ j.position.title }}</div>
+          <div class="job-company">
+            {% if j.position.company %}{{ j.position.company.name }}{% endif %}
+            {% if j.position.location %} &middot; {{ j.position.location }}{% endif %}
+          </div>
+          <div class="job-meta">
+            {% if j.position.type %}<span>&#128188; {{ j.position.type }}</span>{% endif %}
+            {% if j.position.department %}<span>&#127970; {{ j.position.department }}</span>{% endif %}
+          </div>
+          {% if j.match_reason %}<span class="job-match">&#10003; {{ j.match_reason }}</span>{% endif %}
+          <br><a href="{{ site_url }}/jobs/{{ j.position.id }}" class="job-cta">View &amp; Apply &rarr;</a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% if count > 6 %}
+    <div style="font-size:12px;color:#8a9aaa;text-align:center;padding:8px;font-style:italic">
+      + {{ count - 6 }} more match{{ 'es' if count - 6 != 1 else '' }} on the portal
+    </div>
+    {% endif %}
+
+    <div class="tip-note">
+      &#128161; <strong>Tip:</strong> Students who apply within the first 7 days of a posting are <strong>2&times; more likely</strong> to land an interview. Don't wait — early applicants get noticed.
+    </div>
+
+    <a href="{{ site_url }}/jobs?type=Internship" class="cta">Browse All Internships &rarr;</a>
+
+    <p style="margin-top:24px;font-size:13px;color:#5a6a7a">
+      Best regards,<br>
+      <strong>MOF Engineering &mdash; Careers Team</strong>
+    </p>
+  </div>
+  <div class="footer">
+    <img src="https://mof-eng.com/wp-content/uploads/2025/05/cropped-MOF-LOGO-transparent--100x46.png"
+         alt="MOF Engineering" width="72" style="display:block;margin:0 auto 10px;filter:brightness(0);opacity:.55"
+         onerror="this.style.display='none'">
+    You are receiving this weekly digest because matching internships are available for your profile.<br>
+    To stop receiving these emails, ask your university coordinator or the MOF admin to disable<br>
+    "Weekly job-match digest" on your profile.<br>
+    MOF Engineering Company &middot; Slemani, Iraq &middot; <a href="https://mof-eng.com" style="color:#198754">mof-eng.com</a>
+  </div>
+</div>
+</body>
+</html>
