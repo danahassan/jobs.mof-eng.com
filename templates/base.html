@@ -645,17 +645,33 @@ html.dark select.form-control option{background:#1e293b}
           <img src="{{ url_for('ads.serve_image', filename=current_ad.image_path) }}" alt="{{ current_ad.title }}" class="ad-banner-img">
         </picture>
       {% endset %}
-      <div class="ad-banner {% if current_ad.mobile_image_path %}has-mobile{% endif %}" id="adBanner-{{ current_ad.id }}">
+      <div class="ad-banner {% if current_ad.mobile_image_path %}has-mobile{% endif %}" id="adBanner-{{ current_ad.id }}" data-ad-id="{{ current_ad.id }}" style="display:none">
         {% if current_ad.link_url %}
         <a href="{{ url_for('ads.click', ad_id=current_ad.id) }}" target="_blank" rel="noopener" class="ad-banner-link">{{ _ad_img }}</a>
         {% else %}
         {{ _ad_img }}
         {% endif %}
-        <button type="button" class="ad-banner-close" onclick="document.getElementById('adBanner-{{ current_ad.id }}').remove()" title="Dismiss" aria-label="Dismiss ad">
+        <button type="button" class="ad-banner-close" data-dismiss-ad="{{ current_ad.id }}" title="Dismiss" aria-label="Dismiss ad">
           <i class="bi bi-x-lg"></i>
         </button>
         <img src="{{ url_for('ads.view_pixel', ad_id=current_ad.id) }}" alt="" width="1" height="1" style="position:absolute;left:-9999px" aria-hidden="true">
       </div>
+      <script>
+        (function(){
+          var el = document.getElementById('adBanner-{{ current_ad.id }}');
+          if (!el) return;
+          var key = 'mof_ad_dismissed_{{ current_ad.id }}';
+          try {
+            if (sessionStorage.getItem(key) === '1') { el.remove(); return; }
+          } catch(e) {}
+          el.style.display = '';
+          var btn = el.querySelector('[data-dismiss-ad]');
+          if (btn) btn.addEventListener('click', function(){
+            try { sessionStorage.setItem(key, '1'); } catch(e) {}
+            el.remove();
+          });
+        })();
+      </script>
       {% endif %}
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
