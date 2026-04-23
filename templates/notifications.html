@@ -116,9 +116,29 @@
           step('permission after request = '+perm);
         }
         if (perm !== 'granted') { fail('permission not granted'); return; }
-        step('awaiting serviceWorker.ready…');
-        const sw = await navigator.serviceWorker.ready;
-        ok('sw ready, scope='+sw.scope);
+        step('awaiting serviceWorker registration…');
+        let sw = await navigator.serviceWorker.getRegistration('/');
+        if (!sw) {
+          step('no registration — registering /sw.js …');
+          sw = await navigator.serviceWorker.register('/sw.js', {scope:'/'});
+        }
+        ok('registration found, scope='+sw.scope+' active='+(!!sw.active)+' installing='+(!!sw.installing)+' waiting='+(!!sw.waiting));
+        if (sw.waiting) {
+          step('waiting SW found — telling it to SKIP_WAITING');
+          try { sw.waiting.postMessage({type:'SKIP_WAITING'}); } catch(_){}
+        }
+        if (!sw.active) {
+          step('no active worker yet — waiting for it (max 10s)…');
+          const waitActive = new Promise((res) => {
+            const chk = () => { if (sw.active) { res(); return true; } return false; };
+            if (chk()) return;
+            const t = setInterval(()=>{ if (chk()) clearInterval(t); }, 300);
+            setTimeout(()=>clearInterval(t), 10000);
+          });
+          await waitActive;
+          ok('active='+(!!sw.active));
+        }
+        if (!sw.active) { fail('service worker never became active — try reloading the app'); return; }
         step('fetching VAPID public key…');
         const r = await fetch('/api/v1/push/vapid-public-key', {credentials:'same-origin'});
         const j = await r.json();
