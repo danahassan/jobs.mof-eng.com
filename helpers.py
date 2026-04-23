@@ -251,7 +251,7 @@ def _send_web_push(user_id, message, link=None):
                 priv_obj = ec.derive_private_key(priv_int, ec.SECP256R1())
                 ok_pk = priv_obj.private_bytes(
                     encoding=serialization.Encoding.PEM,
-                    format=serialization.PrivateFormat.PKCS8,
+                    format=serialization.PrivateFormat.TraditionalOpenSSL,
                     encryption_algorithm=serialization.NoEncryption(),
                 ).decode('utf-8')
         except Exception as e:
