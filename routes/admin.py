@@ -1123,18 +1123,17 @@ def user_toggle(user_id):
 def user_send_reminder_test(user_id):
     """Send a one-off preview of the supervisor daily reminder email.
 
-    Bypasses the 'already sent today' guard and the opt-in flag so admins
-    can preview the email regardless of current settings.
+    Sends the email to the CURRENT ADMIN (not the target user) so the
+    admin can preview what the supervisor would receive. If the supervisor
+    has no "New" applications, a sample preview with mock data is sent
+    so the layout is still visible.
     """
-    from datetime import datetime
+    from datetime import datetime, timedelta
     from sqlalchemy import or_
     from models import Application, Position, CompanyMember, STATUS_NEW
     user = db.get_or_404(User, user_id)
-    if user.role != ROLE_SUPERVISOR:
-        flash('Test reminder can only be sent to supervisors.', 'warning')
-        return redirect(url_for('admin.user_edit', user_id=user.id))
 
-    # Build the same query the cron uses
+    # Build the same query the cron uses (same visibility rules)
     managed_company_ids = [m.company_id for m in
                             CompanyMember.query.filter_by(user_id=user.id, role='manager').all()]
     managed_pos_ids = []
@@ -1149,20 +1148,40 @@ def user_send_reminder_test(user_id):
         q = q.filter(Application.assigned_to_id == user.id)
     apps = q.order_by(Application.applied_at.asc()).all()
 
+    is_sample = False
     if not apps:
-        flash(f'No applications in "New" status visible to {user.full_name}. '
-              'Email not sent (would be empty). Add a test application or assign one to preview.', 'warning')
+        # Build a sample list using ANY recent New applications so the admin
+        # can still preview the email layout
+        apps = (Application.query.filter(Application.status == STATUS_NEW)
+                .order_by(Application.applied_at.desc()).limit(3).all())
+        if not apps:
+            apps = (Application.query
+                    .order_by(Application.applied_at.desc()).limit(3).all())
+        is_sample = True
+
+    if not apps:
+        flash('No applications exist in the system at all — cannot generate a preview email. '
+              'Create at least one test application first.', 'warning')
         return redirect(url_for('admin.user_edit', user_id=user.id))
 
+    # Send to the admin's own email (so they can preview without needing the supervisor's mailbox)
+    target_email = current_user.email
     try:
         now = datetime.utcnow()
         site_url = request.host_url.rstrip('/')
         html = render_template('emails/supervisor_daily_reminder.html',
                                supervisor=user, apps=apps, count=len(apps),
                                now=now, site_url=site_url)
-        subject = f'[TEST] Reminder: {len(apps)} applicant{"s" if len(apps) != 1 else ""} waiting for your review'
-        send_email(user.email, subject, html)
-        flash(f'Test reminder email sent to {user.email} ({len(apps)} applicants listed).', 'success')
+        prefix = '[TEST · SAMPLE DATA] ' if is_sample else '[TEST] '
+        subject = f'{prefix}Reminder: {len(apps)} applicant{"s" if len(apps) != 1 else ""} waiting for review'
+        send_email(target_email, subject, html)
+        if is_sample:
+            flash(f'Preview email sent to YOUR address ({target_email}). '
+                  f'Note: {user.full_name} has no "New" applications visible to them, '
+                  f'so the email shows {len(apps)} sample application(s) for layout preview.', 'info')
+        else:
+            flash(f'Preview email sent to YOUR address ({target_email}) — showing {len(apps)} '
+                  f'real "New" application(s) visible to {user.full_name}.', 'success')
     except Exception as ex:
         current_app.logger.exception('Test reminder email failed: %s', ex)
         flash(f'Failed to send test email: {ex}', 'danger')
