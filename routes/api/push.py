@@ -29,16 +29,16 @@ def push_status():
         try:
             raw = (cfg.get('VAPID_PRIVATE_KEY', '') or '').strip()
             if '-----BEGIN' in raw:
-                from py_vapid import Vapid01
-                Vapid01.from_string(private_key=raw.replace('\\n', '\n'))
+                # lightweight validation via cryptography
+                from cryptography.hazmat.primitives import serialization
+                serialization.load_pem_private_key(
+                    raw.replace('\\n', '\n').encode('utf-8'), password=None)
             else:
+                # raw base64url 32-byte scalar (what pywebpush accepts directly)
                 import base64 as _b64
-                from cryptography.hazmat.primitives.asymmetric import ec
                 b = raw + '=' * ((4 - len(raw) % 4) % 4)
-                priv_bytes = _b64.urlsafe_b64decode(b.encode('ascii'))
-                if len(priv_bytes) != 32:
-                    raise ValueError('expected 32-byte EC scalar, got %d' % len(priv_bytes))
-                ec.derive_private_key(int.from_bytes(priv_bytes, 'big'), ec.SECP256R1())
+                if len(_b64.urlsafe_b64decode(b.encode('ascii'))) != 32:
+                    raise ValueError('expected 32-byte EC scalar')
             private_key_loadable = True
         except Exception as e:
             private_key_error = str(e)[:200]
