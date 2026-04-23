@@ -8,3 +8,15 @@ PassengerAppRoot "/home/mofengco/jobs.mof-eng.com"
 PassengerBaseURI "/"
 PassengerPython "/home/mofengco/virtualenv/jobs.mof-eng.com/3.11/bin/python"
 # DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION END
+
+# Serve favicon / apple-touch-icon directly via Apache so the MOF logo
+# appears even on the Passenger maintenance page (when the app is down).
+<Files "favicon.ico">
+  PassengerEnabled off
+</Files>
+<Files "apple-touch-icon.png">
+  PassengerEnabled off
+</Files>
+<Files "apple-touch-icon-precomposed.png">
+  PassengerEnabled off
+</Files>
