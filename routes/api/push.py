@@ -27,12 +27,18 @@ def push_status():
     private_key_error    = None
     if has_keys:
         try:
-            from py_vapid import Vapid01
             raw = (cfg.get('VAPID_PRIVATE_KEY', '') or '').strip()
             if '-----BEGIN' in raw:
+                from py_vapid import Vapid01
                 Vapid01.from_string(private_key=raw.replace('\\n', '\n'))
             else:
-                Vapid01.from_raw(private_raw=raw.encode('utf-8'))
+                import base64 as _b64
+                from cryptography.hazmat.primitives.asymmetric import ec
+                b = raw + '=' * ((4 - len(raw) % 4) % 4)
+                priv_bytes = _b64.urlsafe_b64decode(b.encode('ascii'))
+                if len(priv_bytes) != 32:
+                    raise ValueError('expected 32-byte EC scalar, got %d' % len(priv_bytes))
+                ec.derive_private_key(int.from_bytes(priv_bytes, 'big'), ec.SECP256R1())
             private_key_loadable = True
         except Exception as e:
             private_key_error = str(e)[:200]

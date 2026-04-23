@@ -226,28 +226,36 @@ def _send_web_push(user_id, message, link=None):
             return [{'ok': False, 'error': 'VAPID keys missing on server'}]
         # Normalize the private key. Two formats are supported in env vars:
         #   1) Raw single-line base64url of the 32-byte EC scalar (preferred — what
-        #      scripts/gen_vapid_keys.py now prints). Loaded via Vapid01.from_raw.
+        #      scripts/gen_vapid_keys.py now prints). We convert it to PEM here
+        #      using the `cryptography` library, then hand the PEM to pywebpush.
         #   2) PEM (multi-line) — possibly with literal "\n" sequences if the env
-        #      editor stripped real newlines. Loaded via Vapid01.from_string.
-        from py_vapid import Vapid01
+        #      editor stripped real newlines.
         ok_pk = None
         last_exc = None
-        attempts = []
-        if '-----BEGIN' in private_key_raw:
-            attempts.append(('pem', private_key_raw.replace('\\n', '\n')))
-            attempts.append(('pem-as-given', private_key_raw))
-        else:
-            attempts.append(('raw', private_key_raw))
-        for kind, cand in attempts:
-            try:
-                if kind == 'raw':
-                    Vapid01.from_raw(private_raw=cand.encode('utf-8'))
-                else:
-                    Vapid01.from_string(private_key=cand)
-                ok_pk = cand
-                break
-            except Exception as e:
-                last_exc = e
+        try:
+            if '-----BEGIN' in private_key_raw:
+                ok_pk = private_key_raw.replace('\\n', '\n')
+            else:
+                # raw base64url 32-byte scalar -> PEM
+                import base64 as _b64
+                from cryptography.hazmat.primitives.asymmetric import ec
+                from cryptography.hazmat.primitives import serialization
+                # base64url decode (add padding)
+                b = private_key_raw + '=' * ((4 - len(private_key_raw) % 4) % 4)
+                priv_bytes = _b64.urlsafe_b64decode(b.encode('ascii'))
+                if len(priv_bytes) != 32:
+                    raise ValueError(
+                        'expected 32-byte EC scalar after base64url decode, got %d bytes'
+                        % len(priv_bytes))
+                priv_int = int.from_bytes(priv_bytes, 'big')
+                priv_obj = ec.derive_private_key(priv_int, ec.SECP256R1())
+                ok_pk = priv_obj.private_bytes(
+                    encoding=serialization.Encoding.PEM,
+                    format=serialization.PrivateFormat.PKCS8,
+                    encryption_algorithm=serialization.NoEncryption(),
+                ).decode('utf-8')
+        except Exception as e:
+            last_exc = e
         if not ok_pk:
             err = 'VAPID_PRIVATE_KEY could not be loaded: ' + str(last_exc)[:200]
             current_app.logger.error('[push] %s', err)
