@@ -26,6 +26,50 @@ def _user_university_ids(user):
     return ids
 
 
+def _coordinator_student_ids(coord):
+    """Student user-ids in this coordinator's university scope (dept/class aware)."""
+    membership = UniversityMember.query.filter_by(user_id=coord.id).first()
+    if not membership:
+        return []
+    q = User.query.filter_by(role=ROLE_STUDENT, university_id=membership.university_id)
+    if membership.department_id:
+        q = q.filter(User.university_department_id == membership.department_id)
+    if membership.class_scope:
+        q = q.filter(User.university_class == membership.class_scope)
+    return [u.id for u in q.all()]
+
+
+def _coordinator_supervisor_ids(coord):
+    """Supervisors that supervise/hired any of this coordinator's students.
+
+    A supervisor "supervises" a student when:
+      - the student has an Application to a Position whose company has the
+        supervisor as a CompanyMember, OR
+      - the application is directly assigned_to the supervisor.
+    """
+    sids = _coordinator_student_ids(coord)
+    if not sids:
+        return set()
+    rows = (db.session.query(Application.assigned_to_id, Position.company_id)
+            .join(Position, Application.position_id == Position.id)
+            .filter(Application.applicant_id.in_(sids))
+            .all())
+    company_ids = {r.company_id for r in rows if r.company_id}
+    assigned_ids = {r.assigned_to_id for r in rows if r.assigned_to_id}
+    sup_ids = set(assigned_ids)
+    if company_ids:
+        sup_ids.update(
+            m.user_id for m in CompanyMember.query
+            .filter(CompanyMember.company_id.in_(company_ids)).all()
+        )
+    # Only keep actual supervisor accounts
+    if sup_ids:
+        sup_ids = {u.id for u in User.query
+                   .filter(User.id.in_(sup_ids), User.role == ROLE_SUPERVISOR,
+                           User.is_active == True).all()}
+    return sup_ids
+
+
 def _can_message(sender, receiver):
     """Messaging permission rules:
     - Admin  → anyone
@@ -71,6 +115,13 @@ def _can_message(sender, receiver):
     # Student/university coordinator messaging within same university
     if sender.role in (ROLE_STUDENT, ROLE_UNIVERSITY_COORD) and receiver.role in (ROLE_STUDENT, ROLE_UNIVERSITY_COORD):
         return bool(_user_university_ids(sender) & _user_university_ids(receiver))
+
+    # University coordinator ↔ supervisor — only if the supervisor has hired
+    # / been assigned an application from one of the coordinator's students.
+    if sender.role == ROLE_UNIVERSITY_COORD and receiver.role == ROLE_SUPERVISOR:
+        return receiver.id in _coordinator_supervisor_ids(sender)
+    if sender.role == ROLE_SUPERVISOR and receiver.role == ROLE_UNIVERSITY_COORD:
+        return sender.id in _coordinator_supervisor_ids(receiver)
 
     return False
 
