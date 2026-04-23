@@ -559,6 +559,9 @@ html.dark select.form-control option{background:#1e293b}
         <div class="nav-section">Student Portal</div>
         <a href="{{ url_for('student.dashboard') }}" class="nav-item {% if request.blueprint == 'student' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
         <a href="{{ url_for('jobs.listing') }}" class="nav-item {% if request.blueprint == 'jobs' or request.endpoint == 'user.browse' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-search"></i> Browse Internships</a>
+        <a href="{{ url_for('user.my_applications') }}" class="nav-item {% if request.endpoint == 'user.my_applications' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-collection-fill"></i> My Applications</a>
+        <a href="{{ url_for('user.saved_jobs') }}" class="nav-item {% if request.endpoint == 'user.saved_jobs' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-bookmark-fill"></i> Saved</a>
+        <a href="{{ url_for('analytics.candidate') }}" class="nav-item {% if request.endpoint == 'analytics.candidate' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-bar-chart-fill"></i> My Analytics</a>
         <div class="nav-section">Discover</div>
         <a href="{{ url_for('companies.listing') }}" class="nav-item {% if request.blueprint == 'companies' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-building"></i> Companies</a>
         <div class="nav-section">Other</div>
