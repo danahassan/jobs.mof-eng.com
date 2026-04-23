@@ -53,7 +53,7 @@ body.editing .ud-save-btn{display:flex}
         <div class="ud-meta">
           {% if univ.location %}<span><i class="bi bi-geo-alt"></i> {{ univ.location }}</span>{% endif %}
           {% if univ.website %}<span><i class="bi bi-globe"></i> <a href="{{ univ.website }}" target="_blank" style="color:var(--green)">{{ univ.website }}</a></span>{% endif %}
-          <span><i class="bi bi-people-fill"></i> {{ students|length }} student(s)</span>
+          <span><i class="bi bi-people-fill"></i> {{ student_total }} student(s)</span>
           <span><i class="bi bi-person-video3"></i> {{ coords|length }} coordinator(s)</span>
           <span><i class="bi bi-collection-fill"></i> {{ internship_count }} internship app(s)</span>
         </div>
@@ -243,33 +243,133 @@ body.editing .ud-save-btn{display:flex}
 
     <!-- Students card -->
     <div class="card" style="padding:20px 24px">
-      <div class="card-title"><i class="bi bi-person-badge-fill"></i> Students
-        <span style="background:#f5f3ff;color:#7c3aed;border-radius:20px;padding:2px 8px;font-size:11px;font-weight:600;margin-left:6px">{{ students|length }}</span>
+      <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:14px">
+        <div class="card-title" style="margin-bottom:0"><i class="bi bi-person-badge-fill"></i> Students
+          <span style="background:#f5f3ff;color:#7c3aed;border-radius:20px;padding:2px 8px;font-size:11px;font-weight:600;margin-left:6px">{{ student_total }}</span>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <a href="{{ url_for('admin.university_students_export', univ_id=univ.id, fmt='xlsx', q=q_str, department_id=department_filter, class_filter=class_filter) }}" class="btn btn-outline btn-sm"><i class="bi bi-download"></i> Export</a>
+          <a href="{{ url_for('admin.university_students_import_template', univ_id=univ.id) }}" class="btn btn-outline btn-sm"><i class="bi bi-file-earmark-spreadsheet"></i> Template</a>
+        </div>
       </div>
-      {% if students %}
-        {% for s in students[:8] %}
-        <div class="ud-student-row">
-          <div style="width:30px;height:30px;border-radius:50%;background:#f5f3ff;color:#7c3aed;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">
-            {{ s.initials }}
-          </div>
-          <div style="flex:1;min-width:0">
-            <a href="{{ url_for('admin.user_detail', user_id=s.id) }}" style="font-size:13px;font-weight:600;color:var(--text)">{{ s.full_name }}</a>
-            <div style="font-size:11px;color:var(--text3)">
-              {{ (s.university_department.college ~ ' / ' if s.university_department and s.university_department.college else '') ~ (s.university_department.name if s.university_department else 'No department') }}
-              {% if s.university_class %} · Class {{ s.university_class }}{% endif %}
-              {% if s.university_major %} · {{ s.university_major }}{% endif %}
-            </div>
-          </div>
-          {% if s.student_gpa %}<span style="font-size:11px;color:var(--text3);white-space:nowrap">GPA {{ s.student_gpa }}</span>{% endif %}
-        </div>
+
+      <form method="GET" action="{{ url_for('admin.university_detail', univ_id=univ.id) }}" style="display:grid;grid-template-columns:minmax(220px,1.4fr) minmax(160px,.8fr) minmax(140px,.7fr) auto auto;gap:8px;margin-bottom:14px">
+        <input type="text" name="q" class="form-control" placeholder="Search by name, email, ID, major, class" value="{{ q_str }}">
+        <select name="department_id" class="form-control">
+          <option value="">All departments</option>
+          {% for d in departments %}
+          <option value="{{ d.id }}" {% if department_filter == d.id %}selected{% endif %}>{{ d.college ~ ' / ' if d.college else '' }}{{ d.name }}</option>
+          {% endfor %}
+        </select>
+        <input type="text" name="class_filter" class="form-control" placeholder="Class filter" value="{{ class_filter }}">
+        <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-funnel"></i> Filter</button>
+        <a href="{{ url_for('admin.university_detail', univ_id=univ.id) }}" class="btn btn-outline btn-sm"><i class="bi bi-arrow-counterclockwise"></i> Reset</a>
+      </form>
+
+      <form method="POST" action="{{ url_for('admin.university_students_import', univ_id=univ.id) }}" enctype="multipart/form-data" style="display:grid;grid-template-columns:minmax(220px,1.2fr) minmax(170px,.8fr) minmax(140px,.7fr) auto;gap:8px;margin-bottom:16px;padding:12px;border:1px dashed var(--border);border-radius:12px;background:#fafbfc">
+        <input type="file" name="file" class="form-control" accept=".xlsx,.xls" required>
+        <select name="default_department_id" class="form-control">
+          <option value="">Default department</option>
+          {% for d in departments %}
+          <option value="{{ d.id }}">{{ d.college ~ ' / ' if d.college else '' }}{{ d.name }}</option>
+          {% endfor %}
+        </select>
+        <input type="text" name="default_class" class="form-control" placeholder="Default class/cohort">
+        <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-upload"></i> Import</button>
+      </form>
+
+      <form method="POST" action="{{ url_for('admin.university_student_assign', univ_id=univ.id) }}" style="display:grid;grid-template-columns:minmax(190px,1.1fr) minmax(160px,1fr) minmax(170px,.9fr) minmax(130px,.7fr) minmax(160px,.9fr) auto;gap:8px;margin-bottom:16px;padding:12px;border:1px solid var(--border);border-radius:12px;background:#fff">
+        <select name="student_id" class="form-control">
+          <option value="">Assign existing student</option>
+          {% for student in assignable_students %}
+          <option value="{{ student.id }}">{{ student.full_name }}{% if student.email %} ({{ student.email }}){% endif %}</option>
+          {% endfor %}
+        </select>
+        <input type="text" name="full_name" class="form-control" placeholder="Or create: full name">
+        <input type="email" name="email" class="form-control" placeholder="Student email">
+        <select name="department_id" class="form-control">
+          <option value="">Department</option>
+          {% for d in departments %}
+          <option value="{{ d.id }}">{{ d.name }}</option>
+          {% endfor %}
+        </select>
+        <input type="text" name="university_class" class="form-control" placeholder="Class / cohort">
+        <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Assign</button>
+      </form>
+
+      <div class="table-responsive">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>Department</th>
+              <th>Class</th>
+              <th>Major</th>
+              <th>GPA</th>
+              <th>Grad Year</th>
+              <th>Student ID</th>
+              <th style="width:210px"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in students.items %}
+            <tr>
+              <td data-label="Student">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <div style="width:30px;height:30px;border-radius:50%;background:#f5f3ff;color:#7c3aed;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">{{ s.initials }}</div>
+                  <div style="min-width:0">
+                    <a href="{{ url_for('admin.user_detail', user_id=s.id) }}" style="font-size:13px;font-weight:600;color:var(--text)">{{ s.full_name }}</a>
+                    <div style="font-size:11px;color:var(--text3)">{{ s.email }}</div>
+                  </div>
+                </div>
+              </td>
+              <td data-label="Department">
+                <select name="department_id" form="student-assign-{{ s.id }}" class="form-control" style="min-width:150px">
+                  <option value="">No department</option>
+                  {% for d in departments %}
+                  <option value="{{ d.id }}" {% if s.university_department_id == d.id %}selected{% endif %}>{{ d.college ~ ' / ' if d.college else '' }}{{ d.name }}</option>
+                  {% endfor %}
+                </select>
+              </td>
+              <td data-label="Class">
+                <input type="text" name="university_class" form="student-assign-{{ s.id }}" class="form-control" value="{{ s.university_class or '' }}" placeholder="Class" style="min-width:100px">
+              </td>
+              <td data-label="Major" style="font-size:13px;color:var(--text3)">{{ s.university_major or '—' }}</td>
+              <td data-label="GPA" style="font-size:13px;color:var(--text3)">{{ s.student_gpa or '—' }}</td>
+              <td data-label="Grad Year" style="font-size:13px;color:var(--text3)">{{ s.graduation_year or '—' }}</td>
+              <td data-label="Student ID" style="font-size:13px;color:var(--text3)">{{ s.student_id_number or '—' }}</td>
+              <td data-label="Actions">
+                <div style="display:flex;gap:8px;justify-content:flex-end;align-items:center;flex-wrap:wrap">
+                  <form id="student-assign-{{ s.id }}" method="POST" action="{{ url_for('admin.university_student_update', univ_id=univ.id, student_id=s.id, q=q_str, department_id=department_filter, class_filter=class_filter, page=students.page) }}">
+                    <button type="submit" class="btn btn-outline btn-sm"><i class="bi bi-check2"></i> Save</button>
+                  </form>
+                  <form method="POST" action="{{ url_for('admin.university_student_unlink', univ_id=univ.id, student_id=s.id, q=q_str, department_id=department_filter, class_filter=class_filter, page=students.page) }}" onsubmit="return confirm('Unlink {{ s.full_name|e }} from {{ univ.name|e }}?')">
+                    <button type="submit" class="btn btn-sm" style="color:#dc2626;border-color:#fecaca;background:transparent"><i class="bi bi-link-45deg"></i> Unlink</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="8"><div class="empty-state"><i class="bi bi-people"></i> No students match the current filters.</div></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% if students.pages > 1 %}
+      <div class="pagination" style="margin-top:16px">
+        <a href="{{ url_for('admin.university_detail', univ_id=univ.id, page=students.prev_num, q=q_str, department_id=department_filter, class_filter=class_filter) }}" class="page-link {% if not students.has_prev %}disabled{% endif %}"><i class="bi bi-chevron-left"></i></a>
+        {% for p in students.iter_pages() %}
+          {% if p %}
+            <a href="{{ url_for('admin.university_detail', univ_id=univ.id, page=p, q=q_str, department_id=department_filter, class_filter=class_filter) }}" class="page-link {% if p == students.page %}active{% endif %}">{{ p }}</a>
+          {% else %}
+            <span class="page-link">…</span>
+          {% endif %}
         {% endfor %}
-        {% if students|length > 8 %}
-        <div style="text-align:center;padding-top:10px;font-size:12px;color:var(--text3)">
-          + {{ students|length - 8 }} more students
-        </div>
-        {% endif %}
-      {% else %}
-      <div style="color:var(--text3);font-size:13px;text-align:center;padding:16px 0">No students linked yet.</div>
+        <a href="{{ url_for('admin.university_detail', univ_id=univ.id, page=students.next_num, q=q_str, department_id=department_filter, class_filter=class_filter) }}" class="page-link {% if not students.has_next %}disabled{% endif %}"><i class="bi bi-chevron-right"></i></a>
+      </div>
       {% endif %}
     </div>
 

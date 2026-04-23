@@ -1,5 +1,6 @@
 ﻿import csv
 import io
+import secrets
 from datetime import datetime, timedelta
 from flask import (Blueprint, render_template, redirect, url_for,
                    flash, request, abort, current_app, send_from_directory,
@@ -42,6 +43,63 @@ def _parse_int(s):
 
 
 admin_bp = Blueprint('admin', __name__)
+
+
+_ADMIN_UNIVERSITY_STUDENT_COLS = [
+    ('student_id_number', 'Student ID'),
+    ('full_name', 'Full Name'),
+    ('email', 'Email'),
+    ('phone', 'Phone'),
+    ('department_name', 'Department'),
+    ('university_class', 'Class'),
+    ('university_major', 'Major'),
+    ('student_gpa', 'GPA'),
+    ('graduation_year', 'Graduation Year'),
+]
+
+
+def _normalize_text(value):
+    return ' '.join(str(value or '').strip().lower().split())
+
+
+def _admin_university_students_query(univ_id, search='', department_id=None, class_filter=''):
+    q = User.query.filter_by(university_id=univ_id, role=ROLE_STUDENT)
+
+    if search:
+        q = q.filter(or_(
+            User.full_name.ilike(f'%{search}%'),
+            User.email.ilike(f'%{search}%'),
+            User.university_major.ilike(f'%{search}%'),
+            User.university_class.ilike(f'%{search}%'),
+            User.student_id_number.ilike(f'%{search}%'),
+        ))
+    if department_id:
+        q = q.filter(User.university_department_id == department_id)
+    if class_filter:
+        q = q.filter(User.university_class.ilike(f'%{class_filter}%'))
+
+    return q
+
+
+def _admin_university_student_redirect(univ_id):
+    params = {}
+    for key in ('q', 'department_id', 'class_filter', 'page'):
+        value = request.args.get(key, '').strip() if key != 'page' else request.args.get(key, type=int)
+        if value:
+            params[key] = value
+    return redirect(url_for('admin.university_detail', univ_id=univ_id, **params))
+
+
+def _resolve_university_department(univ_id, department_id=None, department_name=None):
+    if department_id:
+        return UniversityDepartment.query.filter_by(id=department_id, university_id=univ_id).first()
+    if department_name:
+        departments = UniversityDepartment.query.filter_by(university_id=univ_id).all()
+        wanted = _normalize_text(department_name)
+        for department in departments:
+            if _normalize_text(department.name) == wanted or _normalize_text(department.full_name()) == wanted:
+                return department
+    return None
 
 
 # ─── DASHBOARD ────────────────────────────────────────────────────────────────
@@ -1850,6 +1908,10 @@ def universities():
 @admin_required
 def university_detail(univ_id):
     univ = db.get_or_404(University, univ_id)
+    page = request.args.get('page', 1, type=int)
+    q_str = request.args.get('q', '').strip()
+    department_id = request.args.get('department_id', type=int)
+    class_filter = request.args.get('class_filter', '').strip()
     departments = (UniversityDepartment.query
                    .filter_by(university_id=univ_id)
                    .order_by(UniversityDepartment.college.asc(), UniversityDepartment.name.asc())
@@ -1857,24 +1919,35 @@ def university_detail(univ_id):
     coords = (UniversityMember.query
               .filter_by(university_id=univ_id)
               .all())
-    students = User.query.filter_by(university_id=univ_id, role=ROLE_STUDENT).all()
+    students_q = _admin_university_students_query(univ_id, q_str, department_id, class_filter)
+    students = students_q.order_by(User.full_name.asc()).paginate(page=page, per_page=20, error_out=False)
+    student_total = User.query.filter_by(university_id=univ_id, role=ROLE_STUDENT).count()
     available_coords = User.query.filter_by(role=ROLE_UNIVERSITY_COORD, is_active=True).all()
     assigned_ids = {m.user_id for m in coords}
     available_coords = [c for c in available_coords if c.id not in assigned_ids]
+    assignable_students = (User.query
+                           .filter_by(role=ROLE_STUDENT)
+                           .filter(or_(User.university_id.is_(None), User.university_id != univ_id))
+                           .order_by(User.full_name.asc())
+                           .limit(100)
+                           .all())
 
-    internship_count = 0
-    student_ids = [s.id for s in students]
-    if student_ids:
-        internship_count = (Application.query
-            .join(Application.position)
-            .filter(Application.applicant_id.in_(student_ids), Position.type == 'Internship')
-            .count())
+    internship_count = (Application.query
+        .join(Application.position)
+        .join(User, Application.applicant_id == User.id)
+        .filter(User.university_id == univ_id, Position.type == 'Internship')
+        .count())
 
     return render_template('admin/university_detail.html',
         univ=univ,
         departments=departments,
         coords=coords,
         students=students,
+        student_total=student_total,
+        q_str=q_str,
+        department_filter=department_id,
+        class_filter=class_filter,
+        assignable_students=assignable_students,
         available_coords=available_coords,
         internship_count=internship_count)
 
@@ -2084,3 +2157,282 @@ def university_coordinator_remove(univ_id, user_id):
     db.session.commit()
     flash('Coordinator removed.', 'success')
     return redirect(url_for('admin.university_detail', univ_id=univ_id))
+
+
+@admin_bp.route('/universities/<int:univ_id>/students/export')
+@admin_required
+def university_students_export(univ_id):
+    db.get_or_404(University, univ_id)
+    fmt = request.args.get('fmt', 'xlsx').lower()
+    q_str = request.args.get('q', '').strip()
+    department_id = request.args.get('department_id', type=int)
+    class_filter = request.args.get('class_filter', '').strip()
+    rows = (_admin_university_students_query(univ_id, q_str, department_id, class_filter)
+            .order_by(User.full_name.asc())
+            .all())
+
+    headers = [label for _, label in _ADMIN_UNIVERSITY_STUDENT_COLS]
+    data = []
+    for student in rows:
+        data.append([
+            student.student_id_number,
+            student.full_name,
+            student.email,
+            student.phone,
+            student.university_department.full_name() if student.university_department else '',
+            student.university_class,
+            student.university_major,
+            student.student_gpa,
+            student.graduation_year,
+        ])
+    return _export(headers, data, f'university_{univ_id}_students', fmt)
+
+
+@admin_bp.route('/universities/<int:univ_id>/students/import-template')
+@admin_required
+def university_students_import_template(univ_id):
+    db.get_or_404(University, univ_id)
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = 'Students'
+
+    header_fill = PatternFill('solid', fgColor='1a5c38')
+    header_font = Font(color='FFFFFF', bold=True)
+    example_data = {
+        'student_id_number': '20231001',
+        'full_name': 'Ahmed Al-Rashidi',
+        'email': 'ahmed@example.com',
+        'phone': '+9647501234567',
+        'department_name': 'Engineering',
+        'university_class': '2027',
+        'university_major': 'Computer Engineering',
+        'student_gpa': '3.75',
+        'graduation_year': '2027',
+    }
+    for ci, (attr, label) in enumerate(_ADMIN_UNIVERSITY_STUDENT_COLS, 1):
+        cell = ws.cell(row=1, column=ci, value=label)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal='center')
+        ws.column_dimensions[cell.column_letter].width = max(len(label) + 4, 18)
+        ws.cell(row=2, column=ci, value=example_data.get(attr, ''))
+
+    example_fill = PatternFill('solid', fgColor='F3F4F6')
+    for ci in range(1, len(_ADMIN_UNIVERSITY_STUDENT_COLS) + 1):
+        ws.cell(row=2, column=ci).fill = example_fill
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return send_file(buf, as_attachment=True,
+                     download_name='students_import_template.xlsx',
+                     mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+
+@admin_bp.route('/universities/<int:univ_id>/students/import', methods=['POST'])
+@admin_required
+def university_students_import(univ_id):
+    univ = db.get_or_404(University, univ_id)
+    import openpyxl
+
+    upload = request.files.get('file')
+    default_department_id = request.form.get('default_department_id', type=int)
+    default_class = request.form.get('default_class', '').strip() or None
+
+    if default_department_id and not _resolve_university_department(univ_id, department_id=default_department_id):
+        flash('Invalid default department selected.', 'danger')
+        return redirect(url_for('admin.university_detail', univ_id=univ_id))
+    if not upload or not upload.filename:
+        flash('No file selected.', 'danger')
+        return redirect(url_for('admin.university_detail', univ_id=univ_id))
+    if not upload.filename.lower().endswith(('.xlsx', '.xls')):
+        flash('Please upload an Excel file (.xlsx or .xls).', 'danger')
+        return redirect(url_for('admin.university_detail', univ_id=univ_id))
+
+    try:
+        wb = openpyxl.load_workbook(io.BytesIO(upload.read()), data_only=True)
+        ws = wb.active
+    except Exception:
+        flash('Could not read the uploaded file. Make sure it is a valid Excel workbook.', 'danger')
+        return redirect(url_for('admin.university_detail', univ_id=univ_id))
+
+    headers = [str(cell.value or '').strip() for cell in ws[1]]
+    label_to_attr = {label: attr for attr, label in _ADMIN_UNIVERSITY_STUDENT_COLS}
+    col_map = {}
+    for ci, header in enumerate(headers):
+        if header in label_to_attr:
+            col_map[ci] = label_to_attr[header]
+
+    if 'email' not in col_map.values() or 'full_name' not in col_map.values():
+        flash('Import failed: the file must have "Email" and "Full Name" columns.', 'danger')
+        return redirect(url_for('admin.university_detail', univ_id=univ_id))
+
+    created = linked = skipped = 0
+    departments = UniversityDepartment.query.filter_by(university_id=univ_id).all()
+    department_lookup = {}
+    for department in departments:
+        department_lookup[_normalize_text(department.name)] = department
+        department_lookup[_normalize_text(department.full_name())] = department
+
+    for row in ws.iter_rows(min_row=2, values_only=True):
+        if all(value is None for value in row):
+            continue
+
+        data = {}
+        for ci, attr in col_map.items():
+            value = row[ci] if ci < len(row) else None
+            data[attr] = str(value).strip() if value is not None else ''
+
+        email = data.get('email', '').lower()
+        full_name = data.get('full_name', '').strip()
+        if not email or not full_name:
+            skipped += 1
+            continue
+
+        department = None
+        if data.get('department_name'):
+            department = department_lookup.get(_normalize_text(data['department_name']))
+            if not department:
+                skipped += 1
+                continue
+        elif default_department_id:
+            department = _resolve_university_department(univ_id, department_id=default_department_id)
+
+        class_value = data.get('university_class', '').strip() or default_class
+        existing = User.query.filter_by(email=email).first()
+        if existing:
+            if existing.role != ROLE_STUDENT:
+                skipped += 1
+                continue
+            existing.university_id = univ.id
+            existing.university_name = univ.name
+            existing.university_department_id = department.id if department else None
+            existing.university_class = class_value
+            for attr in ('phone', 'university_major', 'student_gpa', 'student_id_number'):
+                if data.get(attr):
+                    setattr(existing, attr, data[attr])
+            if data.get('graduation_year'):
+                existing.graduation_year = _parse_int(data['graduation_year'])
+            linked += 1
+            continue
+
+        temp_pw = secrets.token_urlsafe(10)
+        student = User(
+            full_name=full_name,
+            email=email,
+            phone=data.get('phone') or None,
+            role=ROLE_STUDENT,
+            is_active=True,
+            university_id=univ.id,
+            university_name=univ.name,
+            university_department_id=department.id if department else None,
+            university_class=class_value,
+            university_major=data.get('university_major') or None,
+            student_gpa=data.get('student_gpa') or None,
+            graduation_year=_parse_int(data.get('graduation_year', '')),
+            student_id_number=data.get('student_id_number') or None,
+        )
+        student.set_password(temp_pw)
+        db.session.add(student)
+        created += 1
+
+    _audit('university.students_import', f'{univ.name} created={created} linked={linked} skipped={skipped}')
+    db.session.commit()
+    flash(f'Import complete. Created: {created}, linked: {linked}, skipped: {skipped}.', 'success')
+    return redirect(url_for('admin.university_detail', univ_id=univ_id))
+
+
+@admin_bp.route('/universities/<int:univ_id>/students/assign', methods=['POST'])
+@admin_required
+def university_student_assign(univ_id):
+    univ = db.get_or_404(University, univ_id)
+    student_id = request.form.get('student_id', type=int)
+    email = request.form.get('email', '').strip().lower()
+    full_name = request.form.get('full_name', '').strip()
+    department_id = request.form.get('department_id', type=int)
+    class_value = request.form.get('university_class', '').strip() or None
+    major = request.form.get('university_major', '').strip() or None
+
+    department = None
+    if department_id:
+        department = _resolve_university_department(univ_id, department_id=department_id)
+        if not department:
+            flash('Invalid department selected.', 'danger')
+            return redirect(url_for('admin.university_detail', univ_id=univ_id))
+
+    student = None
+    if student_id:
+        student = User.query.filter_by(id=student_id, role=ROLE_STUDENT).first()
+    elif email:
+        student = User.query.filter_by(email=email).first()
+        if student and student.role != ROLE_STUDENT:
+            flash('That email belongs to a non-student account.', 'danger')
+            return redirect(url_for('admin.university_detail', univ_id=univ_id))
+
+    if student is None:
+        if not email or not full_name:
+            flash('Select a student or provide both full name and email to create one.', 'danger')
+            return redirect(url_for('admin.university_detail', univ_id=univ_id))
+        temp_pw = secrets.token_urlsafe(10)
+        student = User(
+            full_name=full_name,
+            email=email,
+            role=ROLE_STUDENT,
+            is_active=True,
+            university_major=major,
+        )
+        student.set_password(temp_pw)
+        db.session.add(student)
+
+    student.university_id = univ.id
+    student.university_name = univ.name
+    student.university_department_id = department.id if department else None
+    student.university_class = class_value
+    if major:
+        student.university_major = major
+
+    _audit('university.student_assign', f'{student.email} → {univ.name}')
+    db.session.commit()
+    flash(f'{student.full_name} assigned to {univ.name}.', 'success')
+    return redirect(url_for('admin.university_detail', univ_id=univ_id))
+
+
+@admin_bp.route('/universities/<int:univ_id>/students/<int:student_id>/update', methods=['POST'])
+@admin_required
+def university_student_update(univ_id, student_id):
+    univ = db.get_or_404(University, univ_id)
+    student = User.query.filter_by(id=student_id, university_id=univ_id, role=ROLE_STUDENT).first_or_404()
+    department_id = request.form.get('department_id', type=int)
+    class_value = request.form.get('university_class', '').strip() or None
+
+    department = None
+    if department_id:
+        department = _resolve_university_department(univ_id, department_id=department_id)
+        if not department:
+            flash('Invalid department selected.', 'danger')
+            return redirect(url_for('admin.university_detail', univ_id=univ_id))
+
+    student.university_department_id = department.id if department else None
+    student.university_class = class_value
+    _audit('university.student_update', f'{student.email} @ {univ.name}')
+    db.session.commit()
+    flash('Student assignment updated.', 'success')
+    return _admin_university_student_redirect(univ_id)
+
+
+@admin_bp.route('/universities/<int:univ_id>/students/<int:student_id>/unlink', methods=['POST'])
+@admin_required
+def university_student_unlink(univ_id, student_id):
+    univ = db.get_or_404(University, univ_id)
+    student = User.query.filter_by(id=student_id, university_id=univ_id, role=ROLE_STUDENT).first_or_404()
+    student.university_id = None
+    student.university_name = None
+    student.university_department_id = None
+    student.university_class = None
+    _audit('university.student_unlink', f'{student.email} ← {univ.name}')
+    db.session.commit()
+    flash('Student unlinked from university.', 'success')
+    return _admin_university_student_redirect(univ_id)
