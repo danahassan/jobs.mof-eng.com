@@ -4,67 +4,80 @@
 
 {% block extra_css %}
 <style>
-.ud-page{display:flex;flex-direction:column;gap:16px}
-.ud-hero{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-md)}
-.ud-cover{height:170px;background:linear-gradient(130deg,#0e7a4f,#1f557a);position:relative}
+.ud-page{display:flex;flex-direction:column;gap:14px}
+.ud-hero{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:var(--shadow-md)}
+.ud-cover{height:190px;background:linear-gradient(120deg,#0f7b52,#1f5f82);position:relative}
 .ud-cover.has-banner{background-size:cover;background-position:center}
-.ud-cover::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.35),rgba(0,0,0,.05))}
-.ud-head{padding:0 20px 18px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:-36px;position:relative;z-index:2}
-.ud-ident{display:flex;align-items:flex-end;gap:14px;min-width:0}
-.ud-logo{width:74px;height:74px;border-radius:14px;object-fit:contain;background:#fff;border:3px solid #fff;box-shadow:0 2px 12px rgba(0,0,0,.15);flex-shrink:0}
-.ud-logo-ph{width:74px;height:74px;border-radius:14px;background:#0d7a4e;color:#fff;border:3px solid #fff;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;box-shadow:0 2px 12px rgba(0,0,0,.15)}
-.ud-name{font-size:22px;font-weight:800;color:var(--text);margin:0}
-.ud-meta{font-size:13px;color:var(--text3);display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}
-.ud-meta span{display:inline-flex;align-items:center;gap:4px}
-.ud-actions{display:flex;gap:8px;flex-wrap:wrap}
+.ud-cover::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(8,16,28,.45),rgba(8,16,28,.06))}
+.ud-head{position:relative;z-index:2;margin-top:-34px;padding:0 20px 18px;display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.ud-ident{display:flex;gap:14px;align-items:flex-end;min-width:0}
+.ud-logo{width:76px;height:76px;border-radius:14px;background:#fff;border:3px solid #fff;object-fit:contain;box-shadow:0 3px 12px rgba(0,0,0,.2)}
+.ud-logo-ph{width:76px;height:76px;border-radius:14px;background:#0f7b52;border:3px solid #fff;color:#fff;font-size:30px;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 12px rgba(0,0,0,.2)}
+.ud-name{margin:0;font-size:22px;font-weight:800;color:var(--text)}
+.ud-meta{display:flex;flex-wrap:wrap;gap:10px;font-size:12px;color:var(--text3);margin-top:4px}
+.ud-meta span{display:inline-flex;align-items:center;gap:5px}
+.ud-top-actions{display:flex;gap:8px;flex-wrap:wrap}
 
-.ud-tabs{display:flex;gap:8px;flex-wrap:wrap;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px}
-.ud-tab-btn{border:1px solid var(--border);background:#fff;color:var(--text2);padding:8px 12px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
-.ud-tab-btn.active{background:#0d7a4e;color:#fff;border-color:#0d7a4e}
+.ud-tabs{display:flex;gap:8px;flex-wrap:wrap;padding:10px;background:var(--card);border:1px solid var(--border);border-radius:12px}
+.ud-tab-btn{border:1px solid var(--border);background:#fff;color:var(--text2);padding:8px 12px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px}
+.ud-tab-btn.active{background:#0f7b52;color:#fff;border-color:#0f7b52}
 
 .ud-pane{display:none}
 .ud-pane.active{display:block}
-.ud-pane-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.ud-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);padding:18px}
-.ud-card-title{font-size:16px;font-weight:800;color:var(--text);margin:0 0 14px;display:flex;align-items:center;gap:8px}
-.ud-row{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
-.ud-row:last-child{border-bottom:none}
-.ud-row-label{font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text3);letter-spacing:.04em}
-.ud-row-value{font-size:13px;color:var(--text);font-weight:500}
-.ud-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ud-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.ud-card{background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow-sm);padding:16px}
+.ud-title{margin:0 0 12px;font-size:16px;font-weight:800;color:var(--text);display:flex;align-items:center;gap:8px}
+.ud-kv{display:grid;grid-template-columns:130px 1fr;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)}
+.ud-kv:last-child{border-bottom:none}
+.ud-k{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--text3)}
+.ud-v{font-size:13px;color:var(--text);font-weight:500}
+
+.ud-form{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .ud-full{grid-column:1 / -1}
+.ud-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 
 .ud-toolbar{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:12px}
 .ud-toolbar-right{display:flex;gap:8px;flex-wrap:wrap}
-.ud-filters{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr .8fr .8fr .8fr auto auto;gap:8px;margin-bottom:12px}
-.ud-assign{display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr 1fr 1fr .8fr .8fr auto;gap:8px;margin-bottom:12px;padding:12px;border:1px solid var(--border);border-radius:12px;background:#fff}
-.ud-import{display:grid;grid-template-columns:1.2fr 1fr 1fr auto;gap:8px;margin-bottom:12px;padding:12px;border:1px dashed var(--border);border-radius:12px;background:#fafbfc}
-.ud-bulk{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;margin-bottom:12px;padding:12px;border:1px solid var(--border);border-radius:12px;background:#fafbfc}
+.ud-filters{display:grid;grid-template-columns:1.5fr repeat(6,1fr) auto auto;gap:8px;margin-bottom:12px}
+.ud-import{display:grid;grid-template-columns:1.3fr 1fr 1fr auto;gap:8px;margin-bottom:12px;padding:10px;border:1px dashed var(--border);border-radius:10px;background:#fafbfc}
+.ud-assign{display:grid;grid-template-columns:1.2fr repeat(7,1fr) auto;gap:8px;margin-bottom:12px;padding:10px;border:1px solid var(--border);border-radius:10px;background:#fff}
+.ud-bulk{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;margin-bottom:12px;padding:10px;border:1px solid var(--border);border-radius:10px;background:#fafbfc}
+
 .ud-table-wrap{overflow:auto}
-.ud-table{min-width:1050px}
-.ud-st-actions{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
+.ud-table{min-width:1060px}
+.ud-row-actions{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
+.ud-mobile-cards{display:none;gap:10px;flex-direction:column}
+.ud-st-card{border:1px solid var(--border);border-radius:10px;background:#fff;padding:12px}
+.ud-st-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.ud-st-initial{width:30px;height:30px;border-radius:50%;background:#eff6ff;color:#2563eb;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.ud-st-meta{font-size:12px;color:var(--text3);display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}
 
-.ud-list-row{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--border)}
-.ud-list-row:last-child{border-bottom:none}
-.ud-list-main{flex:1;min-width:0}
+.ud-list{display:flex;flex-direction:column;gap:10px}
+.ud-item{display:flex;align-items:flex-start;gap:10px;padding:10px;border:1px solid var(--border);border-radius:10px;background:#fff}
+.ud-item-main{flex:1;min-width:0}
 .ud-small{font-size:11px;color:var(--text3)}
+.ud-item-actions{display:flex;gap:6px;flex-wrap:wrap}
 
-@media(max-width:1100px){
-  .ud-filters{grid-template-columns:1fr 1fr 1fr 1fr 1fr 1fr 1fr auto auto}
+.is-hidden{display:none!important}
+
+@media(max-width:1120px){
+  .ud-filters{grid-template-columns:repeat(4,1fr)}
+  .ud-import,.ud-bulk{grid-template-columns:1fr 1fr}
   .ud-assign{grid-template-columns:1fr 1fr 1fr 1fr}
 }
 @media(max-width:900px){
-  .ud-pane-grid{grid-template-columns:1fr}
-  .ud-form-grid,.ud-filters,.ud-assign,.ud-import,.ud-bulk{grid-template-columns:1fr 1fr}
+  .ud-grid{grid-template-columns:1fr}
 }
-@media(max-width:640px){
-  .ud-cover{height:120px}
+@media(max-width:700px){
+  .ud-cover{height:130px}
   .ud-head{padding:0 14px 14px}
-  .ud-meta{font-size:12px}
-  .ud-actions{width:100%}
-  .ud-actions .btn{flex:1;justify-content:center}
-  .ud-form-grid,.ud-filters,.ud-assign,.ud-import,.ud-bulk{grid-template-columns:1fr}
-  .ud-st-actions{justify-content:flex-start}
+  .ud-top-actions{width:100%}
+  .ud-top-actions .btn{flex:1;justify-content:center}
+  .ud-kv{grid-template-columns:1fr}
+  .ud-form,.ud-filters,.ud-import,.ud-assign,.ud-bulk{grid-template-columns:1fr}
+  .ud-table-wrap{display:none}
+  .ud-mobile-cards{display:flex}
+  .ud-row-actions{justify-content:flex-start}
 }
 </style>
 {% endblock %}
@@ -91,7 +104,7 @@
           </div>
         </div>
       </div>
-      <div class="ud-actions">
+      <div class="ud-top-actions">
         <a href="{{ url_for('admin.universities') }}" class="btn btn-outline btn-sm"><i class="bi bi-arrow-left"></i> Back</a>
       </div>
     </div>
@@ -105,20 +118,31 @@
   </div>
 
   <section class="ud-pane active" id="tab-info">
-    <div class="ud-pane-grid">
+    <div class="ud-grid">
       <div class="ud-card">
-        <h3 class="ud-card-title"><i class="bi bi-pencil-square"></i> Edit University</h3>
-        <form method="POST" action="{{ url_for('admin.university_edit', univ_id=univ.id) }}" enctype="multipart/form-data" class="ud-form-grid">
+        <h3 class="ud-title"><i class="bi bi-info-circle"></i> University Overview</h3>
+        <div class="ud-kv"><div class="ud-k">Name</div><div class="ud-v">{{ univ.name }}</div></div>
+        <div class="ud-kv"><div class="ud-k">Location</div><div class="ud-v">{{ univ.location or '—' }}</div></div>
+        <div class="ud-kv"><div class="ud-k">Website</div><div class="ud-v">{% if univ.website %}<a href="{{ univ.website }}" target="_blank">{{ univ.website }}</a>{% else %}—{% endif %}</div></div>
+        <div class="ud-kv"><div class="ud-k">Contact Email</div><div class="ud-v">{{ univ.contact_email or '—' }}</div></div>
+        <div class="ud-kv"><div class="ud-k">Contact Phone</div><div class="ud-v">{{ univ.contact_phone or '—' }}</div></div>
+        <div class="ud-kv"><div class="ud-k">Status</div><div class="ud-v">{{ 'Active' if univ.is_active else 'Inactive' }}</div></div>
+        <div class="ud-kv"><div class="ud-k">Description</div><div class="ud-v" style="white-space:pre-wrap">{{ univ.description or 'No description provided.' }}</div></div>
+        <div class="ud-actions" style="margin-top:10px;justify-content:flex-start">
+          <button type="button" class="btn btn-outline btn-sm" data-toggle="univ-edit-panel"><i class="bi bi-pencil"></i> Edit University</button>
+        </div>
+      </div>
+
+      <div class="ud-card is-hidden" id="univ-edit-panel">
+        <h3 class="ud-title"><i class="bi bi-pencil-square"></i> Edit University</h3>
+        <form method="POST" action="{{ url_for('admin.university_edit', univ_id=univ.id) }}" enctype="multipart/form-data" class="ud-form">
           <input class="form-control" name="name" value="{{ univ.name }}" placeholder="University name" required>
           <input class="form-control" name="location" value="{{ univ.location or '' }}" placeholder="Location">
           <input class="form-control" type="url" name="website" value="{{ univ.website or '' }}" placeholder="Website">
           <input class="form-control" type="email" name="contact_email" value="{{ univ.contact_email or '' }}" placeholder="Contact email">
           <input class="form-control" name="contact_phone" value="{{ univ.contact_phone or '' }}" placeholder="Contact phone">
           <label style="display:flex;align-items:center;gap:8px;padding:8px 4px;font-size:13px"><input type="checkbox" name="is_active" value="1" {% if univ.is_active %}checked{% endif %}> Active</label>
-          <div class="ud-full">
-            <label class="ud-small" style="display:block;margin-bottom:4px">Description</label>
-            <textarea class="form-control" name="description" rows="5" style="resize:vertical">{{ univ.description or '' }}</textarea>
-          </div>
+          <div class="ud-full"><textarea class="form-control" name="description" rows="5" style="resize:vertical" placeholder="Description">{{ univ.description or '' }}</textarea></div>
           <div>
             <label class="ud-small" style="display:block;margin-bottom:4px">University Logo</label>
             <input type="file" class="form-control" name="logo" accept=".png,.jpg,.jpeg,.webp">
@@ -127,14 +151,15 @@
             <label class="ud-small" style="display:block;margin-bottom:4px">University Banner</label>
             <input type="file" class="form-control" name="banner" accept=".png,.jpg,.jpeg,.webp">
           </div>
-          <div class="ud-full" style="display:flex;justify-content:flex-end">
-            <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-check2"></i> Save University</button>
+          <div class="ud-full ud-actions">
+            <button type="button" class="btn btn-outline btn-sm" data-toggle="univ-edit-panel"><i class="bi bi-x-lg"></i> Cancel</button>
+            <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-check2"></i> Save Changes</button>
           </div>
         </form>
       </div>
 
       <div class="ud-card" style="border-color:#fecaca">
-        <h3 class="ud-card-title" style="color:#dc2626"><i class="bi bi-exclamation-triangle-fill"></i> Danger Zone</h3>
+        <h3 class="ud-title" style="color:#dc2626"><i class="bi bi-exclamation-triangle-fill"></i> Danger Zone</h3>
         <p style="font-size:13px;color:var(--text2)">Permanently deletes this university. Students will be unlinked and this cannot be undone.</p>
         <form method="POST" action="{{ url_for('admin.university_delete', univ_id=univ.id) }}" onsubmit="return confirm('Delete {{ univ.name|e }} permanently? This cannot be undone.')">
           <button type="submit" class="btn" style="background:#dc2626;color:#fff;border-color:#dc2626"><i class="bi bi-trash3-fill"></i> Delete University</button>
@@ -146,7 +171,7 @@
   <section class="ud-pane" id="tab-students">
     <div class="ud-card">
       <div class="ud-toolbar">
-        <h3 class="ud-card-title" style="margin:0"><i class="bi bi-people"></i> Students <span style="font-size:12px;color:var(--text3)">({{ student_total }})</span></h3>
+        <h3 class="ud-title" style="margin:0"><i class="bi bi-people"></i> Students <span style="font-size:12px;color:var(--text3)">({{ student_total }})</span></h3>
         <div class="ud-toolbar-right">
           <a href="{{ url_for('admin.university_students_export', univ_id=univ.id, fmt='xlsx', q=q_str, department_id=department_filter, class_filter=class_filter, major_filter=major_filter, graduation_year=graduation_year_filter, gpa_min=gpa_min_filter, gpa_max=gpa_max_filter) }}" class="btn btn-outline btn-sm"><i class="bi bi-download"></i> Export</a>
           <a href="{{ url_for('admin.university_students_import_template', univ_id=univ.id) }}" class="btn btn-outline btn-sm"><i class="bi bi-file-earmark-spreadsheet"></i> Template</a>
@@ -225,7 +250,7 @@
         <table class="tbl ud-table">
           <thead>
             <tr>
-              <th style="width:36px"><input type="checkbox" onclick="document.querySelectorAll('.bulk-student-checkbox').forEach((el)=>el.checked=this.checked)"></th>
+                <div class="ud-row-actions">
               <th>Student</th>
               <th>Department</th>
               <th>Class</th>
@@ -275,6 +300,40 @@
         </table>
       </div>
 
+      <div class="ud-mobile-cards">
+        {% for s in students.items %}
+        <div class="ud-st-card">
+          <div class="ud-st-head">
+            <div class="ud-st-initial">{{ s.initials }}</div>
+            <div>
+              <div style="font-size:14px;font-weight:700">{{ s.full_name }}</div>
+              <div class="ud-small">{{ s.email }}</div>
+            </div>
+          </div>
+          <div class="ud-st-meta">
+            <div><strong>Dept:</strong> {{ s.university_department.full_name() if s.university_department else '—' }}</div>
+            <div><strong>Class:</strong> {{ s.university_class or '—' }}</div>
+            <div><strong>Major:</strong> {{ s.university_major or '—' }}</div>
+            <div><strong>GPA:</strong> {{ s.student_gpa or '—' }}</div>
+            <div><strong>Grad:</strong> {{ s.graduation_year or '—' }}</div>
+            <div><strong>ID:</strong> {{ s.student_id_number or '—' }}</div>
+          </div>
+          <div class="ud-row-actions" style="justify-content:flex-start">
+            <a href="{{ url_for('admin.user_detail', user_id=s.id) }}" class="btn btn-outline btn-sm">View</a>
+            <a href="{{ url_for('admin.user_edit', user_id=s.id) }}" class="btn btn-outline btn-sm">Edit</a>
+            <form method="POST" action="{{ url_for('admin.university_student_unlink', univ_id=univ.id, student_id=s.id, q=q_str, department_id=department_filter, class_filter=class_filter, major_filter=major_filter, graduation_year=graduation_year_filter, gpa_min=gpa_min_filter, gpa_max=gpa_max_filter, page=students.page) }}" onsubmit="return confirm('Unlink {{ s.full_name|e }} from {{ univ.name|e }}?')">
+              <button type="submit" class="btn btn-outline btn-sm">Unlink</button>
+            </form>
+            <form method="POST" action="{{ url_for('admin.university_student_delete', univ_id=univ.id, student_id=s.id, q=q_str, department_id=department_filter, class_filter=class_filter, major_filter=major_filter, graduation_year=graduation_year_filter, gpa_min=gpa_min_filter, gpa_max=gpa_max_filter, page=students.page) }}" onsubmit="return confirm('Delete {{ s.full_name|e }} permanently? This removes the account and related records.')">
+              <button type="submit" class="btn btn-sm" style="color:#dc2626;border-color:#fecaca;background:transparent">Delete</button>
+            </form>
+          </div>
+        </div>
+        {% else %}
+        <div class="empty-state"><i class="bi bi-people"></i> No students match current filters.</div>
+        {% endfor %}
+      </div>
+
       {% if students.pages > 1 %}
       <div class="pagination" style="margin-top:14px">
         <a href="{{ url_for('admin.university_detail', univ_id=univ.id, page=students.prev_num, q=q_str, department_id=department_filter, class_filter=class_filter, major_filter=major_filter, graduation_year=graduation_year_filter, gpa_min=gpa_min_filter, gpa_max=gpa_max_filter) }}" class="page-link {% if not students.has_prev %}disabled{% endif %}"><i class="bi bi-chevron-left"></i></a>
@@ -291,16 +350,28 @@
 
   <section class="ud-pane" id="tab-departments">
     <div class="ud-card">
-      <h3 class="ud-card-title"><i class="bi bi-diagram-3"></i> Departments & Colleges</h3>
+      <h3 class="ud-title"><i class="bi bi-diagram-3"></i> Departments & Colleges</h3>
       {% for d in departments %}
-      <div class="ud-list-row">
-        <form method="POST" action="{{ url_for('admin.university_department_edit', univ_id=univ.id, dept_id=d.id) }}" class="ud-form-grid" style="flex:1">
+      <div class="ud-item">
+        <div class="ud-item-main">
+          <div style="font-size:14px;font-weight:700">{{ d.name }}</div>
+          <div class="ud-small">{{ d.college or 'No college assigned' }}</div>
+        </div>
+        <div class="ud-item-actions">
+          <button type="button" class="btn btn-outline btn-sm" data-toggle="dept-edit-{{ d.id }}"><i class="bi bi-pencil"></i> Edit</button>
+          <form method="POST" action="{{ url_for('admin.university_department_delete', univ_id=univ.id, dept_id=d.id) }}" onsubmit="return confirm('Delete this department?')">
+            <button type="submit" class="btn btn-sm" style="color:#dc2626;border-color:#fecaca;background:transparent"><i class="bi bi-trash"></i> Delete</button>
+          </form>
+        </div>
+      </div>
+      <div class="ud-card is-hidden" id="dept-edit-{{ d.id }}" style="margin:0 0 10px 0;background:#fafbfc">
+        <form method="POST" action="{{ url_for('admin.university_department_edit', univ_id=univ.id, dept_id=d.id) }}" class="ud-form">
           <input name="name" class="form-control" value="{{ d.name }}" required>
           <input name="college" class="form-control" value="{{ d.college or '' }}" placeholder="College (optional)">
-          <div class="ud-full" style="display:flex;justify-content:flex-end"><button type="submit" class="btn btn-outline btn-sm"><i class="bi bi-check2"></i> Save</button></div>
-        </form>
-        <form method="POST" action="{{ url_for('admin.university_department_delete', univ_id=univ.id, dept_id=d.id) }}" onsubmit="return confirm('Delete this department?')">
-          <button type="submit" class="btn btn-sm" style="color:#dc2626;border-color:#fecaca;background:transparent"><i class="bi bi-trash"></i> Delete</button>
+          <div class="ud-full ud-actions">
+            <button type="button" class="btn btn-outline btn-sm" data-toggle="dept-edit-{{ d.id }}">Cancel</button>
+            <button type="submit" class="btn btn-primary btn-sm">Save</button>
+          </div>
         </form>
       </div>
       {% else %}
@@ -317,24 +388,33 @@
 
   <section class="ud-pane" id="tab-coordinators">
     <div class="ud-card">
-      <h3 class="ud-card-title"><i class="bi bi-person-video3"></i> Coordinators</h3>
+      <h3 class="ud-title"><i class="bi bi-person-video3"></i> Coordinators</h3>
       {% for m in coords %}
-      <div class="ud-list-row">
+      <div class="ud-item">
         <div style="width:34px;height:34px;border-radius:50%;background:var(--green-light);color:var(--green);display:flex;align-items:center;justify-content:center;font-weight:700">{{ m.user.initials if m.user else '?' }}</div>
-        <div class="ud-list-main">
+        <div class="ud-item-main">
           <a href="{{ url_for('admin.user_detail', user_id=m.user_id) }}" style="font-size:13px;font-weight:700;color:var(--text)">{{ m.user.full_name if m.user else '—' }}</a>
           <div class="ud-small">{{ m.user.email if m.user else '' }}</div>
-          <form method="POST" action="{{ url_for('admin.university_coordinator_scope_update', univ_id=univ.id, user_id=m.user_id) }}" class="ud-form-grid" style="margin-top:8px">
-            <select name="department_id" class="form-control">
-              <option value="">All departments</option>
-              {% for d in departments %}<option value="{{ d.id }}" {% if m.department_id == d.id %}selected{% endif %}>{{ d.full_name() }}</option>{% endfor %}
-            </select>
-            <input name="class_scope" class="form-control" placeholder="Class scope (optional)" value="{{ m.class_scope or '' }}">
-            <div class="ud-full" style="display:flex;justify-content:flex-end"><button type="submit" class="btn btn-outline btn-sm"><i class="bi bi-check2"></i> Save Scope</button></div>
+          <div class="ud-small">Scope: {{ m.department.full_name() if m.department else 'All departments' }}{% if m.class_scope %} · Class {{ m.class_scope }}{% endif %}</div>
+        </div>
+        <div class="ud-item-actions">
+          <button type="button" class="btn btn-outline btn-sm" data-toggle="coord-edit-{{ m.user_id }}"><i class="bi bi-pencil"></i> Edit Scope</button>
+          <form method="POST" action="{{ url_for('admin.university_coordinator_remove', univ_id=univ.id, user_id=m.user_id) }}" onsubmit="return confirm('Remove this coordinator?')">
+            <button type="submit" class="btn btn-sm" style="color:#dc2626;border-color:#fecaca;background:transparent"><i class="bi bi-x-lg"></i> Remove</button>
           </form>
         </div>
-        <form method="POST" action="{{ url_for('admin.university_coordinator_remove', univ_id=univ.id, user_id=m.user_id) }}" onsubmit="return confirm('Remove this coordinator?')">
-          <button type="submit" class="btn btn-sm" style="color:#dc2626;border-color:#fecaca;background:transparent"><i class="bi bi-x-lg"></i> Remove</button>
+      </div>
+      <div class="ud-card is-hidden" id="coord-edit-{{ m.user_id }}" style="margin:0 0 10px;background:#fafbfc">
+        <form method="POST" action="{{ url_for('admin.university_coordinator_scope_update', univ_id=univ.id, user_id=m.user_id) }}" class="ud-form">
+          <select name="department_id" class="form-control">
+            <option value="">All departments</option>
+            {% for d in departments %}<option value="{{ d.id }}" {% if m.department_id == d.id %}selected{% endif %}>{{ d.full_name() }}</option>{% endfor %}
+          </select>
+          <input name="class_scope" class="form-control" placeholder="Class scope (optional)" value="{{ m.class_scope or '' }}">
+          <div class="ud-full ud-actions">
+            <button type="button" class="btn btn-outline btn-sm" data-toggle="coord-edit-{{ m.user_id }}">Cancel</button>
+            <button type="submit" class="btn btn-primary btn-sm">Save Scope</button>
+          </div>
         </form>
       </div>
       {% else %}
@@ -363,6 +443,7 @@
 (function(){
   const btns = Array.from(document.querySelectorAll('.ud-tab-btn'));
   const panes = Array.from(document.querySelectorAll('.ud-pane'));
+  const toggles = Array.from(document.querySelectorAll('[data-toggle]'));
 
   function activate(tab){
     btns.forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
@@ -379,6 +460,16 @@
   } else {
     activate('info');
   }
+
+  toggles.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetId = btn.getAttribute('data-toggle');
+      const el = document.getElementById(targetId);
+      if (el) {
+        el.classList.toggle('is-hidden');
+      }
+    });
+  });
 })();
 </script>
 {% endblock %}
