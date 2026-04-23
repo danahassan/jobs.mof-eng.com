@@ -146,11 +146,11 @@
         {% if user %}
         <div id="uf-reminder-test" style="margin:6px 0 0 28px;{% if user.role != 'supervisor' %}display:none{% endif %}">
           <button type="button" class="btn btn-outline btn-xs"
-                  onclick="sendReminderPreview(this, '{{ url_for('admin.user_send_reminder_test', user_id=user.id) }}', '{{ current_user.email }}', '{{ user.full_name|e }}')">
-            <i class="bi bi-send"></i> Send preview to my email
+                  onclick="sendReminderPreview(this, '{{ url_for('admin.user_send_reminder_test', user_id=user.id) }}', '{{ user.email }}', '{{ user.full_name|e }}')">
+            <i class="bi bi-send"></i> Send test email to supervisor
           </button>
           <span id="uf-reminder-test-status" style="font-size:11px;color:var(--text3);margin-left:6px">
-            Sends to <b>{{ current_user.email }}</b>. Uses sample data if no real "New" applications exist.
+            Sends a real test directly to <b>{{ user.email }}</b>. Uses sample data if no real "New" applications exist.
           </span>
         </div>
         {% endif %}
@@ -669,13 +669,13 @@ function addCert() {
 })();
 
 // Trigger the preview email via AJAX (avoids nested-form submit hijack)
-function sendReminderPreview(btn, url, adminEmail, userName){
-  if(!confirm('Send a preview email to ' + adminEmail + ' showing what ' + userName + ' would see?')) return;
+function sendReminderPreview(btn, url, recipientEmail, userName){
+  if(!confirm('Send a real test reminder email to ' + userName + ' (' + recipientEmail + ')?')) return;
   const status = document.getElementById('uf-reminder-test-status');
   const orig = btn.innerHTML;
   btn.disabled = true;
   btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Sending...';
-  if(status) status.innerHTML = 'Sending preview email to <b>' + adminEmail + '</b>...';
+  if(status) status.innerHTML = 'Sending test email to <b>' + recipientEmail + '</b>...';
 
   // Get CSRF token if Flask-WTF is in use; otherwise this is a no-op
   const csrf = document.querySelector('meta[name="csrf-token"]');
@@ -688,7 +688,7 @@ function sendReminderPreview(btn, url, adminEmail, userName){
       btn.disabled = false;
       btn.innerHTML = orig;
       if(res.ok){
-        if(status) status.innerHTML = '<span style="color:#16a34a;font-weight:600"><i class="bi bi-check-circle-fill"></i> Sent! Check ' + adminEmail + ' inbox (give it ~30s).</span>';
+        if(status) status.innerHTML = '<span style="color:#16a34a;font-weight:600"><i class="bi bi-check-circle-fill"></i> Sent to ' + recipientEmail + ' (delivery may take ~30s).</span>';
       } else {
         if(status) status.innerHTML = '<span style="color:#dc2626;font-weight:600"><i class="bi bi-x-circle-fill"></i> Failed (HTTP ' + res.status + '). Check server logs.</span>';
         console.error('Reminder preview failed:', res.text);

@@ -1121,12 +1121,12 @@ def user_toggle(user_id):
 @admin_bp.route('/users/<int:user_id>/send-reminder-test', methods=['POST'])
 @admin_required
 def user_send_reminder_test(user_id):
-    """Send a one-off preview of the supervisor daily reminder email.
+    """Send a one-off test of the supervisor daily reminder email.
 
-    Sends the email to the CURRENT ADMIN (not the target user) so the
-    admin can preview what the supervisor would receive. If the supervisor
-    has no "New" applications, a sample preview with mock data is sent
-    so the layout is still visible.
+    Sends the email directly to the SUPERVISOR (the actual receiver) so
+    they get a real test of what they would normally receive each morning.
+    If the supervisor has no "New" applications, a sample preview with
+    mock data is sent so the layout is still visible.
     """
     from datetime import datetime, timedelta
     from sqlalchemy import or_
@@ -1162,8 +1162,10 @@ def user_send_reminder_test(user_id):
     if not apps:
         return jsonify({'ok': False, 'error': 'No applications exist in the system at all — cannot generate a preview.'}), 400
 
-    # Send to the admin's own email (so they can preview without needing the supervisor's mailbox)
-    target_email = current_user.email
+    # Send to the actual supervisor (the receiver) so they get a real test of what they would normally receive
+    target_email = (user.email or '').strip()
+    if not target_email:
+        return jsonify({'ok': False, 'error': 'This user has no email address on file.'}), 400
     try:
         now = datetime.utcnow()
         site_url = request.host_url.rstrip('/')
