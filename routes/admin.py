@@ -42,6 +42,18 @@ def _parse_int(s):
         return None
 
 
+def _delete_user_with_related_data(user):
+    """Delete a user and related records used by admin delete flows."""
+    for app in user.applications.all():
+        app.history.order_by(None).delete(synchronize_session=False)
+        app.interviews.delete(synchronize_session=False)
+        db.session.delete(app)
+    Message.query.filter(
+        (Message.sender_id == user.id) | (Message.receiver_id == user.id)
+    ).delete(synchronize_session=False)
+    db.session.delete(user)
+
+
 admin_bp = Blueprint('admin', __name__)
 
 
@@ -931,15 +943,7 @@ def user_delete(user_id):
         flash('You cannot delete your own account.', 'danger')
         return redirect(url_for('admin.users'))
     name = user.full_name
-    for app in user.applications.all():
-        app.history.order_by(None).delete(synchronize_session=False)
-        app.interviews.delete(synchronize_session=False)
-        db.session.delete(app)
-    # Delete messages where user is sender or receiver (both cols are NOT NULL)
-    Message.query.filter(
-        (Message.sender_id == user.id) | (Message.receiver_id == user.id)
-    ).delete(synchronize_session=False)
-    db.session.delete(user)
+    _delete_user_with_related_data(user)
     _audit('user.delete', f'{name}')
     db.session.commit()
     flash(f'User "{name}" permanently deleted.', 'success')
@@ -2088,6 +2092,35 @@ def university_department_add(univ_id):
     return redirect(url_for('admin.university_detail', univ_id=univ_id))
 
 
+@admin_bp.route('/universities/<int:univ_id>/departments/<int:dept_id>/edit', methods=['POST'])
+@admin_required
+def university_department_edit(univ_id, dept_id):
+    univ = db.get_or_404(University, univ_id)
+    dept = UniversityDepartment.query.filter_by(id=dept_id, university_id=univ_id).first_or_404()
+    name = request.form.get('name', '').strip()
+    college = request.form.get('college', '').strip() or None
+
+    if not name:
+        flash('Department name is required.', 'danger')
+        return redirect(url_for('admin.university_detail', univ_id=univ_id))
+
+    exists = (UniversityDepartment.query
+              .filter(UniversityDepartment.university_id == univ_id,
+                      UniversityDepartment.name == name,
+                      UniversityDepartment.id != dept_id)
+              .first())
+    if exists:
+        flash('Another department with this name already exists.', 'warning')
+        return redirect(url_for('admin.university_detail', univ_id=univ_id))
+
+    dept.name = name
+    dept.college = college
+    _audit('university.department_edit', f'{univ.name}: {dept_id}')
+    db.session.commit()
+    flash('Department updated.', 'success')
+    return redirect(url_for('admin.university_detail', univ_id=univ_id))
+
+
 @admin_bp.route('/universities/<int:univ_id>/departments/<int:dept_id>/delete', methods=['POST'])
 @admin_required
 def university_department_delete(univ_id, dept_id):
@@ -2539,4 +2572,21 @@ def university_student_unlink(univ_id, student_id):
     _audit('university.student_unlink', f'{student.email} ← {univ.name}')
     db.session.commit()
     flash('Student unlinked from university.', 'success')
+    return _admin_university_student_redirect(univ_id)
+
+
+@admin_bp.route('/universities/<int:univ_id>/students/<int:student_id>/delete', methods=['POST'])
+@admin_required
+def university_student_delete(univ_id, student_id):
+    univ = db.get_or_404(University, univ_id)
+    student = User.query.filter_by(id=student_id, university_id=univ_id, role=ROLE_STUDENT).first_or_404()
+    if student.id == current_user.id:
+        flash('You cannot delete your own account.', 'danger')
+        return _admin_university_student_redirect(univ_id)
+
+    name = student.full_name
+    _delete_user_with_related_data(student)
+    _audit('university.student_delete', f'{name} @ {univ.name}')
+    db.session.commit()
+    flash(f'Student "{name}" permanently deleted.', 'success')
     return _admin_university_student_redirect(univ_id)

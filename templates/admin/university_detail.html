@@ -31,8 +31,32 @@ body.editing .ud-save-btn{display:flex}
 .ud-row-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text3);margin-bottom:2px}
 .ud-student-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
 .ud-student-row:last-child{border-bottom:none;padding-bottom:0}
-@media(max-width:820px){.ud-grid{grid-template-columns:1fr}}
-@media(max-width:600px){.ud-cover{height:80px}.ud-profile-row{padding:0 16px 16px}}
+.ud-dept-edit{display:grid;grid-template-columns:minmax(120px,1fr) minmax(120px,1fr) auto auto;gap:8px;align-items:center;flex:1;min-width:0}
+.ud-students-filters{display:grid;grid-template-columns:minmax(220px,1.4fr) minmax(160px,.8fr) minmax(140px,.7fr) minmax(160px,.8fr) minmax(120px,.6fr) minmax(110px,.5fr) minmax(110px,.5fr) auto auto;gap:8px;margin-bottom:14px}
+.ud-students-import{display:grid;grid-template-columns:minmax(220px,1.2fr) minmax(170px,.8fr) minmax(140px,.7fr) auto;gap:8px;margin-bottom:16px;padding:12px;border:1px dashed var(--border);border-radius:12px;background:#fafbfc}
+.ud-students-assign{display:grid;grid-template-columns:minmax(190px,1.1fr) minmax(160px,1fr) minmax(170px,.9fr) minmax(130px,.7fr) minmax(130px,.7fr) minmax(170px,.9fr) minmax(100px,.5fr) minmax(110px,.5fr) auto;gap:8px;margin-bottom:16px;padding:12px;border:1px solid var(--border);border-radius:12px;background:#fff}
+.ud-students-bulk{display:grid;grid-template-columns:minmax(170px,.9fr) minmax(170px,.9fr) minmax(140px,.7fr) auto;gap:8px;margin-bottom:16px;padding:12px;border:1px solid var(--border);border-radius:12px;background:#fafbfc}
+.ud-student-actions{display:flex;gap:8px;justify-content:flex-end;align-items:center;flex-wrap:wrap}
+.ud-students-table{min-width:980px}
+@media(max-width:1080px){
+  .ud-students-filters{grid-template-columns:1fr 1fr 1fr 1fr 1fr 1fr 1fr auto auto}
+  .ud-students-assign{grid-template-columns:1fr 1fr 1fr 1fr}
+}
+@media(max-width:820px){
+  .ud-grid{grid-template-columns:1fr}
+  .ud-dept-edit{grid-template-columns:1fr 1fr auto auto}
+  .ud-students-filters,.ud-students-import,.ud-students-assign,.ud-students-bulk{grid-template-columns:1fr 1fr}
+}
+@media(max-width:600px){
+  .ud-cover{height:80px}
+  .ud-profile-row{padding:0 16px 16px}
+  .ud-meta{font-size:12px;gap:8px}
+  .ud-actions{width:100%}
+  .ud-actions .btn{flex:1;justify-content:center}
+  .ud-dept-edit{grid-template-columns:1fr;gap:6px}
+  .ud-students-filters,.ud-students-import,.ud-students-assign,.ud-students-bulk{grid-template-columns:1fr}
+  .ud-student-actions{justify-content:flex-start}
+}
 </style>
 {% endblock %}
 
@@ -220,11 +244,12 @@ body.editing .ud-save-btn{display:flex}
       <div class="card-title"><i class="bi bi-diagram-3-fill"></i> Departments & Colleges</div>
       {% for d in departments %}
       <div class="ud-student-row">
-        <div style="flex:1;min-width:0">
-          <div style="font-size:13px;font-weight:600;color:var(--text)">{{ d.name }}</div>
-          <div style="font-size:11px;color:var(--text3)">{{ d.college or 'No college' }}</div>
-        </div>
-        <form method="POST" action="{{ url_for('admin.university_department_delete', univ_id=univ.id, dept_id=d.id) }}" onsubmit="return confirm('Delete this department?')">
+        <form method="POST" action="{{ url_for('admin.university_department_edit', univ_id=univ.id, dept_id=d.id) }}" class="ud-dept-edit">
+          <input name="name" class="form-control" value="{{ d.name }}" placeholder="Department name" required>
+          <input name="college" class="form-control" value="{{ d.college or '' }}" placeholder="College (optional)">
+          <button type="submit" class="btn btn-outline btn-sm" title="Save"><i class="bi bi-check2"></i></button>
+        </form>
+        <form method="POST" action="{{ url_for('admin.university_department_delete', univ_id=univ.id, dept_id=d.id) }}" onsubmit="return confirm('Delete this department?')" style="margin-left:8px">
           <button type="submit" class="btn btn-sm" style="color:#dc2626;border-color:#fecaca;background:transparent" title="Delete">
             <i class="bi bi-trash"></i>
           </button>
@@ -253,7 +278,7 @@ body.editing .ud-save-btn{display:flex}
         </div>
       </div>
 
-      <form method="GET" action="{{ url_for('admin.university_detail', univ_id=univ.id) }}" style="display:grid;grid-template-columns:minmax(220px,1.4fr) minmax(160px,.8fr) minmax(140px,.7fr) minmax(160px,.8fr) minmax(120px,.6fr) minmax(110px,.5fr) minmax(110px,.5fr) auto auto;gap:8px;margin-bottom:14px">
+      <form method="GET" action="{{ url_for('admin.university_detail', univ_id=univ.id) }}" class="ud-students-filters">
         <input type="text" name="q" class="form-control" placeholder="Search by name, email, ID, major, class" value="{{ q_str }}">
         <select name="department_id" class="form-control">
           <option value="">All departments</option>
@@ -270,7 +295,7 @@ body.editing .ud-save-btn{display:flex}
         <a href="{{ url_for('admin.university_detail', univ_id=univ.id) }}" class="btn btn-outline btn-sm"><i class="bi bi-arrow-counterclockwise"></i> Reset</a>
       </form>
 
-      <form method="POST" action="{{ url_for('admin.university_students_import', univ_id=univ.id) }}" enctype="multipart/form-data" style="display:grid;grid-template-columns:minmax(220px,1.2fr) minmax(170px,.8fr) minmax(140px,.7fr) auto;gap:8px;margin-bottom:16px;padding:12px;border:1px dashed var(--border);border-radius:12px;background:#fafbfc">
+      <form method="POST" action="{{ url_for('admin.university_students_import', univ_id=univ.id) }}" enctype="multipart/form-data" class="ud-students-import">
         <input type="file" name="file" class="form-control" accept=".xlsx,.xls" required>
         <select name="default_department_id" class="form-control">
           <option value="">Default department</option>
@@ -283,7 +308,7 @@ body.editing .ud-save-btn{display:flex}
       </form>
 
       <div style="font-size:12px;color:var(--text3);margin-bottom:8px">Admins assign a student to this university here, and can set department, class, major, GPA, and graduation year at the same time.</div>
-      <form method="POST" action="{{ url_for('admin.university_student_assign', univ_id=univ.id) }}" style="display:grid;grid-template-columns:minmax(190px,1.1fr) minmax(160px,1fr) minmax(170px,.9fr) minmax(130px,.7fr) minmax(130px,.7fr) minmax(170px,.9fr) minmax(100px,.5fr) minmax(110px,.5fr) auto;gap:8px;margin-bottom:16px;padding:12px;border:1px solid var(--border);border-radius:12px;background:#fff">
+      <form method="POST" action="{{ url_for('admin.university_student_assign', univ_id=univ.id) }}" class="ud-students-assign">
         <select name="student_id" class="form-control">
           <option value="">Assign existing student</option>
           {% for student in assignable_students %}
@@ -305,7 +330,7 @@ body.editing .ud-save-btn{display:flex}
         <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Assign</button>
       </form>
 
-      <form id="students-bulk-form" method="POST" action="{{ url_for('admin.university_students_bulk', univ_id=univ.id) }}" style="display:grid;grid-template-columns:minmax(170px,.9fr) minmax(170px,.9fr) minmax(140px,.7fr) auto;gap:8px;margin-bottom:16px;padding:12px;border:1px solid var(--border);border-radius:12px;background:#fafbfc">
+      <form id="students-bulk-form" method="POST" action="{{ url_for('admin.university_students_bulk', univ_id=univ.id) }}" class="ud-students-bulk">
         <input type="hidden" name="q" value="{{ q_str }}">
         <input type="hidden" name="department_id" value="{{ department_filter or '' }}">
         <input type="hidden" name="class_filter" value="{{ class_filter }}">
@@ -331,7 +356,7 @@ body.editing .ud-save-btn{display:flex}
       </form>
 
       <div class="table-responsive">
-        <table class="tbl">
+        <table class="tbl ud-students-table">
           <thead>
             <tr>
               <th style="width:36px"><input type="checkbox" onclick="document.querySelectorAll('.bulk-student-checkbox').forEach((el)=>el.checked=this.checked)"></th>
@@ -342,7 +367,7 @@ body.editing .ud-save-btn{display:flex}
               <th>GPA</th>
               <th>Grad Year</th>
               <th>Student ID</th>
-              <th style="width:210px"></th>
+              <th style="width:270px"></th>
             </tr>
           </thead>
           <tbody>
@@ -359,33 +384,30 @@ body.editing .ud-save-btn{display:flex}
                 </div>
               </td>
               <td data-label="Department">
-                <select name="department_id" form="student-assign-{{ s.id }}" class="form-control" style="min-width:150px">
-                  <option value="">No department</option>
-                  {% for d in departments %}
-                  <option value="{{ d.id }}" {% if s.university_department_id == d.id %}selected{% endif %}>{{ d.college ~ ' / ' if d.college else '' }}{{ d.name }}</option>
-                  {% endfor %}
-                </select>
+                <span style="font-size:13px;color:var(--text3)">{{ s.university_department.full_name() if s.university_department else '—' }}</span>
               </td>
               <td data-label="Class">
-                <input type="text" name="university_class" form="student-assign-{{ s.id }}" class="form-control" value="{{ s.university_class or '' }}" placeholder="Class" style="min-width:100px">
+                <span style="font-size:13px;color:var(--text3)">{{ s.university_class or '—' }}</span>
               </td>
               <td data-label="Major">
-                <input type="text" name="university_major" form="student-assign-{{ s.id }}" class="form-control" value="{{ s.university_major or '' }}" placeholder="Major" style="min-width:150px">
+                <span style="font-size:13px;color:var(--text3)">{{ s.university_major or '—' }}</span>
               </td>
               <td data-label="GPA">
-                <input type="text" name="student_gpa" form="student-assign-{{ s.id }}" class="form-control" value="{{ s.student_gpa or '' }}" placeholder="GPA" style="min-width:80px">
+                <span style="font-size:13px;color:var(--text3)">{{ s.student_gpa or '—' }}</span>
               </td>
               <td data-label="Grad Year">
-                <input type="number" name="graduation_year" form="student-assign-{{ s.id }}" class="form-control" value="{{ s.graduation_year or '' }}" placeholder="Year" style="min-width:95px">
+                <span style="font-size:13px;color:var(--text3)">{{ s.graduation_year or '—' }}</span>
               </td>
               <td data-label="Student ID" style="font-size:13px;color:var(--text3)">{{ s.student_id_number or '—' }}</td>
               <td data-label="Actions">
-                <div style="display:flex;gap:8px;justify-content:flex-end;align-items:center;flex-wrap:wrap">
-                  <form id="student-assign-{{ s.id }}" method="POST" action="{{ url_for('admin.university_student_update', univ_id=univ.id, student_id=s.id, q=q_str, department_id=department_filter, class_filter=class_filter, major_filter=major_filter, graduation_year=graduation_year_filter, gpa_min=gpa_min_filter, gpa_max=gpa_max_filter, page=students.page) }}">
-                    <button type="submit" class="btn btn-outline btn-sm"><i class="bi bi-check2"></i> Save</button>
+                <div class="ud-student-actions">
+                  <a href="{{ url_for('admin.user_detail', user_id=s.id) }}" class="btn btn-outline btn-sm"><i class="bi bi-eye"></i> View</a>
+                  <a href="{{ url_for('admin.user_edit', user_id=s.id) }}" class="btn btn-outline btn-sm"><i class="bi bi-pencil"></i> Edit</a>
+                  <form method="POST" action="{{ url_for('admin.university_student_delete', univ_id=univ.id, student_id=s.id, q=q_str, department_id=department_filter, class_filter=class_filter, major_filter=major_filter, graduation_year=graduation_year_filter, gpa_min=gpa_min_filter, gpa_max=gpa_max_filter, page=students.page) }}" onsubmit="return confirm('Delete {{ s.full_name|e }} permanently? This will remove the account and related records.')">
+                    <button type="submit" class="btn btn-sm" style="color:#dc2626;border-color:#fecaca;background:transparent"><i class="bi bi-trash"></i> Delete</button>
                   </form>
                   <form method="POST" action="{{ url_for('admin.university_student_unlink', univ_id=univ.id, student_id=s.id, q=q_str, department_id=department_filter, class_filter=class_filter, major_filter=major_filter, graduation_year=graduation_year_filter, gpa_min=gpa_min_filter, gpa_max=gpa_max_filter, page=students.page) }}" onsubmit="return confirm('Unlink {{ s.full_name|e }} from {{ univ.name|e }}?')">
-                    <button type="submit" class="btn btn-sm" style="color:#dc2626;border-color:#fecaca;background:transparent"><i class="bi bi-link-45deg"></i> Unlink</button>
+                    <button type="submit" class="btn btn-outline btn-sm"><i class="bi bi-link-45deg"></i> Unlink</button>
                   </form>
                 </div>
               </td>
