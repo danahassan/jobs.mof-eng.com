@@ -137,28 +137,46 @@
   .donut-svg{width:90px;height:90px}
 }
 
-/* List cards */
-.dash-compact{gap:12px;margin-bottom:14px}
+/* Panel cards containing mini-card grids */
+.dash-compact{gap:14px;margin-bottom:14px}
 .dash-compact .card{padding:14px 16px;border-radius:14px}
-.card-hdr-compact{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
-.card-hdr-compact .card-title{margin:0;font-size:14px;display:flex;align-items:center;gap:6px}
-.card-hdr-compact .hdr-count{background:var(--bg);color:var(--text2);font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;border:1px solid var(--border)}
-.list-compact .row-item{display:flex;align-items:center;gap:10px;padding:8px 2px;border-radius:8px;transition:background .15s}
-.list-compact .row-item:hover{background:var(--bg)}
-.list-compact .row-item + .row-item{border-top:1px solid var(--border)}
-.list-compact .ri-main{flex:1;min-width:0}
-.list-compact .ri-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3;color:var(--text);display:flex;align-items:center;gap:5px}
-.list-compact .ri-sub{font-size:11px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3;margin-top:1px}
-.list-compact .ri-thumb{width:32px;height:32px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
-.list-compact .ri-act{padding:4px 8px;font-size:11px;opacity:.75;transition:opacity .15s}
-.list-compact .row-item:hover .ri-act{opacity:1}
-.list-add-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:8px;margin-top:10px;background:transparent;border:1px dashed var(--border);border-radius:8px;color:var(--text3);font-size:12px;font-weight:600;text-decoration:none;transition:all .15s}
-.list-add-btn:hover{border-color:var(--green);color:var(--green);background:var(--green-light)}
+.card-hdr-compact{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+.card-hdr-compact .card-title{margin:0;font-size:14px;display:flex;align-items:center;gap:6px;font-weight:700}
+.card-hdr-compact .hdr-count{background:var(--green-light);color:var(--green-dark,#0d7a4e);font-size:11px;font-weight:700;padding:2px 9px;border-radius:12px}
+.card-hdr-compact .hdr-view{color:var(--text3);font-size:12px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:3px;transition:color .15s}
+.card-hdr-compact .hdr-view:hover{color:var(--green)}
+
+/* Mini-card grid */
+.mini-grid{display:grid;grid-template-columns:1fr;gap:8px}
+.mini-card{display:flex;align-items:center;gap:11px;padding:10px 12px;background:var(--card);border:1px solid var(--border);border-radius:11px;transition:all .15s;text-decoration:none;position:relative;overflow:hidden}
+.mini-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:transparent;transition:background .15s}
+.mini-card:hover{border-color:var(--green);box-shadow:0 3px 10px rgba(22,163,74,.08);transform:translateX(2px)}
+.mini-card:hover::before{background:var(--green)}
+.mini-card .mc-thumb{width:36px;height:36px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;overflow:hidden}
+.mini-card .mc-thumb img{width:100%;height:100%;object-fit:contain;background:#f8fafb}
+.mini-card .mc-main{flex:1;min-width:0}
+.mini-card .mc-name{font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3;display:flex;align-items:center;gap:4px}
+.mini-card .mc-meta{display:flex;align-items:center;gap:6px;margin-top:3px;flex-wrap:wrap}
+.mini-card .mc-tag{font-size:10.5px;font-weight:600;padding:1px 7px;border-radius:8px;background:var(--bg);color:var(--text3);white-space:nowrap}
+.mini-card .mc-tag.green{background:var(--green-light);color:var(--green-dark,#0d7a4e)}
+.mini-card .mc-tag.warn{background:#fef3c7;color:#b45309}
+.mini-card .mc-tag.danger{background:#fee2e2;color:#b91c1c}
+.mini-card .mc-tag.blue{background:#dbeafe;color:#1d4ed8}
+.mini-card .mc-act{width:28px;height:28px;border-radius:7px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--text3);background:var(--card);transition:all .15s;flex-shrink:0;opacity:0}
+.mini-card:hover .mc-act{opacity:1}
+.mini-card .mc-act:hover{background:var(--green);border-color:var(--green);color:#fff}
+
+.list-add-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:10px;margin-top:10px;background:transparent;border:1.5px dashed var(--border);border-radius:10px;color:var(--text3);font-size:12px;font-weight:700;text-decoration:none;transition:all .15s}
+.list-add-btn:hover{border-color:var(--green);border-style:solid;color:var(--green);background:var(--green-light)}
+
 @media(max-width:768px){
-  .dash-compact .card{padding:12px}
-  .list-compact .ri-thumb{width:28px;height:28px;border-radius:7px}
-  .list-compact .ri-name{font-size:12.5px}
-  .list-compact .row-item{padding:7px 2px}
+  .dash-compact .card{padding:12px 14px}
+  .mini-card{padding:9px 10px;gap:10px;border-radius:10px}
+  .mini-card .mc-thumb{width:32px;height:32px;border-radius:8px;font-size:12px}
+  .mini-card .mc-name{font-size:12.5px}
+  .mini-card .mc-tag{font-size:10px;padding:1px 6px}
+  .mini-card .mc-act{opacity:1;width:26px;height:26px}
+  .mini-card:hover{transform:none}
 }
 </style>
 
@@ -240,29 +258,38 @@
 </div>
 
 <!-- Companies + Supervisors (refined) -->
-<div class="dash-two-col dash-compact list-compact">
+<div class="dash-two-col dash-compact">
   <!-- Recent Companies -->
   <div class="card">
     <div class="card-hdr-compact">
       <div class="card-title"><i class="bi bi-buildings-fill" style="color:var(--green)"></i> Companies <span class="hdr-count">{{ companies_count }}</span></div>
-      <a href="{{ url_for('admin.companies') }}" class="btn btn-outline btn-xs">View All</a>
+      <a href="{{ url_for('admin.companies') }}" class="hdr-view">View All <i class="bi bi-arrow-right-short"></i></a>
     </div>
-    {% for company in recent_companies %}
-    <div class="row-item">
-      {% if company.logo_filename %}
-      <img src="{{ url_for('static', filename='uploads/company/' + company.logo_filename) }}" class="ri-thumb" style="object-fit:contain;background:#f8fafb;border:1px solid var(--border)" alt="{{ company.name }}">
+    <div class="mini-grid">
+      {% for company in recent_companies %}
+      <a href="{{ url_for('admin.company_detail', company_id=company.id) }}" class="mini-card">
+        {% if company.logo_filename %}
+        <div class="mc-thumb" style="border:1px solid var(--border)"><img src="{{ url_for('static', filename='uploads/company/' + company.logo_filename) }}" alt="{{ company.name }}"></div>
+        {% else %}
+        <div class="mc-thumb" style="background:var(--green-light);color:var(--green)"><i class="bi bi-building"></i></div>
+        {% endif %}
+        <div class="mc-main">
+          <div class="mc-name">{{ company.name }}{% if company.is_verified %}<i class="bi bi-patch-check-fill" title="Verified" style="color:#2563eb;font-size:12px"></i>{% endif %}</div>
+          <div class="mc-meta">
+            <span class="mc-tag">{{ company.industry or 'General' }}</span>
+            {% if company.open_jobs_count > 0 %}
+            <span class="mc-tag green"><i class="bi bi-briefcase-fill" style="font-size:9px;margin-right:2px"></i>{{ company.open_jobs_count }} open</span>
+            {% else %}
+            <span class="mc-tag">No openings</span>
+            {% endif %}
+          </div>
+        </div>
+        <span class="mc-act" title="View"><i class="bi bi-arrow-right"></i></span>
+      </a>
       {% else %}
-      <div class="ri-thumb" style="background:var(--green-light);color:var(--green)"><i class="bi bi-building"></i></div>
-      {% endif %}
-      <div class="ri-main">
-        <div class="ri-name">{{ company.name }}{% if company.is_verified %}<i class="bi bi-patch-check-fill" title="Verified" style="color:#2563eb;font-size:11px"></i>{% endif %}</div>
-        <div class="ri-sub">{{ company.industry or 'General' }} · {{ company.open_jobs_count }} open</div>
-      </div>
-      <a href="{{ url_for('admin.company_detail', company_id=company.id) }}" class="btn btn-outline btn-xs ri-act"><i class="bi bi-eye"></i></a>
+      <div class="empty-state" style="padding:20px 0"><i class="bi bi-buildings"></i><p>No companies yet.</p></div>
+      {% endfor %}
     </div>
-    {% else %}
-    <div class="empty-state" style="padding:14px"><i class="bi bi-buildings"></i><p>No companies yet.</p></div>
-    {% endfor %}
     <a href="{{ url_for('admin.company_new') }}" class="list-add-btn"><i class="bi bi-plus-lg"></i> Add Company</a>
   </div>
 
@@ -270,24 +297,30 @@
   <div class="card">
     <div class="card-hdr-compact">
       <div class="card-title"><i class="bi bi-people-fill" style="color:var(--green)"></i> Supervisors <span class="hdr-count">{{ supervisors_count }}</span></div>
-      <a href="{{ url_for('admin.users') }}" class="btn btn-outline btn-xs">View All</a>
+      <a href="{{ url_for('admin.users') }}" class="hdr-view">View All <i class="bi bi-arrow-right-short"></i></a>
     </div>
-    {% for sup in recent_supervisors %}
-    {% set sup_companies = sup.company_memberships | list %}
-    <div class="row-item">
-      <div class="ri-thumb avatar">{{ sup.initials }}</div>
-      <div class="ri-main">
-        <div class="ri-name">{{ sup.full_name }}</div>
-        <div class="ri-sub">
-          {% if sup_companies %}<i class="bi bi-buildings" style="margin-right:2px"></i>{{ sup_companies[0].company.name }}{% if sup_companies|length > 1 %} +{{ sup_companies|length - 1 }}{% endif %}
-          {% else %}<span style="color:#dc2626"><i class="bi bi-exclamation-circle" style="margin-right:2px"></i>No company</span>{% endif %}
+    <div class="mini-grid">
+      {% for sup in recent_supervisors %}
+      {% set sup_companies = sup.company_memberships | list %}
+      <a href="{{ url_for('admin.user_edit', user_id=sup.id) }}" class="mini-card">
+        <div class="mc-thumb avatar">{{ sup.initials }}</div>
+        <div class="mc-main">
+          <div class="mc-name">{{ sup.full_name }}</div>
+          <div class="mc-meta">
+            {% if sup_companies %}
+            <span class="mc-tag blue"><i class="bi bi-buildings" style="font-size:9px;margin-right:2px"></i>{{ sup_companies[0].company.name }}{% if sup_companies|length > 1 %} +{{ sup_companies|length - 1 }}{% endif %}</span>
+            {% else %}
+            <span class="mc-tag danger"><i class="bi bi-exclamation-circle" style="font-size:9px;margin-right:2px"></i>No company</span>
+            {% endif %}
+            {% if sup.is_active %}<span class="mc-tag green">Active</span>{% endif %}
+          </div>
         </div>
-      </div>
-      <a href="{{ url_for('admin.user_edit', user_id=sup.id) }}" class="btn btn-outline btn-xs ri-act" title="Edit"><i class="bi bi-pencil"></i></a>
+        <span class="mc-act" title="Edit"><i class="bi bi-pencil"></i></span>
+      </a>
+      {% else %}
+      <div class="empty-state" style="padding:20px 0"><i class="bi bi-people"></i><p>No supervisors yet.</p></div>
+      {% endfor %}
     </div>
-    {% else %}
-    <div class="empty-state" style="padding:14px"><i class="bi bi-people"></i><p>No supervisors yet.</p></div>
-    {% endfor %}
     <a href="{{ url_for('admin.user_new') }}" class="list-add-btn"><i class="bi bi-person-plus-fill"></i> Add Supervisor</a>
   </div>
 </div>
