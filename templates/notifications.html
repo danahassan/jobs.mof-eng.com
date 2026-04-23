@@ -48,6 +48,7 @@
     <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn btn-outline btn-sm" type="button" onclick="pushDiagRefresh()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
       <button class="btn btn-primary btn-sm" type="button" onclick="pushDiagTest()"><i class="bi bi-send"></i> Send test push to me</button>
+      <button class="btn btn-outline btn-sm" type="button" onclick="pushForceSubscribe()" style="color:#16a34a;border-color:#16a34a"><i class="bi bi-bell"></i> Subscribe this device</button>
       <button class="btn btn-outline btn-sm" type="button" onclick="pushClearMine()" style="color:#dc2626;border-color:#dc2626"><i class="bi bi-trash"></i> Clear my push subscriptions</button>
     </div>
     <div id="pushDiagResult" style="margin-top:8px;font-size:12px;color:var(--text3)"></div>
@@ -94,6 +95,52 @@
         }
         out.innerHTML = html;
       }catch(e){ out.textContent = 'Error: '+e; }
+    }
+    async function pushForceSubscribe(){
+      const out = document.getElementById('pushDiagResult');
+      out.textContent = 'Subscribing…';
+      try{
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+          out.textContent = 'This browser does not support Push.'; return;
+        }
+        // Request permission (must happen from a user gesture — this click counts)
+        let perm = Notification.permission;
+        if (perm === 'default') perm = await Notification.requestPermission();
+        if (perm !== 'granted') { out.textContent = 'Permission: '+perm+' — cannot subscribe.'; return; }
+        const sw = await navigator.serviceWorker.ready;
+        // Fetch VAPID public key
+        const r = await fetch('/api/v1/push/vapid-public-key', {credentials:'same-origin'});
+        const j = await r.json();
+        const publicKey = j.publicKey || '';
+        if (!publicKey) { out.textContent = 'Server returned empty VAPID public key.'; return; }
+        // Drop any stale subscription (may have been created against an old key)
+        const old = await sw.pushManager.getSubscription();
+        if (old) { try { await old.unsubscribe(); } catch(_){} }
+        // Convert base64url -> Uint8Array
+        const pad = '='.repeat((4 - publicKey.length % 4) % 4);
+        const raw = atob((publicKey + pad).replace(/-/g, '+').replace(/_/g, '/'));
+        const bytes = Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+        // Subscribe
+        let sub;
+        try {
+          sub = await sw.pushManager.subscribe({userVisibleOnly: true, applicationServerKey: bytes});
+        } catch(e) {
+          out.innerHTML = '<div style="color:#dc2626">pushManager.subscribe failed:</div><div style="font-family:monospace;font-size:11px;color:#dc2626;word-break:break-all">'+(e && (e.message||e.name)||e)+'</div>';
+          return;
+        }
+        // Send to server
+        const sr = await fetch('/api/v1/push/subscribe', {
+          method:'POST', credentials:'same-origin',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify(sub.toJSON()),
+        });
+        out.innerHTML = '<div style="color:#16a34a">Subscribed OK. Server responded HTTP '+sr.status+'. Endpoint host: '+
+          (sub.endpoint||'').split('/')[2]+'</div>';
+        pushDiagRefresh();
+      }catch(e){
+        const out2 = document.getElementById('pushDiagResult');
+        out2.innerHTML = '<div style="color:#dc2626">Unexpected error:</div><div style="font-family:monospace;font-size:11px;color:#dc2626;word-break:break-all">'+(e && (e.message||e.name)||e)+'</div>';
+      }
     }
     async function pushClearMine(){
       if (!confirm('Delete all of your stored push subscriptions? You will need to enable push again from each device.')) return;
