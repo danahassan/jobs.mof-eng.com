@@ -14,7 +14,7 @@ from models import (db, User, Position, Application, ApplicationHistory,
                     Message, SupervisorRequest, University, UniversityDepartment, UniversityMember, UniversityRequest,
                     ROLE_ADMIN, ROLE_SUPERVISOR, ROLE_USER, ROLE_STUDENT, ROLE_UNIVERSITY_COORD,
                     LANG_LEVELS, ALL_STATUSES, SOURCES, STATUS_NEW, STATUS_UNIV_PENDING)
-from sqlalchemy import or_, and_
+from sqlalchemy import or_, and_, cast, Float
 from helpers import (admin_required, log_history, save_cv, allowed_file,
                      send_email, save_company_image, push_notification, log_audit,
                      get_site_settings, save_site_settings)
@@ -62,7 +62,14 @@ def _normalize_text(value):
     return ' '.join(str(value or '').strip().lower().split())
 
 
-def _admin_university_students_query(univ_id, search='', department_id=None, class_filter=''):
+def _parse_float(value):
+    try:
+        return float(str(value).strip()) if value is not None and str(value).strip() else None
+    except (ValueError, TypeError):
+        return None
+
+
+def _admin_university_students_query(univ_id, search='', department_id=None, class_filter='', major_filter='', graduation_year=None, gpa_min=None, gpa_max=None):
     q = User.query.filter_by(university_id=univ_id, role=ROLE_STUDENT)
 
     if search:
@@ -77,14 +84,22 @@ def _admin_university_students_query(univ_id, search='', department_id=None, cla
         q = q.filter(User.university_department_id == department_id)
     if class_filter:
         q = q.filter(User.university_class.ilike(f'%{class_filter}%'))
+    if major_filter:
+        q = q.filter(User.university_major.ilike(f'%{major_filter}%'))
+    if graduation_year:
+        q = q.filter(User.graduation_year == graduation_year)
+    if gpa_min is not None:
+        q = q.filter(cast(User.student_gpa, Float) >= gpa_min)
+    if gpa_max is not None:
+        q = q.filter(cast(User.student_gpa, Float) <= gpa_max)
 
     return q
 
 
 def _admin_university_student_redirect(univ_id):
     params = {}
-    for key in ('q', 'department_id', 'class_filter', 'page'):
-        value = request.args.get(key, '').strip() if key != 'page' else request.args.get(key, type=int)
+    for key in ('q', 'department_id', 'class_filter', 'major_filter', 'graduation_year', 'gpa_min', 'gpa_max', 'page'):
+        value = request.values.get(key, '').strip() if key != 'page' else request.values.get(key, type=int)
         if value:
             params[key] = value
     return redirect(url_for('admin.university_detail', univ_id=univ_id, **params))
@@ -1912,6 +1927,10 @@ def university_detail(univ_id):
     q_str = request.args.get('q', '').strip()
     department_id = request.args.get('department_id', type=int)
     class_filter = request.args.get('class_filter', '').strip()
+    major_filter = request.args.get('major_filter', '').strip()
+    graduation_year = request.args.get('graduation_year', type=int)
+    gpa_min = _parse_float(request.args.get('gpa_min', '').strip())
+    gpa_max = _parse_float(request.args.get('gpa_max', '').strip())
     departments = (UniversityDepartment.query
                    .filter_by(university_id=univ_id)
                    .order_by(UniversityDepartment.college.asc(), UniversityDepartment.name.asc())
@@ -1919,7 +1938,16 @@ def university_detail(univ_id):
     coords = (UniversityMember.query
               .filter_by(university_id=univ_id)
               .all())
-    students_q = _admin_university_students_query(univ_id, q_str, department_id, class_filter)
+    students_q = _admin_university_students_query(
+        univ_id,
+        q_str,
+        department_id,
+        class_filter,
+        major_filter,
+        graduation_year,
+        gpa_min,
+        gpa_max,
+    )
     students = students_q.order_by(User.full_name.asc()).paginate(page=page, per_page=20, error_out=False)
     student_total = User.query.filter_by(university_id=univ_id, role=ROLE_STUDENT).count()
     available_coords = User.query.filter_by(role=ROLE_UNIVERSITY_COORD, is_active=True).all()
@@ -1947,6 +1975,10 @@ def university_detail(univ_id):
         q_str=q_str,
         department_filter=department_id,
         class_filter=class_filter,
+        major_filter=major_filter,
+        graduation_year_filter=graduation_year,
+        gpa_min_filter=request.args.get('gpa_min', '').strip(),
+        gpa_max_filter=request.args.get('gpa_max', '').strip(),
         assignable_students=assignable_students,
         available_coords=available_coords,
         internship_count=internship_count)
@@ -2167,7 +2199,11 @@ def university_students_export(univ_id):
     q_str = request.args.get('q', '').strip()
     department_id = request.args.get('department_id', type=int)
     class_filter = request.args.get('class_filter', '').strip()
-    rows = (_admin_university_students_query(univ_id, q_str, department_id, class_filter)
+    major_filter = request.args.get('major_filter', '').strip()
+    graduation_year = request.args.get('graduation_year', type=int)
+    gpa_min = _parse_float(request.args.get('gpa_min', '').strip())
+    gpa_max = _parse_float(request.args.get('gpa_max', '').strip())
+    rows = (_admin_university_students_query(univ_id, q_str, department_id, class_filter, major_filter, graduation_year, gpa_min, gpa_max)
             .order_by(User.full_name.asc())
             .all())
 
@@ -2355,6 +2391,8 @@ def university_student_assign(univ_id):
     department_id = request.form.get('department_id', type=int)
     class_value = request.form.get('university_class', '').strip() or None
     major = request.form.get('university_major', '').strip() or None
+    student_gpa = request.form.get('student_gpa', '').strip() or None
+    graduation_year = _parse_int(request.form.get('graduation_year', ''))
 
     department = None
     if department_id:
@@ -2393,6 +2431,10 @@ def university_student_assign(univ_id):
     student.university_class = class_value
     if major:
         student.university_major = major
+    if student_gpa:
+        student.student_gpa = student_gpa
+    if graduation_year:
+        student.graduation_year = graduation_year
 
     _audit('university.student_assign', f'{student.email} → {univ.name}')
     db.session.commit()
@@ -2407,6 +2449,9 @@ def university_student_update(univ_id, student_id):
     student = User.query.filter_by(id=student_id, university_id=univ_id, role=ROLE_STUDENT).first_or_404()
     department_id = request.form.get('department_id', type=int)
     class_value = request.form.get('university_class', '').strip() or None
+    major = request.form.get('university_major', '').strip() or None
+    student_gpa = request.form.get('student_gpa', '').strip() or None
+    graduation_year_raw = request.form.get('graduation_year', '').strip()
 
     department = None
     if department_id:
@@ -2417,9 +2462,68 @@ def university_student_update(univ_id, student_id):
 
     student.university_department_id = department.id if department else None
     student.university_class = class_value
+    student.university_major = major
+    student.student_gpa = student_gpa
+    student.graduation_year = _parse_int(graduation_year_raw)
     _audit('university.student_update', f'{student.email} @ {univ.name}')
     db.session.commit()
     flash('Student assignment updated.', 'success')
+    return _admin_university_student_redirect(univ_id)
+
+
+@admin_bp.route('/universities/<int:univ_id>/students/bulk', methods=['POST'])
+@admin_required
+def university_students_bulk(univ_id):
+    univ = db.get_or_404(University, univ_id)
+    action = request.form.get('bulk_action', '').strip()
+    department_id = request.form.get('bulk_department_id', type=int)
+    class_value = request.form.get('bulk_class', '').strip() or None
+    student_ids = request.form.getlist('student_ids')
+
+    if not student_ids:
+        flash('Select at least one student.', 'warning')
+        return _admin_university_student_redirect(univ_id)
+
+    students = (User.query
+                .filter(User.id.in_(student_ids), User.university_id == univ_id, User.role == ROLE_STUDENT)
+                .all())
+    if not students:
+        flash('No matching students found for bulk action.', 'warning')
+        return _admin_university_student_redirect(univ_id)
+
+    department = None
+    if department_id:
+        department = _resolve_university_department(univ_id, department_id=department_id)
+        if not department:
+            flash('Invalid bulk department selected.', 'danger')
+            return _admin_university_student_redirect(univ_id)
+
+    if action == 'set_department':
+        for student in students:
+            student.university_department_id = department.id if department else None
+            if class_value is not None:
+                student.university_class = class_value
+        message = f'Updated {len(students)} student(s).'
+    elif action == 'clear_department':
+        for student in students:
+            student.university_department_id = None
+            if class_value is not None:
+                student.university_class = class_value
+        message = f'Cleared department for {len(students)} student(s).'
+    elif action == 'unlink':
+        for student in students:
+            student.university_id = None
+            student.university_name = None
+            student.university_department_id = None
+            student.university_class = None
+        message = f'Unlinked {len(students)} student(s).'
+    else:
+        flash('Choose a valid bulk action.', 'warning')
+        return _admin_university_student_redirect(univ_id)
+
+    _audit('university.students_bulk', f'{univ.name} action={action} count={len(students)}')
+    db.session.commit()
+    flash(message, 'success')
     return _admin_university_student_redirect(univ_id)
 
 
