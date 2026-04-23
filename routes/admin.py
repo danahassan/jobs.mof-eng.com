@@ -956,6 +956,7 @@ def user_new():
             phone     = request.form.get('phone', '').strip(),
             role      = request.form.get('role', ROLE_USER),
             is_active = bool(request.form.get('is_active', True)),
+            daily_new_apps_reminder = bool(request.form.get('daily_new_apps_reminder')),
         )
         user.set_password(request.form.get('password', 'ChangeMe@123'))
         db.session.add(user)
@@ -1000,6 +1001,7 @@ def user_edit(user_id):
         user.phone     = request.form.get('phone', '').strip() or None
         user.role      = request.form.get('role', user.role)
         user.is_active = bool(request.form.get('is_active'))
+        user.daily_new_apps_reminder = bool(request.form.get('daily_new_apps_reminder'))
         new_pw = request.form.get('new_password', '').strip()
         if new_pw:
             user.set_password(new_pw)

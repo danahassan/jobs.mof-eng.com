@@ -132,6 +132,17 @@
                  {% if not user or user.is_active %}checked{% endif %}>
           <label for="is_active">Account is active</label>
         </div>
+        <div class="uf-check-row" id="uf-reminder-row" style="{% if user and user.role != 'supervisor' %}display:none{% endif %}">
+          <input type="checkbox" name="daily_new_apps_reminder" id="daily_new_apps_reminder"
+                 {% if not user or user.daily_new_apps_reminder %}checked{% endif %}>
+          <label for="daily_new_apps_reminder">
+            <i class="bi bi-bell-fill" style="color:var(--green);margin-right:4px"></i>
+            Send daily 8 AM reminder for "New" applications
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;font-weight:normal">
+              Supervisor only. Sends an email each morning listing applicants still pending review.
+            </div>
+          </label>
+        </div>
       </div>
 
       {% if user %}
@@ -528,8 +539,6 @@
 {% if user %}
 <script>
 const LANG_LEVELS = {{ LANG_LEVELS | tojson }};
-
-function addSkill() {
   const c = document.getElementById('skills-list');
   const d = document.createElement('div');
   d.className = 'uf-row uf-row-skill';
@@ -631,4 +640,16 @@ function addCert() {
 }
 </script>
 {% endif %}
+
+<script>
+// Show/hide the supervisor daily reminder row depending on selected role
+(function(){
+  const roleSel = document.querySelector('select[name="role"]');
+  const remRow  = document.getElementById('uf-reminder-row');
+  if(!roleSel || !remRow) return;
+  function sync(){ remRow.style.display = (roleSel.value === 'supervisor') ? '' : 'none'; }
+  roleSel.addEventListener('change', sync);
+  sync();
+})();
+</script>
 {% endblock %}

@@ -68,6 +68,9 @@ class User(UserMixin, db.Model):
     created_at    = db.Column(db.DateTime, default=datetime.utcnow)
     last_login    = db.Column(db.DateTime)
     last_seen     = db.Column(db.DateTime)
+    # Supervisor engagement: daily reminder for "New" applications
+    daily_new_apps_reminder  = db.Column(db.Boolean, default=True)
+    daily_reminder_last_sent = db.Column(db.DateTime)
     bio           = db.Column(db.Text)
     linkedin_url  = db.Column(db.String(200))
     github_url    = db.Column(db.String(200))

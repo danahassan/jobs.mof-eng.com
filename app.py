@@ -260,6 +260,9 @@ def _migrate_db(app):
             _safe_add_column(conn, 'applications', 'supervisor_evaluation', 'TEXT')
             _safe_add_column(conn, 'applications', 'evaluation_score', 'INTEGER')
             _safe_add_column(conn, 'applications', 'completion_confirmed', 'BOOLEAN')
+            # Supervisor daily reminder preferences
+            _safe_add_column(conn, 'users', 'daily_new_apps_reminder', 'BOOLEAN')
+            _safe_add_column(conn, 'users', 'daily_reminder_last_sent', 'DATETIME')
 
 
 def _safe_add_column(conn, table, column, col_type):

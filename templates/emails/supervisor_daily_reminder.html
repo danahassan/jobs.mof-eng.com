@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width,initial-scale=1"><meta charset="UTF-8"><style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+body{font-family:'Inter',Arial,sans-serif;background:#f4f6f8;margin:0;padding:24px;color:#1a2332}
+.wrap{max-width:600px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e0e0e0;box-shadow:0 2px 12px rgba(0,0,0,.04)}
+.header{background:linear-gradient(135deg,#198754 0%,#16a34a 100%);padding:28px;color:#fff;text-align:center}
+.header .icon{font-size:42px;line-height:1;margin-bottom:8px}
+.header h1{margin:0;font-size:22px;font-weight:800;letter-spacing:-.3px}
+.header .sub{margin-top:6px;font-size:13px;opacity:.92}
+.body{padding:26px 28px}
+.greet{font-size:15px;color:#3a4a5a;margin:0 0 14px;line-height:1.55}
+.count-card{background:linear-gradient(135deg,#f0fdf4 0%,#dcfce7 100%);border:1px solid #bbf7d0;border-radius:12px;padding:18px 20px;margin:18px 0;display:flex;align-items:center;gap:16px}
+.count-num{font-size:42px;font-weight:800;color:#198754;line-height:1}
+.count-text{flex:1}
+.count-text .ct-title{font-size:14px;font-weight:700;color:#0d4d2c;margin-bottom:2px}
+.count-text .ct-sub{font-size:12px;color:#3a6b50}
+.section-title{font-size:11px;font-weight:700;color:#8a9aaa;letter-spacing:.8px;text-transform:uppercase;margin:22px 0 10px}
+.applicant-list{border:1px solid #e8ecf0;border-radius:10px;overflow:hidden}
+.applicant-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid #e8ecf0}
+.applicant-row:last-child{border-bottom:none}
+.applicant-row .ar-avatar{width:36px;height:36px;border-radius:50%;background:#dcfce7;color:#198754;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+.applicant-row .ar-main{flex:1;min-width:0}
+.applicant-row .ar-name{font-size:14px;font-weight:600;color:#1a2332;line-height:1.3}
+.applicant-row .ar-pos{font-size:11.5px;color:#6a7a8a;margin-top:2px;line-height:1.3}
+.applicant-row .ar-when{font-size:11px;color:#8a9aaa;text-align:right;flex-shrink:0;white-space:nowrap}
+.applicant-row .ar-when b{display:block;color:#d97706;font-size:11px;font-weight:700;margin-bottom:1px}
+.tip-box{background:#fef3c7;border-left:3px solid #f59e0b;padding:12px 14px;border-radius:6px;font-size:12.5px;color:#78350f;line-height:1.55;margin-top:18px}
+.tip-box b{color:#78350f}
+.cta{display:inline-block;margin-top:22px;background:#198754;color:#fff !important;text-decoration:none;padding:13px 28px;border-radius:8px;font-size:14px;font-weight:700;box-shadow:0 2px 8px rgba(25,135,84,.25)}
+.footer{background:#f8f9fa;padding:18px 28px;font-size:11.5px;color:#8a9aaa;border-top:1px solid #e0e0e0;text-align:center;line-height:1.55}
+.footer a{color:#8a9aaa;text-decoration:underline}
+.more-note{font-size:12px;color:#6a7a8a;text-align:center;padding:10px;font-style:italic}
+@media (max-width:600px){
+  body{padding:0 !important}
+  .wrap{width:100% !important;max-width:100% !important;border-radius:0 !important;border:none !important}
+  .header{padding:22px 18px !important}
+  .body{padding:20px 18px !important}
+  .footer{padding:16px 18px !important}
+  .count-card{flex-direction:column;text-align:center;gap:8px;padding:16px}
+  .count-num{font-size:36px}
+  .applicant-row{padding:10px 12px;gap:10px}
+  .applicant-row .ar-when{font-size:10.5px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div class="icon">☀️</div>
+    <h1>Good Morning, {{ supervisor.full_name.split()[0] }}!</h1>
+    <div class="sub">Your daily applicant review reminder</div>
+  </div>
+
+  <div class="body">
+    <p class="greet">
+      You have <b>{{ count }}</b> {% if count == 1 %}applicant{% else %}applicants{% endif %} waiting for your review.
+      Please take a moment today to evaluate their applications and help us deliver a great candidate experience.
+    </p>
+
+    <div class="count-card">
+      <div class="count-num">{{ count }}</div>
+      <div class="count-text">
+        <div class="ct-title">{% if count == 1 %}New application{% else %}New applications{% endif %} pending</div>
+        <div class="ct-sub">Currently in <b>"New"</b> status — awaiting your first review</div>
+      </div>
+    </div>
+
+    <div class="section-title">Applicants Awaiting You</div>
+    <div class="applicant-list">
+      {% for app in apps[:10] %}
+      <div class="applicant-row">
+        <div class="ar-avatar">{{ app.applicant.initials }}</div>
+        <div class="ar-main">
+          <div class="ar-name">{{ app.applicant.full_name }}</div>
+          <div class="ar-pos">{{ app.position.title }}{% if app.position.company %} · {{ app.position.company.name }}{% endif %}</div>
+        </div>
+        <div class="ar-when">
+          <b>{{ ((now - app.applied_at).days) }}d</b>
+          ago
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% if count > 10 %}
+    <div class="more-note">+ {{ count - 10 }} more {% if count - 10 == 1 %}applicant{% else %}applicants{% endif %} not shown</div>
+    {% endif %}
+
+    <div class="tip-box">
+      <b>💡 Why act today?</b> Applicants who hear back within 48 hours are <b>3× more likely</b> to accept an offer.
+      A quick review — even a status change — keeps candidates engaged with MOF Jobs.
+    </div>
+
+    <div style="text-align:center">
+      <a href="{{ site_url }}/supervisor/applications?status=New" class="cta">Review Applications →</a>
+    </div>
+  </div>
+
+  <div class="footer">
+    You're receiving this because daily reminders are enabled on your supervisor account.<br>
+    To opt out, ask an administrator to disable "Daily 8 AM reminder" on your profile.<br>
+    <span style="opacity:.7">© MOF Jobs Portal · {{ now.strftime('%Y') }}</span>
+  </div>
+</div>
+</body>
+</html>
