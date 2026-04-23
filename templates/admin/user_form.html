@@ -143,6 +143,19 @@
             </div>
           </label>
         </div>
+        {% if user and user.role == 'supervisor' %}
+        <div id="uf-reminder-test" style="margin:6px 0 0 28px">
+          <form method="POST" action="{{ url_for('admin.user_send_reminder_test', user_id=user.id) }}"
+                style="display:inline" onsubmit="return confirm('Send a test reminder email to {{ user.email }} now?');">
+            <button type="submit" class="btn btn-outline btn-xs">
+              <i class="bi bi-send"></i> Send test reminder now
+            </button>
+          </form>
+          <span style="font-size:11px;color:var(--text3);margin-left:6px">
+            Previews the email immediately. Requires at least one application in "New" status visible to this supervisor.
+          </span>
+        </div>
+        {% endif %}
       </div>
 
       {% if user %}

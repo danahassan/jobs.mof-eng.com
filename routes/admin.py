@@ -1118,6 +1118,57 @@ def user_toggle(user_id):
     return redirect(request.referrer or url_for('admin.users'))
 
 
+@admin_bp.route('/users/<int:user_id>/send-reminder-test', methods=['POST'])
+@admin_required
+def user_send_reminder_test(user_id):
+    """Send a one-off preview of the supervisor daily reminder email.
+
+    Bypasses the 'already sent today' guard and the opt-in flag so admins
+    can preview the email regardless of current settings.
+    """
+    from datetime import datetime
+    from sqlalchemy import or_
+    from models import Application, Position, CompanyMember, STATUS_NEW
+    user = db.get_or_404(User, user_id)
+    if user.role != ROLE_SUPERVISOR:
+        flash('Test reminder can only be sent to supervisors.', 'warning')
+        return redirect(url_for('admin.user_edit', user_id=user.id))
+
+    # Build the same query the cron uses
+    managed_company_ids = [m.company_id for m in
+                            CompanyMember.query.filter_by(user_id=user.id, role='manager').all()]
+    managed_pos_ids = []
+    if managed_company_ids:
+        managed_pos_ids = [p.id for p in
+                            Position.query.filter(Position.company_id.in_(managed_company_ids)).all()]
+    q = Application.query.filter(Application.status == STATUS_NEW)
+    if managed_pos_ids:
+        q = q.filter(or_(Application.position_id.in_(managed_pos_ids),
+                         Application.assigned_to_id == user.id))
+    else:
+        q = q.filter(Application.assigned_to_id == user.id)
+    apps = q.order_by(Application.applied_at.asc()).all()
+
+    if not apps:
+        flash(f'No applications in "New" status visible to {user.full_name}. '
+              'Email not sent (would be empty). Add a test application or assign one to preview.', 'warning')
+        return redirect(url_for('admin.user_edit', user_id=user.id))
+
+    try:
+        now = datetime.utcnow()
+        site_url = request.host_url.rstrip('/')
+        html = render_template('emails/supervisor_daily_reminder.html',
+                               supervisor=user, apps=apps, count=len(apps),
+                               now=now, site_url=site_url)
+        subject = f'[TEST] Reminder: {len(apps)} applicant{"s" if len(apps) != 1 else ""} waiting for your review'
+        send_email(user.email, subject, html)
+        flash(f'Test reminder email sent to {user.email} ({len(apps)} applicants listed).', 'success')
+    except Exception as ex:
+        current_app.logger.exception('Test reminder email failed: %s', ex)
+        flash(f'Failed to send test email: {ex}', 'danger')
+    return redirect(url_for('admin.user_edit', user_id=user.id))
+
+
 @admin_bp.route('/users/<int:user_id>/delete', methods=['POST'])
 @admin_required
 def user_delete(user_id):
