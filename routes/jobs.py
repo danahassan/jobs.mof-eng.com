@@ -15,9 +15,8 @@ jobs_bp = Blueprint('jobs', __name__)
 @jobs_bp.route('/')
 def listing():
     """Public advanced job listing with filters."""
-    # Students should only browse internships via their own portal
-    if current_user.is_authenticated and current_user.role == ROLE_STUDENT:
-        return redirect(url_for('user.browse'))
+    # Students browse internships only (same rich UI as jobs)
+    is_student = current_user.is_authenticated and current_user.role == ROLE_STUDENT
     q          = request.args.get('q', '').strip()
     dept       = request.args.get('dept', '').strip()
     jtype      = request.args.get('type', '').strip()
@@ -34,7 +33,9 @@ def listing():
         or_(Position.closes_at.is_(None), Position.closes_at >= now))
 
     # Internships are only visible to authenticated non-ROLE_USER accounts
-    if not current_user.is_authenticated or current_user.role == ROLE_USER:
+    if is_student:
+        query = query.filter(Position.type == 'Internship')
+    elif not current_user.is_authenticated or current_user.role == ROLE_USER:
         query = query.filter(Position.type != 'Internship')
 
     if q:
@@ -107,7 +108,8 @@ def listing():
         saved_ids=saved_ids, recommended=recommended,
         q=q, dept=dept, jtype=jtype, exp=exp, location=location,
         remote=remote, salary_min=salary_min, sort=sort,
-        kpi_remote=kpi_remote, kpi_apps_7d=kpi_apps_7d)
+        kpi_remote=kpi_remote, kpi_apps_7d=kpi_apps_7d,
+        is_student=is_student)
 
 
 @jobs_bp.route('/<int:job_id>')
@@ -120,6 +122,9 @@ def detail(job_id):
     if job.type == 'Internship':
         if not current_user.is_authenticated or current_user.role == ROLE_USER:
             abort(404)
+    # Non-internship positions hidden from students
+    elif current_user.is_authenticated and current_user.role == ROLE_STUDENT:
+        abort(404)
 
     # Track view
     job.views_count = (job.views_count or 0) + 1

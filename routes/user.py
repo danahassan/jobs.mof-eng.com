@@ -35,6 +35,9 @@ def dashboard():
 @user_bp.route('/browse')
 def browse():
     """Public job listing — no login required."""
+    # Students get the rich jobs listing UI in internship-only mode
+    if current_user.is_authenticated and current_user.role == ROLE_STUDENT:
+        return redirect(url_for('jobs.listing'))
     dept    = request.args.get('dept', '')
     search  = request.args.get('q', '').strip()
     jtype   = request.args.get('type', '')

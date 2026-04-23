@@ -1,6 +1,6 @@
 ﻿{% extends 'base.html' %}
-{% block title %}Jobs — MOF Jobs{% endblock %}
-{% block page_title %}Browse Jobs{% endblock %}
+{% block title %}{{ 'Internships' if is_student else 'Jobs' }} — MOF Jobs{% endblock %}
+{% block page_title %}Browse {{ 'Internships' if is_student else 'Jobs' }}{% endblock %}
 {% block page_breadcrumb %}Opportunities{% endblock %}
 
 {% block extra_css %}
@@ -179,7 +179,7 @@
 <!-- Results header -->
 <div class="section-header" style="margin-bottom:14px">
   <span style="font-size:13px;color:var(--text3)">
-    {{ positions.total }} job{{ 's' if positions.total != 1 }} found
+    {{ positions.total }} {{ ('internship' if is_student else 'job') }}{{ 's' if positions.total != 1 }} found
     {% if q or jtype or exp or location or dept or remote or salary_min %}
     &nbsp;·&nbsp;<a href="{{ url_for('jobs.listing') }}" style="font-size:12px">Clear all</a>
     {% endif %}
@@ -253,7 +253,7 @@
 {% else %}
 <div class="card" style="padding:60px;text-align:center">
   <i class="bi bi-briefcase" style="font-size:48px;color:var(--text3);display:block;margin-bottom:16px;opacity:.3"></i>
-  <h3 style="margin-bottom:8px">No jobs found</h3>
+  <h3 style="margin-bottom:8px">No {{ 'internships' if is_student else 'jobs' }} found</h3>
   <p style="color:var(--text3);margin-bottom:16px">Try different keywords or clear your filters.</p>
   <a href="{{ url_for('jobs.listing') }}" class="btn btn-primary">Clear all filters</a>
 </div>
