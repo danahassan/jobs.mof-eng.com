@@ -98,48 +98,64 @@
     }
     async function pushForceSubscribe(){
       const out = document.getElementById('pushDiagResult');
-      out.textContent = 'Subscribing…';
+      const log = [];
+      const render = () => { out.innerHTML = '<pre style="white-space:pre-wrap;font-family:monospace;font-size:11px;margin:0">'+log.join('\n')+'</pre>'; };
+      const step = (msg) => { log.push('• '+msg); render(); };
+      const fail = (msg) => { log.push('✗ '+msg); render(); };
+      const ok   = (msg) => { log.push('✓ '+msg); render(); };
       try{
+        step('starting');
         if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-          out.textContent = 'This browser does not support Push.'; return;
+          fail('Push not supported in this browser'); return;
         }
-        // Request permission (must happen from a user gesture — this click counts)
+        step('permission = '+Notification.permission);
         let perm = Notification.permission;
-        if (perm === 'default') perm = await Notification.requestPermission();
-        if (perm !== 'granted') { out.textContent = 'Permission: '+perm+' — cannot subscribe.'; return; }
+        if (perm === 'default') {
+          step('requesting permission…');
+          perm = await Notification.requestPermission();
+          step('permission after request = '+perm);
+        }
+        if (perm !== 'granted') { fail('permission not granted'); return; }
+        step('awaiting serviceWorker.ready…');
         const sw = await navigator.serviceWorker.ready;
-        // Fetch VAPID public key
+        ok('sw ready, scope='+sw.scope);
+        step('fetching VAPID public key…');
         const r = await fetch('/api/v1/push/vapid-public-key', {credentials:'same-origin'});
         const j = await r.json();
         const publicKey = j.publicKey || '';
-        if (!publicKey) { out.textContent = 'Server returned empty VAPID public key.'; return; }
-        // Drop any stale subscription (may have been created against an old key)
+        ok('VAPID public key len='+publicKey.length+' preview='+publicKey.slice(0,20)+'…');
+        if (!publicKey) { fail('server returned empty key'); return; }
+        step('checking for existing subscription…');
         const old = await sw.pushManager.getSubscription();
-        if (old) { try { await old.unsubscribe(); } catch(_){} }
-        // Convert base64url -> Uint8Array
+        if (old) {
+          step('existing found, unsubscribing…');
+          try { await old.unsubscribe(); ok('old unsubscribed'); } catch(e){ fail('unsubscribe threw: '+(e.message||e)); }
+        } else { step('no existing subscription'); }
         const pad = '='.repeat((4 - publicKey.length % 4) % 4);
         const raw = atob((publicKey + pad).replace(/-/g, '+').replace(/_/g, '/'));
         const bytes = Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
-        // Subscribe
+        step('calling pushManager.subscribe (may take up to 30s)…');
+        // Add a 25-second timeout to detect hangs
+        const subPromise = sw.pushManager.subscribe({userVisibleOnly: true, applicationServerKey: bytes});
+        const timeout = new Promise((_, rej) => setTimeout(()=>rej(new Error('subscribe() timed out after 25s')), 25000));
         let sub;
         try {
-          sub = await sw.pushManager.subscribe({userVisibleOnly: true, applicationServerKey: bytes});
+          sub = await Promise.race([subPromise, timeout]);
         } catch(e) {
-          out.innerHTML = '<div style="color:#dc2626">pushManager.subscribe failed:</div><div style="font-family:monospace;font-size:11px;color:#dc2626;word-break:break-all">'+(e && (e.message||e.name)||e)+'</div>';
+          fail('pushManager.subscribe failed: '+(e && (e.name+': '+e.message) || e));
           return;
         }
-        // Send to server
+        ok('subscribed: '+(sub.endpoint||'').split('/')[2]);
+        step('POST /api/v1/push/subscribe …');
         const sr = await fetch('/api/v1/push/subscribe', {
           method:'POST', credentials:'same-origin',
           headers:{'Content-Type':'application/json'},
           body: JSON.stringify(sub.toJSON()),
         });
-        out.innerHTML = '<div style="color:#16a34a">Subscribed OK. Server responded HTTP '+sr.status+'. Endpoint host: '+
-          (sub.endpoint||'').split('/')[2]+'</div>';
-        pushDiagRefresh();
+        ok('server responded HTTP '+sr.status);
+        setTimeout(pushDiagRefresh, 500);
       }catch(e){
-        const out2 = document.getElementById('pushDiagResult');
-        out2.innerHTML = '<div style="color:#dc2626">Unexpected error:</div><div style="font-family:monospace;font-size:11px;color:#dc2626;word-break:break-all">'+(e && (e.message||e.name)||e)+'</div>';
+        fail('unexpected: '+(e && (e.name+': '+e.message) || e));
       }
     }
     async function pushClearMine(){
