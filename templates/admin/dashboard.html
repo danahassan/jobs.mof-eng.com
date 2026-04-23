@@ -99,8 +99,35 @@
   </a>
 </div>
 
-<!-- Middle row: Status + Source -->
-<div class="dash-two-col dashboard-mid">
+<!-- Middle row: Status + Source (compact) -->
+<style>
+.dash-compact{gap:12px;margin-bottom:14px}
+.dash-compact .card{padding:12px 14px}
+.dash-compact .card-title{margin-bottom:8px;font-size:13px}
+.stat-row{display:flex;align-items:center;gap:8px;padding:4px 0}
+.stat-row .sr-lbl{font-size:12px;color:var(--text2);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat-row .sr-num{font-size:12px;font-weight:700;color:var(--text);min-width:28px;text-align:right}
+.stat-row .mini-bar{flex:2;height:5px;margin:0}
+.src-chips{display:flex;flex-wrap:wrap;gap:6px}
+.src-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:16px;background:var(--bg);border:1px solid var(--border);font-size:12px;color:var(--text2)}
+.src-chip .sc-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.src-chip .sc-num{font-weight:700;color:var(--text);font-size:12px}
+.list-compact .row-item{display:flex;align-items:center;gap:9px;padding:6px 0;border-bottom:1px solid var(--border)}
+.list-compact .row-item:last-of-type{border-bottom:0}
+.list-compact .ri-main{flex:1;min-width:0}
+.list-compact .ri-name{font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.25}
+.list-compact .ri-sub{font-size:10.5px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.25}
+.list-compact .ri-thumb{width:28px;height:28px;border-radius:7px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}
+.list-compact .ri-act{padding:3px 7px;font-size:11px}
+.card-hdr-compact{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.card-hdr-compact .card-title{margin:0;font-size:13px}
+@media(max-width:768px){
+  .dash-compact .card{padding:10px 12px}
+  .stat-row .sr-lbl{font-size:11.5px}
+  .list-compact .row-item{padding:5px 0}
+}
+</style>
+<div class="dash-two-col dash-compact dashboard-mid">
   <!-- By Status -->
   <div class="card">
     <div class="card-title"><i class="bi bi-bar-chart-fill"></i> By Status</div>
@@ -108,97 +135,80 @@
       'New': '#16a34a', 'Under Review': '#2563eb', 'Interview': '#7c3aed',
       'Offer': '#d97706', 'Hired': '#198754', 'Rejected': '#dc2626', 'Future Consideration': '#64748b'
     } %}
-    {% for s, count in status_counts.items() %}
-    {% if count > 0 %}
-    <div style="margin-bottom:10px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-        <span style="font-size:12px;font-weight:500;color:var(--text2)">{{ s }}</span>
-        <span style="font-size:12px;font-weight:700;color:var(--text)">{{ count }}</span>
-      </div>
-      <div class="mini-bar">
-        <div class="mini-bar-fill" style="width:{{ count * 100 // [total_apps, 1]|max }}%;background:{{ status_colors.get(s, '#64748b') }}"></div>
-      </div>
+    {% for s, count in status_counts.items() %}{% if count > 0 %}
+    <div class="stat-row">
+      <span class="sr-lbl">{{ s }}</span>
+      <div class="mini-bar"><div class="mini-bar-fill" style="width:{{ count * 100 // [total_apps, 1]|max }}%;background:{{ status_colors.get(s, '#64748b') }}"></div></div>
+      <span class="sr-num">{{ count }}</span>
     </div>
-    {% endif %}
-    {% endfor %}
+    {% endif %}{% endfor %}
   </div>
 
   <!-- By Source -->
   <div class="card">
     <div class="card-title"><i class="bi bi-pie-chart-fill"></i> By Source</div>
     {% set source_colors = ['#198754','#0284c7','#7c3aed','#d97706','#dc2626'] %}
-    {% for src, count in source_counts.items() %}
-    {% if count > 0 %}
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border)">
-      <div style="display:flex;align-items:center;gap:8px">
-        <div style="width:8px;height:8px;border-radius:50%;background:{{ source_colors[loop.index0 % 5] }};flex-shrink:0"></div>
-        <span style="font-size:13px;color:var(--text2)">{{ src }}</span>
-      </div>
-      <span class="badge badge-future">{{ count }}</span>
+    <div class="src-chips">
+      {% for src, count in source_counts.items() %}{% if count > 0 %}
+      <span class="src-chip">
+        <span class="sc-dot" style="background:{{ source_colors[loop.index0 % 5] }}"></span>
+        {{ src }} <span class="sc-num">{{ count }}</span>
+      </span>
+      {% endif %}{% endfor %}
     </div>
-    {% endif %}
-    {% endfor %}
   </div>
 </div>
 
-<!-- Companies + Supervisors side by side -->
-<div class="dash-two-col">
+<!-- Companies + Supervisors (compact) -->
+<div class="dash-two-col dash-compact list-compact">
   <!-- Recent Companies -->
   <div class="card">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-      <div class="card-title" style="margin-bottom:0"><i class="bi bi-buildings-fill"></i> Companies <span style="font-size:12px;font-weight:500;color:var(--text3);margin-left:4px">({{ companies_count }} active)</span></div>
+    <div class="card-hdr-compact">
+      <div class="card-title"><i class="bi bi-buildings-fill"></i> Companies <span style="font-size:11px;font-weight:500;color:var(--text3)">({{ companies_count }})</span></div>
       <a href="{{ url_for('admin.companies') }}" class="btn btn-outline btn-xs">View All</a>
     </div>
     {% for company in recent_companies %}
-    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+    <div class="row-item">
       {% if company.logo_filename %}
-      <img src="{{ url_for('static', filename='uploads/company/' + company.logo_filename) }}" style="width:32px;height:32px;border-radius:8px;object-fit:contain;background:#f8fafb;border:1px solid var(--border);flex-shrink:0" alt="{{ company.name }}">
+      <img src="{{ url_for('static', filename='uploads/company/' + company.logo_filename) }}" class="ri-thumb" style="object-fit:contain;background:#f8fafb;border:1px solid var(--border)" alt="{{ company.name }}">
       {% else %}
-      <div style="width:32px;height:32px;border-radius:8px;background:var(--green-light);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-        <i class="bi bi-building" style="color:var(--green);font-size:15px"></i>
-      </div>
+      <div class="ri-thumb" style="background:var(--green-light);color:var(--green)"><i class="bi bi-building"></i></div>
       {% endif %}
-      <div style="flex:1;min-width:0">
-        <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ company.name }}</div>
-        <div style="font-size:11px;color:var(--text3)">{{ company.industry or 'General' }} · {{ company.open_jobs_count }} open jobs</div>
+      <div class="ri-main">
+        <div class="ri-name">{{ company.name }}{% if company.is_verified %} <i class="bi bi-patch-check-fill" title="Verified" style="color:#2563eb;font-size:11px"></i>{% endif %}</div>
+        <div class="ri-sub">{{ company.industry or 'General' }} · {{ company.open_jobs_count }} open</div>
       </div>
-      {% if company.is_verified %}
-      <span title="Verified" style="color:#2563eb;font-size:13px"><i class="bi bi-patch-check-fill"></i></span>
-      {% endif %}
-      <a href="{{ url_for('admin.company_detail', company_id=company.id) }}" class="btn btn-outline btn-xs"><i class="bi bi-eye"></i></a>
+      <a href="{{ url_for('admin.company_detail', company_id=company.id) }}" class="btn btn-outline btn-xs ri-act"><i class="bi bi-eye"></i></a>
     </div>
     {% else %}
-    <div class="empty-state" style="padding:20px"><i class="bi bi-buildings"></i><p>No companies yet.</p></div>
+    <div class="empty-state" style="padding:14px"><i class="bi bi-buildings"></i><p>No companies yet.</p></div>
     {% endfor %}
-    <a href="{{ url_for('admin.company_new') }}" class="btn btn-outline btn-sm" style="width:100%;text-align:center;justify-content:center;margin-top:12px"><i class="bi bi-plus-lg"></i> Add Company</a>
+    <a href="{{ url_for('admin.company_new') }}" class="btn btn-outline btn-xs" style="width:100%;text-align:center;justify-content:center;margin-top:8px"><i class="bi bi-plus-lg"></i> Add Company</a>
   </div>
 
   <!-- Recent Supervisors -->
   <div class="card">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-      <div class="card-title" style="margin-bottom:0"><i class="bi bi-people-fill"></i> Supervisors <span style="font-size:12px;font-weight:500;color:var(--text3);margin-left:4px">({{ supervisors_count }} active)</span></div>
+    <div class="card-hdr-compact">
+      <div class="card-title"><i class="bi bi-people-fill"></i> Supervisors <span style="font-size:11px;font-weight:500;color:var(--text3)">({{ supervisors_count }})</span></div>
       <a href="{{ url_for('admin.users') }}" class="btn btn-outline btn-xs">View All</a>
     </div>
     {% for sup in recent_supervisors %}
     {% set sup_companies = sup.company_memberships | list %}
-    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
-      <div class="avatar" style="width:32px;height:32px;font-size:11px;flex-shrink:0">{{ sup.initials }}</div>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ sup.full_name }}</div>
-        <div style="font-size:11px;color:var(--text3)">
-          {% if sup_companies %}
-            <i class="bi bi-buildings" style="margin-right:3px"></i>{{ sup_companies[0].company.name }}{% if sup_companies|length > 1 %} +{{ sup_companies|length - 1 }}{% endif %}
-          {% else %}
-            <span style="color:#dc2626"><i class="bi bi-exclamation-circle" style="margin-right:3px"></i>No company assigned</span>
-          {% endif %}
+    <div class="row-item">
+      <div class="ri-thumb avatar" style="width:28px;height:28px">{{ sup.initials }}</div>
+      <div class="ri-main">
+        <div class="ri-name">{{ sup.full_name }}</div>
+        <div class="ri-sub">
+          {% if sup_companies %}<i class="bi bi-buildings" style="margin-right:2px"></i>{{ sup_companies[0].company.name }}{% if sup_companies|length > 1 %} +{{ sup_companies|length - 1 }}{% endif %}
+          {% else %}<span style="color:#dc2626"><i class="bi bi-exclamation-circle" style="margin-right:2px"></i>No company</span>{% endif %}
         </div>
       </div>
-      <a href="{{ url_for('admin.user_edit', user_id=sup.id) }}" class="btn btn-outline btn-xs" title="Edit profile"><i class="bi bi-pencil"></i></a>
+      <a href="{{ url_for('admin.user_edit', user_id=sup.id) }}" class="btn btn-outline btn-xs ri-act" title="Edit"><i class="bi bi-pencil"></i></a>
     </div>
     {% else %}
-    <div class="empty-state" style="padding:20px"><i class="bi bi-people"></i><p>No supervisors yet.</p></div>
+    <div class="empty-state" style="padding:14px"><i class="bi bi-people"></i><p>No supervisors yet.</p></div>
     {% endfor %}
-    <a href="{{ url_for('admin.user_new') }}" class="btn btn-outline btn-sm" style="width:100%;text-align:center;justify-content:center;margin-top:12px"><i class="bi bi-person-plus-fill"></i> Add Supervisor</a>
+    <a href="{{ url_for('admin.user_new') }}" class="btn btn-outline btn-xs" style="width:100%;text-align:center;justify-content:center;margin-top:8px"><i class="bi bi-person-plus-fill"></i> Add Supervisor</a>
   </div>
 </div>
 
