@@ -48,7 +48,7 @@ def _coordinator_for_student(student):
     if not student or not student.university_id:
         return None
     members = (UniversityMember.query
-               .filter_by(university_id=student.university_id, is_active=True)
+               .filter_by(university_id=student.university_id)
                .all())
     if not members:
         return None
@@ -74,7 +74,7 @@ def _coordinator_student_ids(coord):
     if coord.role == ROLE_ADMIN:
         return [u.id for u in User.query.filter_by(role=ROLE_STUDENT).all()]
     membership = UniversityMember.query.filter_by(
-        user_id=coord.id, is_active=True).first()
+        user_id=coord.id).first()
     if not membership:
         return []
     q = User.query.filter_by(role=ROLE_STUDENT, university_id=membership.university_id)
