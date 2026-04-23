@@ -98,10 +98,12 @@
       </button>
       <div class="msd-panel">
         {% for t in POSITION_TYPES %}
+          {% if scope == 'all' or (scope == 'internship' and t == 'Internship') or (scope == 'job' and t != 'Internship') %}
         <label class="msd-option">
           <input type="checkbox" name="type" value="{{ t }}" {% if t in types_f %}checked{% endif %}>
           <span>{{ t }}</span>
         </label>
+          {% endif %}
         {% endfor %}
       </div>
     </div>
