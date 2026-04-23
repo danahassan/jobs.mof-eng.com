@@ -71,6 +71,12 @@ class User(UserMixin, db.Model):
     # Supervisor engagement: daily reminder for "New" applications
     daily_new_apps_reminder  = db.Column(db.Boolean, default=True)
     daily_reminder_last_sent = db.Column(db.DateTime)
+    # Student engagement: weekly job-match digest (matches skills/major to new internships)
+    weekly_job_match_digest      = db.Column(db.Boolean, default=True)
+    job_match_digest_last_sent   = db.Column(db.DateTime)
+    # University coordinator engagement: weekly cohort digest (pending approvals + at-risk)
+    weekly_coord_digest          = db.Column(db.Boolean, default=True)
+    coord_digest_last_sent       = db.Column(db.DateTime)
     bio           = db.Column(db.Text)
     linkedin_url  = db.Column(db.String(200))
     github_url    = db.Column(db.String(200))

@@ -1,9 +1,10 @@
 import secrets
 import io
+from datetime import datetime, timedelta
 from flask import (Blueprint, render_template, redirect, url_for,
                    flash, request, current_app, abort, jsonify, send_file)
 from flask_login import current_user
-from sqlalchemy import or_, false as sql_false
+from sqlalchemy import or_, false as sql_false, func
 from models import (db, User, Application, Position, University, UniversityDepartment, UniversityMember,
                     ApplicationHistory, CompanyMember,
                     ROLE_STUDENT, ROLE_UNIVERSITY_COORD, ROLE_ADMIN,
@@ -55,6 +56,9 @@ def dashboard():
     # Status breakdown
     status_counts = {s: internship_q.filter_by(status=s).count() for s in ALL_STATUSES}
 
+    # ── Cohort intelligence ──────────────────────────────────────────────
+    cohort = _cohort_insights(univ, membership, student_ids, internship_q)
+
     return render_template('university/dashboard.html',
         univ=univ,
         total_students=total_students,
@@ -63,6 +67,7 @@ def dashboard():
         hired_count=hired_count,
         recent_apps=recent_apps,
         status_counts=status_counts,
+        cohort=cohort,
         ALL_STATUSES=ALL_STATUSES)
 
 
@@ -703,3 +708,125 @@ def _parse_int(s):
         return int(str(s).strip()) if s and str(s).strip() else None
     except (ValueError, TypeError):
         return None
+
+
+def _cohort_insights(univ, membership, student_ids, internship_q):
+    """Compute cohort intelligence for the coordinator dashboard.
+
+    Returns a dict with these keys (always present, may be empty):
+      - placement_rate            : int 0..100 (% of students who got Hired)
+      - interview_rate            : int 0..100 (% of apps that reached Interview+)
+      - response_avg_days         : float | None (avg days between Applied and first status change)
+      - apps_last_30              : int (apps in last 30 days)
+      - apps_prev_30              : int (apps in days 30-60 ago)
+      - active_students           : int (students with >=1 application)
+      - inactive_students         : int (students with 0 apps)
+      - at_risk                   : list[dict] of up to 8 students needing outreach
+      - top_positions             : list[(title, count)] top 5 positions students applied to
+      - top_companies             : list[(name, count)] top 5 hiring partners
+      - dept_breakdown            : list[dict{name,students,apps,placed}] per department (if no scope)
+      - pending_approvals         : int (STATUS_UNIV_PENDING count)
+    """
+    insights = {
+        'placement_rate': 0, 'interview_rate': 0,
+        'response_avg_days': None,
+        'apps_last_30': 0, 'apps_prev_30': 0,
+        'active_students': 0, 'inactive_students': 0,
+        'at_risk': [], 'top_positions': [], 'top_companies': [],
+        'dept_breakdown': [], 'pending_approvals': 0,
+    }
+    if not student_ids:
+        return insights
+    now = datetime.utcnow()
+    cutoff_30 = now - timedelta(days=30)
+    cutoff_60 = now - timedelta(days=60)
+
+    # Placement / interview rates
+    total_apps = internship_q.count()
+    if total_apps:
+        hired = internship_q.filter(Application.status == STATUS_HIRED).count()
+        reached_interview = internship_q.filter(
+            Application.status.in_([STATUS_INTERVIEW, STATUS_OFFER, STATUS_HIRED])
+        ).count()
+        # Placement rate = % of students with at least one Hired
+        hired_student_ids = {a.applicant_id for a in
+                             internship_q.filter(Application.status == STATUS_HIRED).all()}
+        insights['placement_rate'] = round(len(hired_student_ids) * 100 / max(len(student_ids), 1))
+        insights['interview_rate'] = round(reached_interview * 100 / max(total_apps, 1))
+
+    insights['apps_last_30'] = internship_q.filter(Application.applied_at >= cutoff_30).count()
+    insights['apps_prev_30'] = internship_q.filter(
+        Application.applied_at >= cutoff_60, Application.applied_at < cutoff_30).count()
+    insights['pending_approvals'] = internship_q.filter(
+        Application.status == STATUS_UNIV_PENDING).count()
+
+    # Avg time-to-response — first ApplicationHistory entry per app where status changed
+    apps_with_response = (db.session.query(
+            Application.id, Application.applied_at, func.min(ApplicationHistory.created_at))
+        .join(ApplicationHistory, ApplicationHistory.application_id == Application.id)
+        .filter(Application.applicant_id.in_(student_ids))
+        .filter(ApplicationHistory.new_status.isnot(None))
+        .group_by(Application.id, Application.applied_at)
+        .all())
+    if apps_with_response:
+        diffs = []
+        for _aid, applied_at, first_change in apps_with_response:
+            if applied_at and first_change and first_change > applied_at:
+                diffs.append((first_change - applied_at).total_seconds() / 86400.0)
+        if diffs:
+            insights['response_avg_days'] = round(sum(diffs) / len(diffs), 1)
+
+    # Active vs inactive students
+    applicant_ids = {row[0] for row in db.session.query(Application.applicant_id)
+                     .filter(Application.applicant_id.in_(student_ids)).distinct().all()}
+    insights['active_students']   = len(applicant_ids)
+    insights['inactive_students'] = max(len(student_ids) - len(applicant_ids), 0)
+
+    # At-risk students: no apps in 30 days OR profile strength < 40
+    inactive_ids = [sid for sid in student_ids if sid not in applicant_ids]
+    if inactive_ids:
+        students = (User.query.filter(User.id.in_(inactive_ids))
+                    .order_by(User.created_at.desc()).limit(8).all())
+        for s in students:
+            insights['at_risk'].append({
+                'id': s.id, 'name': s.full_name, 'email': s.email,
+                'reason': 'No applications submitted yet',
+                'profile_pct': s.profile_strength,
+                'major': s.university_major or '—',
+            })
+
+    # Top positions/companies
+    pos_counts = (db.session.query(Position.title, func.count(Application.id).label('c'))
+                  .join(Application, Application.position_id == Position.id)
+                  .filter(Application.applicant_id.in_(student_ids))
+                  .group_by(Position.title).order_by(func.count(Application.id).desc())
+                  .limit(5).all())
+    insights['top_positions'] = [(t, c) for (t, c) in pos_counts]
+
+    from models import Company
+    comp_counts = (db.session.query(Company.name, func.count(Application.id).label('c'))
+                   .join(Position, Position.company_id == Company.id)
+                   .join(Application, Application.position_id == Position.id)
+                   .filter(Application.applicant_id.in_(student_ids))
+                   .group_by(Company.name).order_by(func.count(Application.id).desc())
+                   .limit(5).all())
+    insights['top_companies'] = [(n, c) for (n, c) in comp_counts]
+
+    # Department breakdown — only show if coordinator scope is full university
+    if univ and not (membership and membership.department_id):
+        for dept in UniversityDepartment.query.filter_by(university_id=univ.id, is_active=True).all():
+            dept_student_ids = [u.id for u in
+                                User.query.filter_by(university_department_id=dept.id, role=ROLE_STUDENT).all()]
+            if not dept_student_ids:
+                continue
+            dapps = Application.query.filter(Application.applicant_id.in_(dept_student_ids))
+            insights['dept_breakdown'].append({
+                'name': dept.name,
+                'students': len(dept_student_ids),
+                'apps': dapps.count(),
+                'placed': dapps.filter_by(status=STATUS_HIRED).count(),
+            })
+        insights['dept_breakdown'].sort(key=lambda d: -d['apps'])
+        insights['dept_breakdown'] = insights['dept_breakdown'][:6]
+
+    return insights

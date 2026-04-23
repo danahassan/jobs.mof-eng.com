@@ -263,6 +263,12 @@ def _migrate_db(app):
             # Supervisor daily reminder preferences
             _safe_add_column(conn, 'users', 'daily_new_apps_reminder', 'BOOLEAN')
             _safe_add_column(conn, 'users', 'daily_reminder_last_sent', 'DATETIME')
+            # Student weekly job-match digest preferences
+            _safe_add_column(conn, 'users', 'weekly_job_match_digest', 'BOOLEAN')
+            _safe_add_column(conn, 'users', 'job_match_digest_last_sent', 'DATETIME')
+            # University coordinator weekly digest preferences
+            _safe_add_column(conn, 'users', 'weekly_coord_digest', 'BOOLEAN')
+            _safe_add_column(conn, 'users', 'coord_digest_last_sent', 'DATETIME')
 
 
 def _safe_add_column(conn, table, column, col_type):

@@ -43,6 +43,46 @@
   .ra-table-wrap{display:none!important}
   .ra-cards{display:block}
 }
+
+/* ── Cohort intelligence ── */
+.cohort-section{margin-top:22px}
+.cohort-section-title{font-size:13px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;display:flex;align-items:center;gap:7px}
+.cohort-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.cohort-tile{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px;box-shadow:var(--shadow)}
+.cohort-tile-lbl{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.cohort-tile-val{font-size:26px;font-weight:800;color:var(--text);line-height:1.05}
+.cohort-tile-sub{font-size:12px;color:var(--text2);margin-top:4px}
+.cohort-tile.success .cohort-tile-val{color:#16a34a}
+.cohort-tile.warn .cohort-tile-val{color:#ea580c}
+.cohort-tile.info .cohort-tile-val{color:#2563eb}
+
+.cohort-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+.cohort-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px;box-shadow:var(--shadow)}
+.cohort-card-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.list-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
+.list-row:last-child{border-bottom:none}
+.list-row-name{color:var(--text);font-weight:500;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.list-row-cnt{font-size:12px;font-weight:700;color:var(--green-dark,#0f5c3a);background:var(--green-light);padding:2px 9px;border-radius:99px;flex-shrink:0;margin-left:8px}
+
+.atrisk-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);text-decoration:none;color:inherit}
+.atrisk-row:last-child{border-bottom:none}
+.atrisk-row:hover{background:var(--bg)}
+.atrisk-avatar{width:32px;height:32px;border-radius:50%;background:#fff7ed;color:#c2410c;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.atrisk-body{flex:1;min-width:0}
+.atrisk-name{font-size:13px;font-weight:600;color:var(--text);line-height:1.2}
+.atrisk-meta{font-size:11px;color:var(--text3);margin-top:2px}
+.atrisk-pct{font-size:11px;font-weight:700;color:var(--text2);background:var(--bg);padding:3px 8px;border-radius:99px;flex-shrink:0;border:1px solid var(--border)}
+
+.dept-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:14px}
+.dept-tile{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:11px 14px}
+.dept-name{font-size:12px;font-weight:700;color:var(--text);margin-bottom:6px;line-height:1.25}
+.dept-stats{display:flex;gap:14px;font-size:11px;color:var(--text3)}
+.dept-stats b{color:var(--text);font-size:13px;display:block}
+
+.empty-soft{padding:18px;text-align:center;color:var(--text3);font-size:12px}
+.empty-soft i{display:block;font-size:22px;margin-bottom:5px;opacity:.6}
+
+@media(max-width:780px){.cohort-row{grid-template-columns:1fr}}
 </style>
 
 <!-- KPI Strip -->
@@ -161,5 +201,134 @@
   </div>
 
 </div>
+
+{# ─── Cohort intelligence (new) ─── #}
+{% if cohort %}
+{% set apps_30 = cohort.apps_last_30 %}
+{% set apps_prev = cohort.apps_prev_30 %}
+{% set delta = apps_30 - apps_prev %}
+<div class="cohort-section">
+  <div class="cohort-section-title"><i class="bi bi-graph-up-arrow"></i> Cohort Intelligence</div>
+  <div class="cohort-grid">
+    <div class="cohort-tile success">
+      <div class="cohort-tile-lbl">Placement Rate</div>
+      <div class="cohort-tile-val">{{ cohort.placement_rate }}%</div>
+      <div class="cohort-tile-sub">{{ hired_count }} of {{ total_students }} student{{ 's' if total_students != 1 else '' }} placed</div>
+    </div>
+    <div class="cohort-tile info">
+      <div class="cohort-tile-lbl">Interview Rate</div>
+      <div class="cohort-tile-val">{{ cohort.interview_rate }}%</div>
+      <div class="cohort-tile-sub">of applications reach interview stage or beyond</div>
+    </div>
+    <div class="cohort-tile">
+      <div class="cohort-tile-lbl">Avg. Response Time</div>
+      <div class="cohort-tile-val">
+        {% if cohort.response_avg_days is not none %}{{ cohort.response_avg_days }}d{% else %}—{% endif %}
+      </div>
+      <div class="cohort-tile-sub">from application to first status change</div>
+    </div>
+    <div class="cohort-tile {% if delta > 0 %}success{% elif delta < 0 %}warn{% endif %}">
+      <div class="cohort-tile-lbl">Apps · Last 30 Days</div>
+      <div class="cohort-tile-val">{{ apps_30 }}
+        {% if apps_prev %}
+          <span style="font-size:13px;font-weight:600;color:{{ '#16a34a' if delta>=0 else '#dc2626' }};margin-left:4px">
+            {{ '+' if delta>=0 }}{{ delta }}
+          </span>
+        {% endif %}
+      </div>
+      <div class="cohort-tile-sub">vs. {{ apps_prev }} in the prior 30 days</div>
+    </div>
+    {% if cohort.pending_approvals > 0 %}
+    <div class="cohort-tile warn">
+      <div class="cohort-tile-lbl">Awaiting Your Approval</div>
+      <div class="cohort-tile-val">{{ cohort.pending_approvals }}</div>
+      <div class="cohort-tile-sub"><a href="{{ url_for('university.applications') }}?status=Pending+University+Approval" style="color:#ea580c;font-weight:600">Review now →</a></div>
+    </div>
+    {% endif %}
+    <div class="cohort-tile">
+      <div class="cohort-tile-lbl">Active vs Inactive</div>
+      <div class="cohort-tile-val">{{ cohort.active_students }}<span style="color:var(--text3);font-size:18px">/{{ total_students }}</span></div>
+      <div class="cohort-tile-sub">{{ cohort.inactive_students }} student{{ 's' if cohort.inactive_students != 1 else '' }} have not applied yet</div>
+    </div>
+  </div>
+
+  <div class="cohort-row">
+    <!-- At-risk students -->
+    <div class="cohort-card">
+      <div class="cohort-card-title">
+        <i class="bi bi-exclamation-triangle-fill" style="color:#ea580c"></i>
+        Students Needing Outreach
+      </div>
+      {% if cohort.at_risk %}
+        {% for s in cohort.at_risk %}
+        <a class="atrisk-row" href="{{ url_for('university.student_edit', student_id=s.id) }}">
+          <div class="atrisk-avatar">{{ s.name[:1].upper() }}</div>
+          <div class="atrisk-body">
+            <div class="atrisk-name">{{ s.name }}</div>
+            <div class="atrisk-meta">{{ s.major }} · {{ s.reason }}</div>
+          </div>
+          <div class="atrisk-pct">{{ s.profile_pct }}%</div>
+        </a>
+        {% endfor %}
+      {% else %}
+        <div class="empty-soft">
+          <i class="bi bi-check-circle-fill" style="color:var(--green)"></i>
+          Every student in your cohort has at least one application — great job!
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Top positions / companies -->
+    <div class="cohort-card">
+      <div class="cohort-card-title">
+        <i class="bi bi-bullseye" style="color:#2563eb"></i>
+        Where Your Students Apply
+      </div>
+      {% if cohort.top_positions %}
+        <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Top Positions</div>
+        {% for title, cnt in cohort.top_positions %}
+        <div class="list-row">
+          <div class="list-row-name"><i class="bi bi-briefcase" style="color:var(--text3)"></i> {{ title }}</div>
+          <div class="list-row-cnt">{{ cnt }}</div>
+        </div>
+        {% endfor %}
+      {% endif %}
+      {% if cohort.top_companies %}
+        <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 6px">Top Companies</div>
+        {% for name, cnt in cohort.top_companies %}
+        <div class="list-row">
+          <div class="list-row-name"><i class="bi bi-building" style="color:var(--text3)"></i> {{ name }}</div>
+          <div class="list-row-cnt">{{ cnt }}</div>
+        </div>
+        {% endfor %}
+      {% endif %}
+      {% if not cohort.top_positions and not cohort.top_companies %}
+        <div class="empty-soft"><i class="bi bi-inbox"></i> Once students apply, your most-targeted positions and companies will appear here.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if cohort.dept_breakdown %}
+  <div class="cohort-card" style="margin-top:14px">
+    <div class="cohort-card-title">
+      <i class="bi bi-diagram-3-fill" style="color:#7c3aed"></i>
+      Performance by Department
+    </div>
+    <div class="dept-grid">
+      {% for d in cohort.dept_breakdown %}
+      <div class="dept-tile">
+        <div class="dept-name">{{ d.name }}</div>
+        <div class="dept-stats">
+          <span><b>{{ d.students }}</b>students</span>
+          <span><b>{{ d.apps }}</b>apps</span>
+          <span><b>{{ d.placed }}</b>placed</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
 {% endif %}
 {% endblock %}
