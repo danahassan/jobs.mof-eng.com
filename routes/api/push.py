@@ -22,14 +22,37 @@ def push_status():
         lib_ok = True
     except ImportError:
         lib_ok = False
+    # Try loading the private key the same way the sender does
+    private_key_loadable = False
+    private_key_error    = None
+    if has_keys:
+        try:
+            from py_vapid import Vapid01
+            raw = (cfg.get('VAPID_PRIVATE_KEY', '') or '').strip()
+            cand = raw.replace('\\n', '\n') if '-----BEGIN' in raw else raw
+            Vapid01.from_string(private_key=cand)
+            private_key_loadable = True
+        except Exception as e:
+            private_key_error = str(e)[:200]
     subs = PushSubscription.query.filter_by(user_id=current_user.id).all()
     return jsonify({
-        'vapid_configured': has_keys,
-        'pywebpush_installed': lib_ok,
-        'subscriptions': len(subs),
-        'subject': cfg.get('VAPID_SUBJECT', ''),
-        'public_key_preview': (cfg.get('VAPID_PUBLIC_KEY', '') or '')[:16] + '…' if has_keys else '',
+        'vapid_configured':       has_keys,
+        'vapid_private_loadable': private_key_loadable,
+        'vapid_private_error':    private_key_error,
+        'pywebpush_installed':    lib_ok,
+        'subscriptions':          len(subs),
+        'subject':                cfg.get('VAPID_SUBJECT', ''),
+        'public_key_preview':     (cfg.get('VAPID_PUBLIC_KEY', '') or '')[:16] + '…' if has_keys else '',
     })
+
+
+@api_bp.route('/push/clear-mine', methods=['POST'])
+@login_required
+def push_clear_mine():
+    """Delete all of my stored push subscriptions (after rotating VAPID keys)."""
+    n = PushSubscription.query.filter_by(user_id=current_user.id).delete()
+    db.session.commit()
+    return jsonify({'ok': True, 'deleted': n})
 
 
 @api_bp.route('/push/test', methods=['POST'])

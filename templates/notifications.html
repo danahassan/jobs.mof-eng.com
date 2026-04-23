@@ -48,6 +48,7 @@
     <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn btn-outline btn-sm" type="button" onclick="pushDiagRefresh()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
       <button class="btn btn-primary btn-sm" type="button" onclick="pushDiagTest()"><i class="bi bi-send"></i> Send test push to me</button>
+      <button class="btn btn-outline btn-sm" type="button" onclick="pushClearMine()" style="color:#dc2626;border-color:#dc2626"><i class="bi bi-trash"></i> Clear my push subscriptions</button>
     </div>
     <div id="pushDiagResult" style="margin-top:8px;font-size:12px;color:var(--text3)"></div>
   </details>
@@ -62,6 +63,7 @@
         const sub = sw ? await sw.pushManager.getSubscription() : null;
         box.innerHTML =
           '<div>VAPID configured (server): <strong style="color:'+(j.vapid_configured?'#16a34a':'#dc2626')+'">'+j.vapid_configured+'</strong></div>'+
+          '<div>VAPID private key loadable: <strong style="color:'+(j.vapid_private_loadable?'#16a34a':'#dc2626')+'">'+j.vapid_private_loadable+'</strong>'+(j.vapid_private_error?(' <span style="color:#dc2626">— '+j.vapid_private_error+'</span>'):'')+'</div>'+
           '<div>pywebpush installed: <strong style="color:'+(j.pywebpush_installed?'#16a34a':'#dc2626')+'">'+j.pywebpush_installed+'</strong></div>'+
           '<div>Subscriptions stored for you: <strong>'+j.subscriptions+'</strong></div>'+
           '<div>Browser permission: <strong>'+Notification.permission+'</strong></div>'+
@@ -91,6 +93,22 @@
           html += '<div style="color:#dc2626">No results returned (no subscriptions for this user, or fatal error).</div>';
         }
         out.innerHTML = html;
+      }catch(e){ out.textContent = 'Error: '+e; }
+    }
+    async function pushClearMine(){
+      if (!confirm('Delete all of your stored push subscriptions? You will need to enable push again from each device.')) return;
+      const out = document.getElementById('pushDiagResult');
+      out.textContent = 'Clearing…';
+      try{
+        const r = await fetch('/api/v1/push/clear-mine', {method:'POST', credentials:'same-origin'});
+        const j = await r.json();
+        out.textContent = 'Deleted '+(j.deleted||0)+' subscription(s). Now reload this page inside the PWA and tap Enable on the banner to re-subscribe with the current key.';
+        try{
+          const sw = await navigator.serviceWorker.getRegistration();
+          const sub = sw && await sw.pushManager.getSubscription();
+          if (sub) await sub.unsubscribe();
+        }catch(_){}
+        pushDiagRefresh();
       }catch(e){ out.textContent = 'Error: '+e; }
     }
     document.addEventListener('DOMContentLoaded', pushDiagRefresh);
