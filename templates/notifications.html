@@ -76,7 +76,21 @@
       try{
         const r = await fetch('/api/v1/push/test', {method:'POST', credentials:'same-origin'});
         const j = await r.json();
-        out.textContent = 'Server response: ' + JSON.stringify(j) + ' — check the device for the notification.';
+        let html = '<div style="margin-bottom:6px"><strong>Sent OK:</strong> '+ (j.sent_to||0) +' / '+ (j.results?j.results.length:0) +'</div>';
+        if (j.results && j.results.length) {
+          html += '<ul style="margin:0;padding-left:18px">';
+          for (const x of j.results) {
+            html += '<li style="margin-bottom:4px"><span style="color:'+(x.ok?'#16a34a':'#dc2626')+';font-weight:700">'+(x.ok?'✓':'✗')+'</span> '+
+                    'sub#'+(x.sub_id||'-')+' ['+(x.endpoint_host||'?')+']'+
+                    (x.http? ' HTTP '+x.http : '')+
+                    (x.error? '<div style="font-family:monospace;font-size:11px;color:#dc2626;margin-left:18px;word-break:break-all">'+x.error+'</div>' : '')+
+                    '</li>';
+          }
+          html += '</ul>';
+        } else {
+          html += '<div style="color:#dc2626">No results returned (no subscriptions for this user, or fatal error).</div>';
+        }
+        out.innerHTML = html;
       }catch(e){ out.textContent = 'Error: '+e; }
     }
     document.addEventListener('DOMContentLoaded', pushDiagRefresh);

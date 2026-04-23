@@ -35,11 +35,16 @@ def push_status():
 @api_bp.route('/push/test', methods=['POST'])
 @login_required
 def push_test():
-    """Send a test push to the current user's subscriptions."""
+    """Send a test push to the current user's subscriptions and return per-sub results."""
     from helpers import _send_web_push
-    _send_web_push(current_user.id, 'Test notification from MOF Jobs ✓',
-                   link='/notifications')
-    return jsonify({'ok': True, 'message': 'Test push dispatched. Check your device.'})
+    results = _send_web_push(current_user.id, 'Test notification from MOF Jobs ✓',
+                             link='/notifications')
+    ok_count = sum(1 for r in (results or []) if r.get('ok'))
+    return jsonify({
+        'ok': ok_count > 0,
+        'sent_to': ok_count,
+        'results': results or [],
+    })
 
 
 @api_bp.route('/push/subscribe', methods=['POST'])
