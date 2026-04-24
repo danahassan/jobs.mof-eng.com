@@ -25,7 +25,7 @@ class Config:
     COMPANY_PHOTOS_FOLDER  = os.path.join(BASE_DIR, 'static', 'uploads', 'company_photos')
     REPORTS_FOLDER         = os.path.join(BASE_DIR, 'static', 'uploads', 'reports')
     ADS_FOLDER             = os.path.join(BASE_DIR, 'static', 'uploads', 'ads')
-    MAX_CONTENT_LENGTH   = 10 * 1024 * 1024  # 10 MB
+    MAX_CONTENT_LENGTH   = 25 * 1024 * 1024  # 25 MB
     ALLOWED_EXTENSIONS   = {'pdf', 'doc', 'docx'}
     REPORT_ALLOWED_EXTENSIONS = {'pdf', 'doc', 'docx', 'odt', 'rtf', 'txt',
                                  'ppt', 'pptx', 'xls', 'xlsx', 'csv',

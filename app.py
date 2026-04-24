@@ -225,6 +225,12 @@ def create_app(config_name=None):
             if folder:
                 os.makedirs(folder, exist_ok=True)
 
+    @app.errorhandler(413)
+    def _too_large(e):
+        mb = app.config.get('MAX_CONTENT_LENGTH', 0) // (1024 * 1024)
+        flash(f'Upload too large. Maximum allowed file size is {mb} MB. Please compress the image and try again.', 'danger')
+        return redirect(request.referrer or url_for('index'))
+
     return app
 
 
