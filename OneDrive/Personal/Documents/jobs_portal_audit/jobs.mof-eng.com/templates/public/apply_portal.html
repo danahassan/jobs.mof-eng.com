@@ -1,0 +1,343 @@
+{% extends 'base.html' %}
+{% block title %}{{ page_title }} — MOF Jobs{% endblock %}
+
+{% block public_content %}
+<style>
+.apply-shell {
+  min-height: 100vh;
+  background: radial-gradient(circle at 10% 0%, #12324a 0%, #081d30 40%, #06182a 100%);
+  color: #dce8f2;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  padding: 30px 0 56px;
+}
+.apply-wrap {
+  width: min(1240px, 94vw);
+  margin: 0 auto;
+}
+.apply-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 4px 26px;
+}
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+}
+.brand img {
+  width: 54px;
+  height: 54px;
+  object-fit: contain;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+.brand-text {
+  color: #f4f9ff;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+.brand-sub {
+  color: rgba(220, 232, 242, 0.72);
+  font-size: 12px;
+}
+.top-links {
+  display: flex;
+  gap: 10px;
+}
+.top-links a {
+  border: 1px solid rgba(173, 201, 221, 0.36);
+  color: #c7def0;
+  padding: 9px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  text-decoration: none;
+}
+.hero {
+  background: linear-gradient(135deg, #0c273d 0%, #072036 100%);
+  border: 1px solid rgba(36, 198, 188, 0.25);
+  border-radius: 18px;
+  padding: 32px;
+  box-shadow: 0 16px 50px rgba(0, 0, 0, 0.28);
+  margin-bottom: 24px;
+}
+.kicker {
+  color: #3fd6cc;
+  letter-spacing: 5px;
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 14px;
+}
+.hero h1 {
+  font-size: clamp(31px, 4.2vw, 52px);
+  line-height: 1.12;
+  color: #f2f7fd;
+  margin: 0;
+}
+.hero p {
+  margin-top: 14px;
+  max-width: 920px;
+  color: #b8d0e3;
+  font-size: 19px;
+  line-height: 1.5;
+}
+.hero-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+.hero-actions a {
+  text-decoration: none;
+  border-radius: 12px;
+  padding: 12px 18px;
+  font-weight: 700;
+  font-size: 14px;
+}
+.btn-primary {
+  background: linear-gradient(120deg, #20bca9, #2dd4bf);
+  color: #03211e;
+}
+.btn-outline {
+  border: 1px solid rgba(93, 217, 210, 0.6);
+  color: #95ebe5;
+}
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+.info-card {
+  background: rgba(19, 53, 74, 0.9);
+  border: 1px solid #15bfc0;
+  border-radius: 0;
+  padding: 20px 18px;
+  min-height: 186px;
+}
+.info-card h3 {
+  margin: 0;
+  color: #f2f7fd;
+  font-size: 21px;
+}
+.info-card h4 {
+  margin: 14px 0 8px;
+  color: #f2f7fd;
+  font-size: 30px;
+  line-height: 1.2;
+}
+.info-card p {
+  margin: 0;
+  color: #baf9f4;
+  font-size: 24px;
+  line-height: 1.44;
+}
+.view-grid {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.view-card {
+  background: rgba(9, 33, 51, 0.94);
+  border: 1px solid rgba(65, 182, 212, 0.34);
+  border-radius: 12px;
+  padding: 18px;
+}
+.view-card h5 {
+  margin: 0;
+  font-size: 16px;
+  color: #edfbff;
+}
+.view-card p {
+  margin: 9px 0 0;
+  color: #bddcf0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.logo-slot {
+  margin-top: 12px;
+  border: 1px dashed rgba(111, 222, 215, 0.72);
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #89f1e8;
+  font-size: 13px;
+}
+.logo-slot img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 5px;
+}
+.section-box {
+  margin-top: 24px;
+  background: rgba(6, 24, 42, 0.92);
+  border: 1px solid rgba(65, 182, 212, 0.28);
+  border-radius: 14px;
+  padding: 20px;
+}
+.section-title {
+  font-size: 14px;
+  color: #4dd6c8;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+.section-copy {
+  margin-top: 8px;
+  color: #b9d5e8;
+  font-size: 15px;
+}
+.chat-grid {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.chat-card {
+  background: rgba(10, 38, 56, 0.95);
+  border: 1px solid rgba(43, 189, 182, 0.45);
+  border-radius: 12px;
+  padding: 18px;
+}
+.chat-card h5 {
+  margin: 0;
+  font-size: 17px;
+  color: #ecf8ff;
+}
+.chat-card p {
+  margin: 10px 0 14px;
+  color: #b8ddf0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.chat-card a {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: #17bcb7;
+  color: #05222f;
+  text-decoration: none;
+  border-radius: 9px;
+  padding: 9px 12px;
+  font-weight: 700;
+  font-size: 13px;
+}
+@media (max-width: 990px) {
+  .info-grid { grid-template-columns: 1fr 1fr; }
+  .chat-grid { grid-template-columns: 1fr; }
+  .view-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 720px) {
+  .apply-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .hero { padding: 24px 20px; }
+  .hero p { font-size: 16px; }
+  .info-grid { grid-template-columns: 1fr; }
+}
+</style>
+
+<div class="apply-shell">
+  <div class="apply-wrap">
+    <div class="apply-top">
+      <a class="brand" href="{{ url_for('index') }}">
+        <img src="{{ url_for('static', filename='icons/mof-logo.png') }}" alt="MOF Jobs Logo">
+        <div>
+          <div class="brand-text">MOF Jobs Portal</div>
+          <div class="brand-sub">Recruitment and Placement Platform</div>
+        </div>
+      </a>
+      <div class="top-links">
+        <a href="{{ url_for('auth.login') }}">Sign In</a>
+        <a href="{{ url_for('auth.register') }}">Create Account</a>
+      </div>
+    </div>
+
+    <section class="hero">
+      <div class="kicker">{{ page_kicker }}</div>
+      <h1>{{ page_headline }}</h1>
+      <p>{{ page_subtitle }}</p>
+      <div class="hero-actions">
+        <a href="{{ cta_primary_link }}" class="btn-primary">{{ cta_primary_text }}</a>
+        <a href="{{ cta_secondary_link }}" class="btn-outline">{{ cta_secondary_text }}</a>
+      </div>
+    </section>
+
+    <section class="view-grid" aria-label="Web and company views">
+      <article class="view-card">
+        <h5><i class="bi bi-layout-text-window-reverse"></i> Web View</h5>
+        <p>
+          Public-facing onboarding for universities and supervisors with fast registration,
+          structured activation, and direct call-to-action into live channels.
+        </p>
+      </article>
+      <article class="view-card">
+        <h5><i class="bi bi-building-check"></i> Company View</h5>
+        <p>
+          Business-side workspace focused on internships, task tracking,
+          grading, and measurable outcomes with full communication history.
+        </p>
+        <div class="logo-slot">
+          <img src="{{ url_for('static', filename='icons/mof-logo.png') }}" alt="Company logo">
+          <div><strong>Company Logo Area</strong><br>Replace with partner logo as needed.</div>
+        </div>
+      </article>
+    </section>
+
+    <section class="info-grid" aria-label="Solution features">
+      <article class="info-card">
+        <h4><i class="bi bi-bank2"></i> University Portal</h4>
+        <p>Register your university and coordinator in minutes. Reviewed and activated by our team.</p>
+      </article>
+      <article class="info-card">
+        <h4><i class="bi bi-building"></i> Company Listings</h4>
+        <p>Browse and coordinate with real businesses posting internship positions.</p>
+      </article>
+      <article class="info-card">
+        <h4><i class="bi bi-people-fill"></i> Bulk Student Import</h4>
+        <p>Supervisors import entire cohorts at once and assign them to internship jobs instantly.</p>
+      </article>
+      <article class="info-card">
+        <h4><i class="bi bi-bell-fill"></i> Real-Time Alerts</h4>
+        <p>Live notifications at every step: application, review, approval, and task completion.</p>
+      </article>
+      <article class="info-card">
+        <h4><i class="bi bi-list-check"></i> Task Management</h4>
+        <p>Students perform job tasks, submit deliverables, and upload reports in one place.</p>
+      </article>
+      <article class="info-card">
+        <h4><i class="bi bi-graph-up-arrow"></i> Grading and Reports</h4>
+        <p>Coordinators review student submissions and assign grades with full audit trail.</p>
+      </article>
+    </section>
+
+    <section class="section-box">
+      <div class="section-title">{{ section_label }}</div>
+      <div class="section-copy">{{ section_copy }}</div>
+
+      <div class="chat-grid">
+        <article class="chat-card">
+          <h5><i class="bi bi-chat-dots-fill"></i> {{ channel_one_title }}</h5>
+          <p>{{ channel_one_copy }}</p>
+          <a href="{{ channel_one_link }}"><i class="bi bi-send-fill"></i> Open Chat</a>
+        </article>
+        <article class="chat-card">
+          <h5><i class="bi bi-chat-left-text-fill"></i> {{ channel_two_title }}</h5>
+          <p>{{ channel_two_copy }}</p>
+          <a href="{{ channel_two_link }}"><i class="bi bi-send-fill"></i> Open Chat</a>
+        </article>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}
