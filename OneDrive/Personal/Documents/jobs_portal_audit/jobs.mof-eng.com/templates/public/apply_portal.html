@@ -35,6 +35,19 @@
   padding: 6px;
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
+.logo-fallback {
+  display: none;
+  width: 54px;
+  height: 54px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: linear-gradient(120deg, #1ab8ad, #2cd0bf);
+  color: #05222f;
+  font-weight: 800;
+  letter-spacing: 1px;
+  align-items: center;
+  justify-content: center;
+}
 .brand-text {
   color: #f4f9ff;
   font-weight: 700;
@@ -176,6 +189,12 @@
   background: rgba(255, 255, 255, 0.1);
   padding: 5px;
 }
+.logo-slot .logo-fallback {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  font-size: 12px;
+}
 .section-box {
   margin-top: 24px;
   background: rgba(6, 24, 42, 0.92);
@@ -251,7 +270,8 @@
   <div class="apply-wrap">
     <div class="apply-top">
       <a class="brand" href="{{ url_for('index') }}">
-        <img src="{{ url_for('static', filename='icons/mof-logo.png') }}" alt="MOF Jobs Logo">
+        <img src="{{ url_for('static', filename='icons/mof-logo.png') }}" alt="MOF Jobs Logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-flex';">
+        <span class="logo-fallback" aria-hidden="true">MOF</span>
         <div>
           <div class="brand-text">MOF Jobs Portal</div>
           <div class="brand-sub">Recruitment and Placement Platform</div>
@@ -288,7 +308,8 @@
           grading, and measurable outcomes with full communication history.
         </p>
         <div class="logo-slot">
-          <img src="{{ url_for('static', filename='icons/mof-logo.png') }}" alt="Company logo">
+          <img src="{{ url_for('static', filename='icons/mof-logo.png') }}" alt="Company logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-flex';">
+          <span class="logo-fallback" aria-hidden="true">MOF</span>
           <div><strong>Company Logo Area</strong><br>Replace with partner logo as needed.</div>
         </div>
       </article>
