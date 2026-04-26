@@ -12,15 +12,20 @@ body{background:#f0f2f5;font-family:'Segoe UI',system-ui,sans-serif;color:var(--
 
 /* ── sticky top bar ── */
 .sa-topbar{position:sticky;top:0;z-index:50;background:#0f1923;padding:13px 20px;display:flex;align-items:center;gap:10px}
-.sa-topbar-brand{color:#fff;font-size:15px;font-weight:800;letter-spacing:-.3px}
+.sa-topbar-brand{color:#fff;font-size:15px;font-weight:800;letter-spacing:-.3px;display:flex;align-items:center;gap:8px}
 .sa-topbar-brand span{color:#4ade80}
 .sa-topbar-sub{color:rgba(255,255,255,.38);font-size:11px;margin-left:auto}
+.sa-brand-logo{width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);padding:3px;object-fit:contain}
+.sa-brand-fallback{display:none;width:30px;height:30px;border-radius:8px;background:linear-gradient(120deg,#16a34a,#34d399);color:#04210f;font-size:10px;font-weight:800;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.16)}
 
 /* ── layout ── */
 .sa-wrap{max-width:820px;margin:0 auto;padding:24px 16px 60px}
 .sa-header{text-align:center;margin-bottom:28px;padding-top:8px}
 .sa-title{font-size:26px;font-weight:800;color:var(--text);line-height:1.2}
 .sa-sub{font-size:13px;color:var(--text3);margin-top:6px;line-height:1.6}
+.sa-strip{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 16px}
+.sa-pill{background:#fff;border:1px solid var(--border);border-radius:10px;padding:10px 12px;color:var(--text2);font-size:12px;line-height:1.5}
+.sa-pill strong{color:var(--text);font-size:12px}
 
 /* ── cards ── */
 .sa-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
@@ -71,13 +76,18 @@ input[type=file]{padding:8px 12px;background:#f8fafb;cursor:pointer}
   .sa-card{padding:16px}
   .form-grid{grid-template-columns:1fr}
   .form-grid .full{grid-column:1}
+  .sa-strip{grid-template-columns:1fr}
 }
 </style>
 </head>
 <body>
 
 <div class="sa-topbar">
-  <div class="sa-topbar-brand">MOF <span>Jobs</span></div>
+  <div class="sa-topbar-brand">
+    <img class="sa-brand-logo" src="/static/icons/mof-logo.png" alt="MOF Logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-flex';">
+    <span class="sa-brand-fallback" aria-hidden="true">MOF</span>
+    <span>MOF <span>Jobs</span></span>
+  </div>
   <div class="sa-topbar-sub">Supervisor Registration</div>
 </div>
 
@@ -85,6 +95,11 @@ input[type=file]{padding:8px 12px;background:#f8fafb;cursor:pointer}
   <div class="sa-header">
     <div class="sa-title">Apply as a Supervisor</div>
     <div class="sa-sub">Fill in all required fields. Our team will review your application and respond by email.</div>
+  </div>
+
+  <div class="sa-strip">
+    <div class="sa-pill"><strong>Web View:</strong> Company and supervisor onboarding with structured profile and company details.</div>
+    <div class="sa-pill"><strong>Communication:</strong> Company ↔ Coordinator workflow enabled after verification and approval.</div>
   </div>
 
   {% with messages = get_flashed_messages(with_categories=true) %}
