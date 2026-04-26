@@ -1,14 +1,26 @@
 from flask import Blueprint, render_template, url_for
+from werkzeug.routing import BuildError
 from flask_login import current_user
 
 university_apply_bp = Blueprint('university_apply', __name__)
 
 
 def _chat_link(channel):
-    target = url_for('messages.compose', channel=channel)
-    if current_user.is_authenticated:
-        return target
-    return url_for('auth.login', next=target)
+    try:
+        target = url_for('messages.compose', channel=channel)
+    except BuildError:
+        return url_for('auth.login')
+
+    try:
+        if current_user.is_authenticated:
+            return target
+    except Exception:
+        return url_for('auth.login')
+
+    try:
+        return url_for('auth.login', next=target)
+    except BuildError:
+        return url_for('auth.login')
 
 
 @university_apply_bp.route('/university_apply')
