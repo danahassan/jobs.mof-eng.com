@@ -4,125 +4,61 @@ from datetime import datetime, timedelta
 from flask import (Blueprint, render_template, redirect, url_for,
                    flash, request, abort, Response)
 from flask_login import login_required, current_user
-from models import (db, User, Message, Application, Position, CompanyMember, UniversityMember,
-                    ROLE_ADMIN, ROLE_SUPERVISOR, ROLE_USER, ROLE_STUDENT, ROLE_UNIVERSITY_COORD)
-from helpers import push_notification, log_audit
+from models import db, User, Message, Application, ROLE_ADMIN, ROLE_SUPERVISOR, ROLE_USER, ROLE_EMPLOYER
+from helpers import push_notification
 from sqlalchemy import or_, and_
 
 messages_bp = Blueprint('messages', __name__)
 
 
-def _supervisor_company_ids(supervisor_id):
-    """Return the set of company IDs a supervisor belongs to."""
-    return {m.company_id for m in
-            CompanyMember.query.filter_by(user_id=supervisor_id).all()}
+def _is_coordinator(user):
+    return user.role in (ROLE_SUPERVISOR, 'university_coordinator')
 
 
-def _user_university_ids(user):
-    ids = set()
-    if user.university_id:
-        ids.add(user.university_id)
-    ids.update(m.university_id for m in UniversityMember.query.filter_by(user_id=user.id).all())
-    return ids
+def _is_student(user):
+    return user.role in (ROLE_USER, 'student')
 
 
-def _coordinator_student_ids(coord):
-    """Student user-ids in this coordinator's university scope (dept/class aware)."""
-    membership = UniversityMember.query.filter_by(user_id=coord.id).first()
-    if not membership:
-        return []
-    q = User.query.filter_by(role=ROLE_STUDENT, university_id=membership.university_id)
-    if membership.department_id:
-        q = q.filter(User.university_department_id == membership.department_id)
-    if membership.class_scope:
-        q = q.filter(User.university_class == membership.class_scope)
-    return [u.id for u in q.all()]
+def _is_company_user(user):
+    return user.role == ROLE_EMPLOYER
 
 
-def _coordinator_supervisor_ids(coord):
-    """Supervisors that supervise/hired any of this coordinator's students.
-
-    A supervisor "supervises" a student when:
-      - the student has an Application to a Position whose company has the
-        supervisor as a CompanyMember, OR
-      - the application is directly assigned_to the supervisor.
-    """
-    sids = _coordinator_student_ids(coord)
-    if not sids:
-        return set()
-    rows = (db.session.query(Application.assigned_to_id, Position.company_id)
-            .join(Position, Application.position_id == Position.id)
-            .filter(Application.applicant_id.in_(sids))
-            .all())
-    company_ids = {r.company_id for r in rows if r.company_id}
-    assigned_ids = {r.assigned_to_id for r in rows if r.assigned_to_id}
-    sup_ids = set(assigned_ids)
-    if company_ids:
-        sup_ids.update(
-            m.user_id for m in CompanyMember.query
-            .filter(CompanyMember.company_id.in_(company_ids)).all()
-        )
-    # Only keep actual supervisor accounts
-    if sup_ids:
-        sup_ids = {u.id for u in User.query
-                   .filter(User.id.in_(sup_ids), User.role == ROLE_SUPERVISOR,
-                           User.is_active == True).all()}
-    return sup_ids
+def _recipient_matches_channel(receiver, channel):
+    if channel == 'company_coordinator':
+        return _is_company_user(receiver) or _is_coordinator(receiver)
+    if channel == 'coordinator_student':
+        return _is_coordinator(receiver) or _is_student(receiver)
+    return True
 
 
 def _can_message(sender, receiver):
-    """Messaging permission rules:
-    - Admin  → anyone
-    - Supervisor → admin, other supervisors, or applicants who applied to their company
-    - User → supervisor only if user applied to a job at that supervisor's company
-    - Student ↔ student/university coordinator within the same university
-    - University coordinator ↔ student/university coordinator within the same university
-    - Users may NOT message admins directly
-    """
+    """Check if sender is allowed to message receiver based on roles."""
     if sender.id == receiver.id:
         return False
     if not receiver.is_active:
         return False
-
     # Admin can message anyone
     if sender.role == ROLE_ADMIN:
         return True
-
-    # Supervisor → admin or other supervisor
-    if sender.role == ROLE_SUPERVISOR:
-        if receiver.role in (ROLE_ADMIN, ROLE_SUPERVISOR):
-            return True
-        # Supervisor → user: only if user applied to the supervisor's company
-        if receiver.role == ROLE_USER:
-            company_ids = _supervisor_company_ids(sender.id)
-            if not company_ids:
-                return False
-            return db.session.query(Application.id).join(Position).filter(
-                Application.applicant_id == receiver.id,
-                Position.company_id.in_(company_ids),
-            ).first() is not None
-
-    # User → supervisor only if user applied to that supervisor's company
+    # Anyone can message admin
+    if receiver.role == ROLE_ADMIN:
+        return True
+    # Coordinator can message coordinator
+    if _is_coordinator(sender) and _is_coordinator(receiver):
+        return True
+    # Company can message coordinator, and coordinator can message company
+    if (_is_company_user(sender) and _is_coordinator(receiver)) or (_is_coordinator(sender) and _is_company_user(receiver)):
+        return True
+    # Coordinator and student chat channel
+    if (_is_coordinator(sender) and _is_student(receiver)) or (_is_student(sender) and _is_coordinator(receiver)):
+        return True
+    # Backward-compatible assignment rule for old data flows
+    if sender.role == ROLE_SUPERVISOR and receiver.role == ROLE_USER:
+        assigned = Application.query.filter_by(assigned_to_id=sender.id, applicant_id=receiver.id).first()
+        return assigned is not None
     if sender.role == ROLE_USER and receiver.role == ROLE_SUPERVISOR:
-        company_ids = _supervisor_company_ids(receiver.id)
-        if not company_ids:
-            return False
-        return db.session.query(Application.id).join(Position).filter(
-            Application.applicant_id == sender.id,
-            Position.company_id.in_(company_ids),
-        ).first() is not None
-
-    # Student/university coordinator messaging within same university
-    if sender.role in (ROLE_STUDENT, ROLE_UNIVERSITY_COORD) and receiver.role in (ROLE_STUDENT, ROLE_UNIVERSITY_COORD):
-        return bool(_user_university_ids(sender) & _user_university_ids(receiver))
-
-    # University coordinator ↔ supervisor — only if the supervisor has hired
-    # / been assigned an application from one of the coordinator's students.
-    if sender.role == ROLE_UNIVERSITY_COORD and receiver.role == ROLE_SUPERVISOR:
-        return receiver.id in _coordinator_supervisor_ids(sender)
-    if sender.role == ROLE_SUPERVISOR and receiver.role == ROLE_UNIVERSITY_COORD:
-        return sender.id in _coordinator_supervisor_ids(receiver)
-
+        assigned = Application.query.filter_by(assigned_to_id=receiver.id, applicant_id=sender.id).first()
+        return assigned is not None
     return False
 
 
@@ -182,17 +118,11 @@ def inbox():
     kpi_conversations  = len(conversations)
     kpi_unread         = total_unread
     kpi_today          = Message.query.filter(
-        or_(
-            and_(Message.sender_id == current_user.id, Message.deleted_by_sender == False),
-            and_(Message.receiver_id == current_user.id, Message.deleted_by_receiver == False)
-        ),
+        or_(Message.sender_id == current_user.id, Message.receiver_id == current_user.id),
         Message.created_at >= today_start
     ).count()
     kpi_total_msgs     = Message.query.filter(
-        or_(
-            and_(Message.sender_id == current_user.id, Message.deleted_by_sender == False),
-            and_(Message.receiver_id == current_user.id, Message.deleted_by_receiver == False)
-        )
+        or_(Message.sender_id == current_user.id, Message.receiver_id == current_user.id)
     ).count()
 
     return render_template('messages/inbox.html',
@@ -266,8 +196,6 @@ def send():
         url_for('messages.thread', partner_id=current_user.id),
         icon='bi-chat-dots-fill'
     )
-    log_audit('message.send', f'{current_user.full_name} → {receiver.full_name}',
-              user_id=current_user.id)
     db.session.commit()
     flash('Message sent.', 'success')
 
@@ -281,13 +209,17 @@ def send():
 @login_required
 def compose():
     preset_receiver = request.args.get('to', type=int)
-    recipients = _get_allowed_recipients(current_user)
+    channel = (request.args.get('channel') or '').strip().lower()
+    recipients = [u for u in _get_allowed_recipients(current_user) if _recipient_matches_channel(u, channel)]
     preset_user = None
     if preset_receiver:
         preset_user = db.session.get(User, preset_receiver)
+        if preset_user and channel and not _recipient_matches_channel(preset_user, channel):
+            preset_user = None
     return render_template('messages/compose.html',
                            recipients=recipients,
-                           preset_user=preset_user)
+                           preset_user=preset_user,
+                           channel=channel)
 
 
 @messages_bp.route('/export')
