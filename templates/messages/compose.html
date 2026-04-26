@@ -12,16 +12,6 @@
   <div class="card">
     <div class="card-title"><i class="bi bi-pencil-fill"></i> New Message</div>
 
-    {% if channel == 'company_coordinator' %}
-    <div class="alert alert-info" style="margin-bottom:14px">
-      <i class="bi bi-briefcase-fill"></i> Company and Coordinator channel is active.
-    </div>
-    {% elif channel == 'coordinator_student' %}
-    <div class="alert alert-info" style="margin-bottom:14px">
-      <i class="bi bi-mortarboard-fill"></i> Coordinator and Student channel is active.
-    </div>
-    {% endif %}
-
     {% if recipients %}
     <form method="POST" action="{{ url_for('messages.send') }}">
       <div class="form-group">
