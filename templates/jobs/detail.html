@@ -147,3 +147,10 @@ if (saveBtn) {
 }
 </script>
 {% endblock %}
+
+{# Render same content for logged-out visitors (base only renders public_content when anonymous) #}
+{% block public_content %}
+<div style="max-width:1180px;margin:0 auto;padding:24px">
+  {{ self.content() }}
+</div>
+{% endblock %}
