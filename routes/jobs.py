@@ -118,13 +118,8 @@ def detail(job_id):
     if not job.is_active:
         abort(404)
 
-    # Internships hidden from unauthenticated visitors and regular users
-    if job.type == 'Internship':
-        if not current_user.is_authenticated or current_user.role == ROLE_USER:
-            abort(404)
-    # Non-internship positions hidden from students
-    elif current_user.is_authenticated and current_user.role == ROLE_STUDENT:
-        abort(404)
+    # Logged-out users can view detail pages (shared links) but listing ignores internships for them
+
 
     # Track view
     job.views_count = (job.views_count or 0) + 1
@@ -174,3 +169,5 @@ def api_search():
         'is_remote': j.is_remote,
         'created_at': j.created_at.isoformat(),
     } for j in jobs])
+
+
