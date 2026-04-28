@@ -2231,6 +2231,91 @@ def coordinators():
                            total=len(rows))
 
 
+@admin_bp.route('/coordinators/<int:user_id>')
+@admin_required
+def coordinator_detail(user_id):
+    """Detail page for one coordinator: profile + supervised students."""
+    coord = db.get_or_404(User, user_id)
+    if coord.role != ROLE_UNIVERSITY_COORD:
+        flash('That user is not a university coordinator.', 'warning')
+        return redirect(url_for('admin.coordinators'))
+
+    view = request.args.get('view', 'cards')
+    if view not in ('cards', 'list'):
+        view = 'cards'
+    q_str = request.args.get('q', '').strip()
+
+    # Memberships of this coordinator (a coord may belong to >1 university,
+    # and may be scoped to a department within each).
+    memberships = (UniversityMember.query
+                   .filter_by(user_id=coord.id, role='coordinator')
+                   .all())
+
+    # Build the supervised-students set:
+    #  - take every (university_id, department_id) pair the coord covers
+    #  - if department_id is None, the coord supervises ALL students of that university
+    #  - otherwise only students whose university_department_id matches
+    student_q = User.query.filter(
+        User.role == ROLE_STUDENT,
+        User.is_active == True,
+    )
+
+    if not memberships:
+        students = []
+    else:
+        # OR together per-membership scope filters.
+        scope_filters = []
+        for m in memberships:
+            if m.department_id:
+                scope_filters.append(and_(
+                    User.university_id == m.university_id,
+                    User.university_department_id == m.department_id,
+                ))
+            else:
+                scope_filters.append(User.university_id == m.university_id)
+
+        student_q = student_q.filter(or_(*scope_filters))
+
+        if q_str:
+            like = f'%{q_str}%'
+            student_q = student_q.filter(or_(
+                User.full_name.ilike(like),
+                User.email.ilike(like),
+                User.university_major.ilike(like),
+                User.university_class.ilike(like),
+                User.student_id_number.ilike(like),
+            ))
+
+        students = student_q.order_by(User.full_name).all()
+
+    # Application stats per student (under positions of type=Internship)
+    student_ids = [s.id for s in students]
+    apps_by_student = {}
+    if student_ids:
+        all_apps = (Application.query
+                    .filter(Application.applicant_id.in_(student_ids))
+                    .all())
+        for a in all_apps:
+            apps_by_student.setdefault(a.applicant_id, []).append(a)
+
+    # Pre-build a lightweight stats dict
+    stats_by_student = {}
+    for sid in student_ids:
+        apps = apps_by_student.get(sid, [])
+        stats_by_student[sid] = {
+            'total': len(apps),
+            'hired': sum(1 for a in apps if a.status == 'Hired'),
+            'pending': sum(1 for a in apps if a.status not in ('Hired', 'Rejected')),
+        }
+
+    return render_template('admin/coordinator_detail.html',
+                           coord=coord,
+                           memberships=memberships,
+                           students=students,
+                           stats=stats_by_student,
+                           view=view, q=q_str)
+
+
 @admin_bp.route('/universities')
 @admin_required
 def universities():

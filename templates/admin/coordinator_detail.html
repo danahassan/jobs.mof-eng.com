@@ -1,0 +1,360 @@
+{% extends 'base.html' %}
+{% block title %}{{ coord.full_name or 'Coordinator' }} — Coordinator — MOF Jobs{% endblock %}
+{% block page_title %}Coordinator{% endblock %}
+
+{% block extra_css %}
+<style>
+.cd-wrap{max-width:1200px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+
+/* Breadcrumbs */
+.cd-crumbs{display:flex;gap:6px;align-items:center;font-size:12px;color:var(--text3);flex-wrap:wrap}
+.cd-crumbs a{color:var(--text3);text-decoration:none}
+.cd-crumbs a:hover{color:var(--green)}
+
+/* Profile header */
+.cd-hero{background:linear-gradient(135deg,#0f5c3a 0%,#1a3a5c 100%);color:#fff;border-radius:14px;padding:18px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.cd-hero-avatar{width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,.18);color:#fff;font-weight:800;font-size:28px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:2px solid rgba(255,255,255,.25);object-fit:cover}
+.cd-hero-info{flex:1;min-width:0}
+.cd-hero-name{font-size:22px;font-weight:800;margin:0;line-height:1.15;word-break:break-word}
+.cd-hero-meta{display:flex;flex-wrap:wrap;gap:10px 14px;margin-top:8px;font-size:13px;opacity:.95}
+.cd-hero-meta a{color:#fff;text-decoration:none;border-bottom:1px dotted rgba(255,255,255,.5)}
+.cd-hero-meta a:hover{border-bottom-style:solid}
+.cd-hero-actions{display:flex;gap:6px;flex-wrap:wrap}
+.cd-hero-actions .btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3)}
+.cd-hero-actions .btn:hover{background:rgba(255,255,255,.25)}
+
+/* Universities pills */
+.cd-univs{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.cd-univ-pill{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);font-size:12px;font-weight:600;text-decoration:none}
+.cd-univ-pill:hover{background:rgba(255,255,255,.25)}
+.cd-univ-pill .dept{opacity:.75;font-weight:500}
+
+/* KPIs */
+.cd-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.cd-kpi{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:10px;min-width:0}
+.cd-kpi-icon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.cd-kpi-val{font-size:18px;font-weight:800;line-height:1}
+.cd-kpi-lbl{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.03em;margin-top:2px}
+
+/* Section header */
+.cd-section{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.cd-section h2{margin:0;font-size:17px;font-weight:800;display:flex;align-items:center;gap:8px}
+.cd-section .count{font-weight:500;color:var(--text3);font-size:13px}
+.view-toggle{display:flex;background:var(--bg2,#f1f5f9);border:1px solid var(--border);border-radius:8px;overflow:hidden;flex-shrink:0}
+.view-toggle a{padding:6px 11px;color:var(--text3);text-decoration:none;font-size:14px;display:flex;align-items:center;transition:background .1s}
+.view-toggle a.active{background:var(--green);color:#fff}
+.view-toggle a:not(.active):hover{background:var(--border);color:var(--text)}
+
+/* Filter */
+.cd-filter{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:end}
+.cd-filter .ac-fld{flex:1;min-width:200px;display:flex;flex-direction:column;gap:4px}
+.cd-filter label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.03em}
+
+/* Student cards grid */
+.cd-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.cd-stu-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px;transition:box-shadow .15s,transform .15s;min-width:0}
+.cd-stu-card:hover{box-shadow:0 4px 18px rgba(0,0,0,.08);transform:translateY(-2px)}
+.cd-stu-head{display:flex;gap:12px;align-items:center;min-width:0}
+.cd-stu-avatar{width:48px;height:48px;border-radius:50%;background:#1f5f82;color:#fff;font-weight:800;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;object-fit:cover;border:1px solid var(--border)}
+.cd-stu-name-block{flex:1;min-width:0}
+.cd-stu-name{font-size:15px;font-weight:700;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cd-stu-sub{font-size:12px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cd-stu-tags{display:flex;flex-wrap:wrap;gap:5px;border-top:1px solid var(--border);padding-top:8px}
+.cd-tag{font-size:11px;padding:2px 7px;border-radius:999px;background:#eef2ff;color:#3730a3;border:1px solid #c7d2fe;font-weight:600;display:inline-flex;align-items:center;gap:4px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cd-tag.major{background:#fef3c7;color:#92400e;border-color:#fde68a}
+.cd-tag.dept{background:#ecfdf5;color:#065f46;border-color:#a7f3d0}
+.cd-tag.gpa{background:#f5f3ff;color:#5b21b6;border-color:#ddd6fe}
+.cd-stats{display:flex;gap:8px;font-size:11px;color:var(--text3);flex-wrap:wrap}
+.cd-stat{display:inline-flex;align-items:center;gap:4px}
+.cd-stat .num{font-weight:800;color:var(--text);font-size:13px}
+.cd-stu-actions{display:flex;gap:6px;border-top:1px solid var(--border);padding-top:8px}
+.cd-stu-actions .btn{padding:6px 10px;font-size:12px}
+
+/* Desktop table */
+.cd-table-wrap{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.cd-table{width:100%;border-collapse:collapse;margin:0}
+.cd-table thead{background:var(--bg2,#f8fafc)}
+.cd-table th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--text3);text-align:left;padding:10px 12px;border-bottom:1px solid var(--border);font-weight:700}
+.cd-table td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
+.cd-table tr:last-child td{border-bottom:none}
+.cd-table tr:hover{background:var(--bg2,#f8fafc)}
+.cd-table .name-cell{display:flex;gap:8px;align-items:center;min-width:0}
+.cd-table .name-cell .av{width:32px;height:32px;border-radius:50%;flex-shrink:0;object-fit:cover}
+.cd-table .name-cell .ph{width:32px;height:32px;border-radius:50%;background:#1f5f82;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0}
+.cd-num-pill{display:inline-block;padding:2px 8px;border-radius:999px;background:#f1f5f9;color:var(--text);font-weight:700;font-size:12px;min-width:24px;text-align:center}
+.cd-num-pill.hired{background:#d1fae5;color:#065f46}
+.cd-num-pill.pending{background:#fef3c7;color:#92400e}
+
+/* Mobile data-cards */
+.cd-mcards{display:none;flex-direction:column;gap:10px}
+.cd-mcard{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.cd-mcard-head{display:flex;gap:10px;align-items:center;min-width:0}
+.cd-mcard-row{display:flex;gap:8px;align-items:flex-start;font-size:12px;color:var(--text3);min-width:0}
+.cd-mcard-row .lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;min-width:60px;flex-shrink:0;padding-top:2px}
+.cd-mcard-row .val{flex:1;color:var(--text);font-size:13px;word-break:break-word;min-width:0}
+.cd-mcard-actions{display:flex;gap:6px;border-top:1px solid var(--border);padding-top:8px}
+.cd-mcard-actions .btn{flex:1;justify-content:center;padding:7px 10px;font-size:12px}
+
+/* Empty */
+.cd-empty{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:36px 16px;text-align:center;color:var(--text3)}
+.cd-empty i{font-size:42px;display:block;margin-bottom:8px}
+
+@media(max-width:980px){
+  .cd-grid{grid-template-columns:repeat(2,1fr)}
+  .cd-kpis{grid-template-columns:repeat(4,1fr)}
+}
+@media(max-width:680px){
+  .cd-hero{padding:14px;gap:12px}
+  .cd-hero-avatar{width:60px;height:60px;font-size:22px}
+  .cd-hero-name{font-size:18px}
+  .cd-hero-meta{font-size:12px;gap:6px 12px}
+  .cd-kpis{grid-template-columns:repeat(2,1fr);gap:6px}
+  .cd-grid{grid-template-columns:1fr;gap:10px}
+  .cd-table-wrap{display:none}
+  .cd-mcards{display:flex}
+  .cd-section h2{font-size:15px}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cd-wrap">
+
+  <div class="cd-crumbs">
+    <a href="{{ url_for('admin.coordinators') }}"><i class="bi bi-arrow-left"></i> Coordinators</a>
+    <span>/</span>
+    <span>{{ coord.full_name or coord.email }}</span>
+  </div>
+
+  {# Hero / profile header #}
+  <div class="cd-hero">
+    {% if coord.avatar_filename %}
+      <img src="{{ url_for('static', filename='uploads/avatars/' + coord.avatar_filename) }}" alt="" class="cd-hero-avatar">
+    {% else %}
+      <div class="cd-hero-avatar">{{ (coord.full_name or coord.email)[0]|upper }}</div>
+    {% endif %}
+    <div class="cd-hero-info">
+      <h2 class="cd-hero-name">{{ coord.full_name or '—' }}</h2>
+      <div class="cd-hero-meta">
+        <span><i class="bi bi-envelope"></i> <a href="mailto:{{ coord.email }}">{{ coord.email }}</a></span>
+        {% if coord.phone %}<span><i class="bi bi-telephone"></i> <a href="tel:{{ coord.phone }}">{{ coord.phone }}</a></span>{% endif %}
+        <span><i class="bi bi-{{ 'check-circle-fill' if coord.is_active else 'x-circle-fill' }}"></i> {{ 'Active' if coord.is_active else 'Inactive' }}</span>
+      </div>
+
+      {% if memberships %}
+        <div class="cd-univs">
+          {% for m in memberships %}
+            <a href="{{ url_for('admin.university_detail', univ_id=m.university_id) }}" class="cd-univ-pill" title="{{ m.university.name }}{% if m.department %} — {{ m.department.name }}{% endif %}">
+              <i class="bi bi-mortarboard-fill"></i>
+              <span>{{ m.university.name }}</span>
+              {% if m.department %}<span class="dept">· {{ m.department.name }}</span>{% endif %}
+              {% if m.class_scope %}<span class="dept">· {{ m.class_scope }}</span>{% endif %}
+            </a>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+    <div class="cd-hero-actions">
+      <a href="{{ url_for('admin.user_detail', user_id=coord.id) }}" class="btn btn-sm"><i class="bi bi-person-lines-fill"></i> Full Profile</a>
+      <a href="mailto:{{ coord.email }}" class="btn btn-sm"><i class="bi bi-envelope"></i> Email</a>
+    </div>
+  </div>
+
+  {# KPIs #}
+  {% set total_students = students|length %}
+  {% set ns = namespace(hired=0, pending=0, apps=0) %}
+  {% for s in students %}
+    {% set st = stats.get(s.id, {}) %}
+    {% set ns.hired = ns.hired + (st.get('hired', 0)) %}
+    {% set ns.pending = ns.pending + (st.get('pending', 0)) %}
+    {% set ns.apps = ns.apps + (st.get('total', 0)) %}
+  {% endfor %}
+  <div class="cd-kpis">
+    <div class="cd-kpi">
+      <div class="cd-kpi-icon" style="background:#eff6ff;color:#2563eb"><i class="bi bi-people-fill"></i></div>
+      <div><div class="cd-kpi-val">{{ total_students }}</div><div class="cd-kpi-lbl">Students</div></div>
+    </div>
+    <div class="cd-kpi">
+      <div class="cd-kpi-icon" style="background:#f5f3ff;color:#7c3aed"><i class="bi bi-collection-fill"></i></div>
+      <div><div class="cd-kpi-val">{{ ns.apps }}</div><div class="cd-kpi-lbl">Applications</div></div>
+    </div>
+    <div class="cd-kpi">
+      <div class="cd-kpi-icon" style="background:#fef3c7;color:#b45309"><i class="bi bi-hourglass-split"></i></div>
+      <div><div class="cd-kpi-val">{{ ns.pending }}</div><div class="cd-kpi-lbl">Pending</div></div>
+    </div>
+    <div class="cd-kpi">
+      <div class="cd-kpi-icon" style="background:#ecfdf5;color:#0f7b52"><i class="bi bi-trophy-fill"></i></div>
+      <div><div class="cd-kpi-val">{{ ns.hired }}</div><div class="cd-kpi-lbl">Hired</div></div>
+    </div>
+  </div>
+
+  {# Students section #}
+  <div class="cd-section">
+    <h2><i class="bi bi-people-fill" style="color:var(--green)"></i> Supervised Students <span class="count">({{ total_students }})</span></h2>
+    <div class="view-toggle">
+      <a href="?q={{ q }}&view=cards" class="{% if view == 'cards' %}active{% endif %}" title="Cards"><i class="bi bi-grid-3x3-gap-fill"></i></a>
+      <a href="?q={{ q }}&view=list" class="{% if view == 'list' %}active{% endif %}" title="List"><i class="bi bi-list-ul"></i></a>
+    </div>
+  </div>
+
+  <form method="get" class="cd-filter">
+    <div class="ac-fld">
+      <label>Search Students</label>
+      <input class="form-control" type="text" name="q" value="{{ q }}" placeholder="Name, email, major, class, student ID…">
+    </div>
+    <input type="hidden" name="view" value="{{ view }}">
+    <div style="display:flex;gap:6px">
+      <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-funnel"></i> Filter</button>
+      {% if q %}<a href="{{ url_for('admin.coordinator_detail', user_id=coord.id) }}?view={{ view }}" class="btn btn-outline btn-sm">Reset</a>{% endif %}
+    </div>
+  </form>
+
+  {% if not memberships %}
+    <div class="cd-empty">
+      <i class="bi bi-exclamation-triangle" style="color:#b45309"></i>
+      <p style="margin:0"><strong>This coordinator is not linked to any university.</strong></p>
+      <p style="margin:6px 0 0;font-size:13px">Assign them to a university from the university detail page so they can supervise students.</p>
+    </div>
+
+  {% elif not students %}
+    <div class="cd-empty">
+      <i class="bi bi-person-x"></i>
+      <p style="margin:0">No students under this coordinator's supervision{% if q %} match the current search{% endif %}.</p>
+    </div>
+
+  {% elif view == 'cards' %}
+    <div class="cd-grid">
+      {% for s in students %}
+        {% set st = stats.get(s.id, {'total':0,'hired':0,'pending':0}) %}
+        <div class="cd-stu-card">
+          <div class="cd-stu-head">
+            {% if s.avatar_filename %}
+              <img src="{{ url_for('static', filename='uploads/avatars/' + s.avatar_filename) }}" alt="" class="cd-stu-avatar">
+            {% else %}
+              <div class="cd-stu-avatar">{{ (s.full_name or s.email)[0]|upper }}</div>
+            {% endif %}
+            <div class="cd-stu-name-block">
+              <h3 class="cd-stu-name" title="{{ s.full_name or s.email }}">{{ s.full_name or '—' }}</h3>
+              <div class="cd-stu-sub" title="{{ s.email }}">{{ s.email }}</div>
+              {% if s.student_id_number %}<div class="cd-stu-sub">ID: {{ s.student_id_number }}</div>{% endif %}
+            </div>
+          </div>
+
+          <div class="cd-stu-tags">
+            {% if s.university_major %}<span class="cd-tag major" title="Major"><i class="bi bi-book"></i> {{ s.university_major }}</span>{% endif %}
+            {% if s.university_class %}<span class="cd-tag" title="Class"><i class="bi bi-people"></i> {{ s.university_class }}</span>{% endif %}
+            {% if s.student_gpa %}<span class="cd-tag gpa" title="GPA"><i class="bi bi-bar-chart"></i> {{ s.student_gpa }}</span>{% endif %}
+            {% if s.graduation_year %}<span class="cd-tag" title="Graduation"><i class="bi bi-mortarboard"></i> {{ s.graduation_year }}</span>{% endif %}
+          </div>
+
+          <div class="cd-stats" style="border-top:1px solid var(--border);padding-top:8px">
+            <span class="cd-stat"><i class="bi bi-collection"></i> Apps: <span class="num">{{ st.total }}</span></span>
+            <span class="cd-stat" style="color:#b45309"><i class="bi bi-hourglass"></i> Pending: <span class="num">{{ st.pending }}</span></span>
+            <span class="cd-stat" style="color:#0f7b52"><i class="bi bi-trophy"></i> Hired: <span class="num">{{ st.hired }}</span></span>
+          </div>
+
+          <div class="cd-stu-actions">
+            <a href="{{ url_for('admin.user_detail', user_id=s.id) }}" class="btn btn-outline btn-sm" style="flex:1;justify-content:center"><i class="bi bi-person-lines-fill"></i> Profile</a>
+            <a href="mailto:{{ s.email }}" class="btn btn-outline btn-sm" title="Email"><i class="bi bi-envelope"></i></a>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+  {% else %}
+    {# Desktop table #}
+    <div class="cd-table-wrap">
+      <table class="cd-table">
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>Email</th>
+            <th>Major / Class</th>
+            <th style="text-align:center">Apps</th>
+            <th style="text-align:center">Pending</th>
+            <th style="text-align:center">Hired</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in students %}
+            {% set st = stats.get(s.id, {'total':0,'hired':0,'pending':0}) %}
+            <tr>
+              <td>
+                <div class="name-cell">
+                  {% if s.avatar_filename %}
+                    <img src="{{ url_for('static', filename='uploads/avatars/' + s.avatar_filename) }}" alt="" class="av">
+                  {% else %}
+                    <div class="ph">{{ (s.full_name or s.email)[0]|upper }}</div>
+                  {% endif %}
+                  <div style="min-width:0">
+                    <div style="font-weight:600">{{ s.full_name or '—' }}</div>
+                    {% if s.student_id_number %}<div style="font-size:11px;color:var(--text3)">ID: {{ s.student_id_number }}</div>{% endif %}
+                  </div>
+                </div>
+              </td>
+              <td><a href="mailto:{{ s.email }}">{{ s.email }}</a></td>
+              <td>
+                {% if s.university_major %}<span style="font-weight:600">{{ s.university_major }}</span>{% endif %}
+                {% if s.university_class %}<div style="font-size:11px;color:var(--text3)">{{ s.university_class }}</div>{% endif %}
+              </td>
+              <td style="text-align:center"><span class="cd-num-pill">{{ st.total }}</span></td>
+              <td style="text-align:center"><span class="cd-num-pill {% if st.pending %}pending{% endif %}">{{ st.pending }}</span></td>
+              <td style="text-align:center"><span class="cd-num-pill {% if st.hired %}hired{% endif %}">{{ st.hired }}</span></td>
+              <td style="text-align:right;white-space:nowrap">
+                <a href="{{ url_for('admin.user_detail', user_id=s.id) }}" class="btn btn-outline btn-sm"><i class="bi bi-person-lines-fill"></i> Profile</a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {# Mobile data-cards #}
+    <div class="cd-mcards">
+      {% for s in students %}
+        {% set st = stats.get(s.id, {'total':0,'hired':0,'pending':0}) %}
+        <div class="cd-mcard">
+          <div class="cd-mcard-head">
+            {% if s.avatar_filename %}
+              <img src="{{ url_for('static', filename='uploads/avatars/' + s.avatar_filename) }}" alt="" class="cd-stu-avatar">
+            {% else %}
+              <div class="cd-stu-avatar">{{ (s.full_name or s.email)[0]|upper }}</div>
+            {% endif %}
+            <div class="cd-stu-name-block">
+              <h3 class="cd-stu-name" title="{{ s.full_name or s.email }}">{{ s.full_name or '—' }}</h3>
+              <div class="cd-stu-sub" title="{{ s.email }}">{{ s.email }}</div>
+              {% if s.student_id_number %}<div class="cd-stu-sub">ID: {{ s.student_id_number }}</div>{% endif %}
+            </div>
+          </div>
+
+          {% if s.university_major or s.university_class %}
+            <div class="cd-mcard-row">
+              <div class="lbl">Major</div>
+              <div class="val">
+                {% if s.university_major %}{{ s.university_major }}{% endif %}
+                {% if s.university_class %}<div style="font-size:12px;color:var(--text3)">{{ s.university_class }}</div>{% endif %}
+              </div>
+            </div>
+          {% endif %}
+
+          <div class="cd-mcard-row">
+            <div class="lbl">Apps</div>
+            <div class="val">
+              <span class="cd-num-pill">{{ st.total }}</span> total
+              <span class="cd-num-pill {% if st.pending %}pending{% endif %}" style="margin-left:6px">{{ st.pending }}</span> pending
+              <span class="cd-num-pill {% if st.hired %}hired{% endif %}" style="margin-left:6px">{{ st.hired }}</span> hired
+            </div>
+          </div>
+
+          <div class="cd-mcard-actions">
+            <a href="{{ url_for('admin.user_detail', user_id=s.id) }}" class="btn btn-outline btn-sm"><i class="bi bi-person-lines-fill"></i> Profile</a>
+            <a href="mailto:{{ s.email }}" class="btn btn-outline btn-sm"><i class="bi bi-envelope"></i> Email</a>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

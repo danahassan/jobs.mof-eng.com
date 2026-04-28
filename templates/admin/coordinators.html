@@ -206,7 +206,7 @@
           </div>
 
           <div class="ac-actions">
-            <a href="{{ url_for('admin.user_detail', user_id=u.id) }}" class="btn btn-outline btn-sm" style="flex:1;justify-content:center"><i class="bi bi-person-lines-fill"></i> Profile</a>
+            <a href="{{ url_for('admin.coordinator_detail', user_id=u.id) }}" class="btn btn-outline btn-sm" style="flex:1;justify-content:center"><i class="bi bi-people-fill"></i> View Students</a>
             <a href="mailto:{{ u.email }}" class="btn btn-outline btn-sm" title="Email"><i class="bi bi-envelope"></i></a>
           </div>
         </div>
@@ -264,7 +264,7 @@
                 {% else %}<span class="ac-status-inactive">Inactive</span>{% endif %}
               </td>
               <td style="text-align:right;white-space:nowrap">
-                <a href="{{ url_for('admin.user_detail', user_id=u.id) }}" class="btn btn-outline btn-sm"><i class="bi bi-person-lines-fill"></i> Profile</a>
+                <a href="{{ url_for('admin.coordinator_detail', user_id=u.id) }}" class="btn btn-outline btn-sm"><i class="bi bi-people-fill"></i> Students</a>
               </td>
             </tr>
           {% endfor %}
@@ -318,7 +318,7 @@
           </div>
 
           <div class="ac-mcard-actions">
-            <a href="{{ url_for('admin.user_detail', user_id=u.id) }}" class="btn btn-outline btn-sm"><i class="bi bi-person-lines-fill"></i> Profile</a>
+            <a href="{{ url_for('admin.coordinator_detail', user_id=u.id) }}" class="btn btn-outline btn-sm"><i class="bi bi-people-fill"></i> Students</a>
             <a href="mailto:{{ u.email }}" class="btn btn-outline btn-sm"><i class="bi bi-envelope"></i> Email</a>
           </div>
         </div>
