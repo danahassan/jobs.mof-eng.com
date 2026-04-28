@@ -45,7 +45,7 @@
             <select name="position_id" class="form-control" required {% if not positions %}disabled{% endif %}>
               <option value="">— Select position —</option>
               {% for p in positions %}
-              <option value="{{ p.id }}">{{ p.title }}{% if p.company %} — {{ p.company.name }}{% endif %}{% if p.location %} ({{ p.location }}){% endif %}</option>
+              <option value="{{ p.id }}" {% if preselected_position_id and preselected_position_id == p.id %}selected{% endif %}>{{ p.title }}{% if p.company %} — {{ p.company.name }}{% endif %}{% if p.location %} ({{ p.location }}){% endif %}</option>
               {% endfor %}
             </select>
           </div>

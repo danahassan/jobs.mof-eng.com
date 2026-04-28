@@ -175,7 +175,13 @@
                 {% if job.experience_level %}<span>{{ job.experience_level }}</span>{% endif %}
               </div>
             </div>
-            <a href="{{ url_for('jobs.detail', job_id=job.id) }}" class="btn btn-outline btn-sm" style="white-space:nowrap">Apply Now</a>
+            {% if current_user.is_authenticated and current_user.role == 'university_coordinator' %}
+              <a href="{{ url_for('university.application_new', position_id=job.id) }}" class="btn btn-outline btn-sm" style="white-space:nowrap">
+                <i class="bi bi-mortarboard-fill"></i> Apply for Student
+              </a>
+            {% else %}
+              <a href="{{ url_for('jobs.detail', job_id=job.id) }}" class="btn btn-outline btn-sm" style="white-space:nowrap">Apply Now</a>
+            {% endif %}
           </div>
         </div>
         {% endfor %}

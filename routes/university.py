@@ -420,6 +420,9 @@ def application_new():
     student_ids = _student_ids(univ, _my_membership())
     students = User.query.filter(User.id.in_(student_ids)).order_by(User.full_name).all() if student_ids else []
 
+    # Pre-select a position when coordinator clicks "Apply for Student" on a company / job page.
+    preselected_position_id = request.args.get('position_id', type=int)
+
     if request.method == 'POST':
         student_id  = request.form.get('student_id', type=int)
         position_id = request.form.get('position_id', type=int)
@@ -463,7 +466,8 @@ def application_new():
         return redirect(url_for('university.applications'))
 
     return render_template('university/application_form.html',
-                           univ=univ, students=students, positions=open_positions)
+                           univ=univ, students=students, positions=open_positions,
+                           preselected_position_id=preselected_position_id)
 
 
 # ─── Student export / import ─────────────────────────────────────────────────

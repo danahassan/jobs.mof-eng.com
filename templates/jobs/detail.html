@@ -93,6 +93,8 @@
       {% elif already_applied %}
         <div style="text-align:center;padding:14px 0;font-size:15px;color:#16a34a;font-weight:600"><i class="bi bi-check-circle-fill"></i> Already Applied</div>
         <a href="{{ url_for('user.my_applications') }}" class="btn btn-outline" style="width:100%">View My Applications</a>
+      {% elif current_user.role == 'university_coordinator' %}
+        <a href="{{ url_for('university.application_new', position_id=job.id) }}" class="btn btn-primary" style="width:100%;margin-bottom:10px;font-size:15px"><i class="bi bi-mortarboard-fill"></i> Apply for Student</a>
       {% else %}
         <a href="{{ url_for('user.apply', pos_id=job.id) }}" class="btn btn-primary" style="width:100%;margin-bottom:10px;font-size:15px"><i class="bi bi-send-fill"></i> Apply Now</a>
         <button class="btn btn-outline save-btn" data-job-id="{{ job.id }}" style="width:100%">
