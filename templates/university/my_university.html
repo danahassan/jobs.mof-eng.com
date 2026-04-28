@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+{% block title %}My University — MOF Jobs{% endblock %}
+{% block page_title %}My University{% endblock %}
+
+{% block extra_css %}
+<style>
+.muni-page{display:flex;flex-direction:column;gap:14px;max-width:960px;margin:0 auto}
+.muni-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;box-shadow:var(--shadow-sm)}
+.muni-banner{height:160px;border-radius:10px;background:linear-gradient(120deg,#0f7b52,#1f5f82);background-size:cover;background-position:center;position:relative;margin-bottom:12px}
+.muni-logo-row{display:flex;align-items:center;gap:14px;margin-bottom:14px;flex-wrap:wrap}
+.muni-logo{width:84px;height:84px;border-radius:14px;background:#fff;border:1px solid var(--border);object-fit:contain;padding:6px}
+.muni-logo-ph{width:84px;height:84px;border-radius:14px;background:#0f7b52;color:#fff;font-size:34px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.muni-name{margin:0;font-size:22px;font-weight:800}
+.muni-sub{font-size:13px;color:var(--text3)}
+.muni-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.muni-full{grid-column:1 / -1}
+.muni-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.muni-status{padding:10px 12px;border-radius:10px;font-size:13px;display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.muni-status.verified{background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0}
+.muni-status.unverified{background:#fffbeb;color:#92400e;border:1px solid #fde68a}
+.muni-status.readonly{background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe}
+.muni-small{font-size:12px;color:var(--text3)}
+.muni-kv{display:grid;grid-template-columns:160px 1fr;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)}
+.muni-kv:last-child{border-bottom:none}
+.muni-k{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--text3)}
+.muni-v{font-size:13px;color:var(--text);font-weight:500}
+.muni-empty{padding:32px;text-align:center;color:var(--text3)}
+@media(max-width:700px){.muni-grid{grid-template-columns:1fr}.muni-kv{grid-template-columns:1fr}}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="muni-page">
+
+  {% if not univ %}
+    <div class="muni-card muni-empty">
+      <i class="bi bi-mortarboard" style="font-size:48px;color:var(--text3)"></i>
+      <h3 style="margin:12px 0 4px">No university linked</h3>
+      <p class="muni-small">Your account is not linked to any university yet. Please contact a system administrator.</p>
+    </div>
+
+  {% else %}
+
+  <div class="muni-card">
+    <div class="muni-banner" {% if univ.banner_filename %}style="background-image:url('{{ url_for('static', filename='uploads/company/' + univ.banner_filename) }}')"{% endif %}></div>
+    <div class="muni-logo-row">
+      {% if univ.logo_filename %}
+        <img src="{{ url_for('static', filename='uploads/company/' + univ.logo_filename) }}" alt="{{ univ.name }}" class="muni-logo">
+      {% else %}
+        <div class="muni-logo-ph">{{ univ.name[0]|upper }}</div>
+      {% endif %}
+      <div style="flex:1;min-width:0">
+        <h2 class="muni-name">{{ univ.name }}</h2>
+        <div class="muni-sub">
+          {% if univ.location %}<i class="bi bi-geo-alt"></i> {{ univ.location }}{% endif %}
+          {% if univ.is_verified %}
+            &nbsp;·&nbsp;<span style="color:#0f7b52;font-weight:700"><i class="bi bi-patch-check-fill"></i> Verified</span>
+          {% else %}
+            &nbsp;·&nbsp;<span style="color:#b45309;font-weight:700"><i class="bi bi-hourglass-split"></i> Unverified</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    {# Status banner — different message per role/state #}
+    {% if is_student %}
+      <div class="muni-status readonly">
+        <i class="bi bi-info-circle-fill"></i>
+        <div>This is your university profile. To request changes, please contact your university coordinator or a system administrator.</div>
+      </div>
+    {% elif locked %}
+      <div class="muni-status verified">
+        <i class="bi bi-patch-check-fill"></i>
+        <div>
+          <strong>Verified</strong> — your university profile has been verified by an administrator.
+          Only admins can edit verified profiles. Please contact a system administrator for any changes.
+        </div>
+      </div>
+    {% else %}
+      <div class="muni-status unverified">
+        <i class="bi bi-hourglass-split"></i>
+        <div>
+          <strong>Pending verification</strong> — you can update your university details until an administrator verifies the profile.
+          Once verified, only admins can make changes.
+        </div>
+      </div>
+    {% endif %}
+
+    {# View-only summary (always visible) #}
+    {% if not can_edit %}
+      <div class="muni-grid">
+        <div class="muni-kv"><div class="muni-k">Name</div><div class="muni-v">{{ univ.name }}</div></div>
+        <div class="muni-kv"><div class="muni-k">Location</div><div class="muni-v">{{ univ.location or '—' }}</div></div>
+        <div class="muni-kv"><div class="muni-k">Website</div><div class="muni-v">{% if univ.website %}<a href="{{ univ.website }}" target="_blank" rel="noopener">{{ univ.website }}</a>{% else %}—{% endif %}</div></div>
+        <div class="muni-kv"><div class="muni-k">Contact Email</div><div class="muni-v">{% if univ.contact_email %}<a href="mailto:{{ univ.contact_email }}">{{ univ.contact_email }}</a>{% else %}—{% endif %}</div></div>
+        <div class="muni-kv"><div class="muni-k">Contact Phone</div><div class="muni-v">{{ univ.contact_phone or '—' }}</div></div>
+        <div class="muni-kv"><div class="muni-k">Status</div><div class="muni-v">{{ 'Active' if univ.is_active else 'Inactive' }}</div></div>
+        <div class="muni-kv muni-full"><div class="muni-k">Description</div><div class="muni-v" style="white-space:pre-wrap">{{ univ.description or '—' }}</div></div>
+      </div>
+    {% else %}
+      {# Editable form for coordinators when not verified #}
+      <form method="POST" enctype="multipart/form-data" class="muni-grid">
+        <div class="muni-full">
+          <label class="muni-small">University Name *</label>
+          <input class="form-control" name="name" value="{{ univ.name }}" required>
+        </div>
+        <div>
+          <label class="muni-small">Location</label>
+          <input class="form-control" name="location" value="{{ univ.location or '' }}">
+        </div>
+        <div>
+          <label class="muni-small">Website</label>
+          <input class="form-control" type="url" name="website" value="{{ univ.website or '' }}">
+        </div>
+        <div>
+          <label class="muni-small">Contact Email</label>
+          <input class="form-control" type="email" name="contact_email" value="{{ univ.contact_email or '' }}">
+        </div>
+        <div>
+          <label class="muni-small">Contact Phone</label>
+          <input class="form-control" name="contact_phone" value="{{ univ.contact_phone or '' }}">
+        </div>
+        <div class="muni-full">
+          <label class="muni-small">Description</label>
+          <textarea class="form-control" name="description" rows="5" style="resize:vertical">{{ univ.description or '' }}</textarea>
+        </div>
+
+        <div>
+          <label class="muni-small">University Logo
+            {% if univ.logo_filename %}<span style="color:#0f7b52">— currently set</span>
+            {% else %}<span style="color:#b45309">— none uploaded</span>{% endif %}
+          </label>
+          {% if univ.logo_filename %}
+            <div style="margin:6px 0;padding:6px;border:1px solid var(--border);border-radius:8px;display:inline-block;background:#fff">
+              <img src="{{ url_for('static', filename='uploads/company/' + univ.logo_filename) }}" alt="Current logo" style="max-height:60px;max-width:140px;object-fit:contain;display:block">
+            </div>
+          {% endif %}
+          <input type="file" class="form-control" name="logo" accept=".png,.jpg,.jpeg,.webp">
+        </div>
+        <div>
+          <label class="muni-small">University Banner
+            {% if univ.banner_filename %}<span style="color:#0f7b52">— currently set</span>{% endif %}
+          </label>
+          {% if univ.banner_filename %}
+            <div style="margin:6px 0;padding:6px;border:1px solid var(--border);border-radius:8px;display:inline-block;background:#fff">
+              <img src="{{ url_for('static', filename='uploads/company/' + univ.banner_filename) }}" alt="Current banner" style="max-height:60px;max-width:200px;object-fit:cover;display:block">
+            </div>
+          {% endif %}
+          <input type="file" class="form-control" name="banner" accept=".png,.jpg,.jpeg,.webp">
+        </div>
+
+        <div class="muni-full muni-actions">
+          <a href="{{ url_for('university.dashboard') if current_user.role == 'university_coordinator' else url_for('student.dashboard') }}" class="btn btn-outline btn-sm"><i class="bi bi-arrow-left"></i> Back</a>
+          <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-check2"></i> Save Changes</button>
+        </div>
+      </form>
+    {% endif %}
+  </div>
+
+  {% endif %}
+</div>
+{% endblock %}

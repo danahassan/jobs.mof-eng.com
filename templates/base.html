@@ -569,6 +569,7 @@ html.dark select.form-control option{background:#1e293b}
         <a href="{{ url_for('reports.index') }}" class="nav-item {% if request.blueprint == 'reports' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-file-earmark-text-fill"></i> Reports</a>
         <div class="nav-section">Discover</div>
         <a href="{{ url_for('companies.listing') }}" class="nav-item {% if request.blueprint == 'companies' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-building"></i> Companies</a>
+        <a href="{{ url_for('university.my_university') }}" class="nav-item {% if request.endpoint == 'university.my_university' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-mortarboard"></i> My University</a>
         <div class="nav-section">Other</div>
         <a href="{{ url_for('messages.inbox') }}" class="nav-item {% if request.blueprint == 'messages' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-chat-dots-fill"></i> Messages{% if unread_count %}<span class="nav-badge">{{ unread_count }}</span>{% endif %}</a>
 
@@ -582,6 +583,7 @@ html.dark select.form-control option{background:#1e293b}
         <a href="{{ url_for('analytics.candidate') }}" class="nav-item {% if request.endpoint == 'analytics.candidate' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-bar-chart-fill"></i> My Analytics</a>
         <div class="nav-section">Discover</div>
         <a href="{{ url_for('companies.listing') }}" class="nav-item {% if request.blueprint == 'companies' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-building"></i> Companies</a>
+        <a href="{{ url_for('university.my_university') }}" class="nav-item {% if request.endpoint == 'university.my_university' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-mortarboard"></i> My University</a>
         <div class="nav-section">Other</div>
         <a href="{{ url_for('messages.inbox') }}" class="nav-item {% if request.blueprint == 'messages' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-chat-dots-fill"></i> Messages{% if unread_count %}<span class="nav-badge">{{ unread_count }}</span>{% endif %}</a>
 

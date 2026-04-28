@@ -3,7 +3,7 @@ import io
 from datetime import datetime, timedelta
 from flask import (Blueprint, render_template, redirect, url_for,
                    flash, request, current_app, abort, jsonify, send_file)
-from flask_login import current_user
+from flask_login import current_user, login_required
 from sqlalchemy import or_, false as sql_false, func
 from models import (db, User, Application, Position, University, UniversityDepartment, UniversityMember,
                     ApplicationHistory, CompanyMember,
@@ -71,26 +71,45 @@ def dashboard():
         ALL_STATUSES=ALL_STATUSES)
 
 
-@university_bp.route('/profile/edit', methods=['GET', 'POST'])
-@university_coordinator_required
-def profile_edit():
-    """Coordinator-only edit form for their own university.
+@university_bp.route('/me', methods=['GET', 'POST'])
+@login_required
+def my_university():
+    """My University — single page accessible to both coordinators and students.
 
-    Coordinators may only edit while the university has not yet been verified
-    by an admin. Once verified, the form is read-only and they're told to
-    contact an admin.
+    - Students: read-only view of their linked university.
+    - Coordinators: same view plus an inline edit form, but only while the
+      university has not yet been verified by an admin. Once verified, the
+      form becomes read-only and a notice tells them to contact admins.
+    - Admins/others: redirected to the dashboard (admins have richer admin pages).
     """
-    univ = _my_university()
-    if not univ:
-        flash('You are not linked to any university yet.', 'warning')
-        return redirect(url_for('university.dashboard'))
+    role = getattr(current_user, 'role', None)
+    if role not in (ROLE_STUDENT, ROLE_UNIVERSITY_COORD):
+        flash('My University is only available to students and university coordinators.', 'info')
+        return redirect(url_for('user.dashboard'))
 
+    # Resolve university: coordinators via UniversityMember; students via user.university_id.
+    univ = None
+    if role == ROLE_UNIVERSITY_COORD:
+        univ = _my_university()
+    if univ is None and getattr(current_user, 'university_id', None):
+        univ = db.session.get(University, current_user.university_id)
+
+    if univ is None:
+        flash('You are not linked to any university yet. Please contact your administrator.', 'warning')
+        return render_template('university/my_university.html',
+                               univ=None, can_edit=False, locked=False, is_student=(role == ROLE_STUDENT))
+
+    is_coord = (role == ROLE_UNIVERSITY_COORD)
     locked = bool(getattr(univ, 'is_verified', False))
+    can_edit = is_coord and not locked
 
     if request.method == 'POST':
-        if locked:
-            flash('This university has been verified — only an admin can edit it now.', 'warning')
-            return redirect(url_for('university.profile_edit'))
+        if not can_edit:
+            if is_coord and locked:
+                flash('This university has been verified — please contact an administrator for changes.', 'warning')
+            else:
+                abort(403)
+            return redirect(url_for('university.my_university'))
 
         univ.name          = (request.form.get('name') or univ.name).strip()
         univ.description   = (request.form.get('description') or '').strip() or None
@@ -119,9 +138,18 @@ def profile_edit():
             current_app.logger.exception('audit log failed for coordinator university edit')
         db.session.commit()
         flash('University profile updated.', 'success')
-        return redirect(url_for('university.profile_edit'))
+        return redirect(url_for('university.my_university'))
 
-    return render_template('university/profile_edit.html', univ=univ, locked=locked)
+    return render_template('university/my_university.html',
+                           univ=univ, can_edit=can_edit, locked=locked,
+                           is_student=(role == ROLE_STUDENT))
+
+
+@university_bp.route('/profile/edit', methods=['GET', 'POST'])
+@university_coordinator_required
+def profile_edit():
+    """Legacy alias — redirect to the unified My University page."""
+    return redirect(url_for('university.my_university'), code=302)
 
 
 @university_bp.route('/students')
