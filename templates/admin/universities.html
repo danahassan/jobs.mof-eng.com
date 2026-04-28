@@ -132,8 +132,8 @@
         <a href="{{ url_for('admin.university_detail', univ_id=u.id) }}" class="btn btn-outline btn-sm" style="flex:1;justify-content:center">
           <i class="bi bi-eye"></i> View
         </a>
-        <a href="{{ url_for('admin.university_edit', univ_id=u.id) }}" class="btn btn-outline btn-sm">
-          <i class="bi bi-pencil"></i>
+        <a href="{{ url_for('admin.university_detail', univ_id=u.id, edit=1) }}#tab-info" class="btn btn-outline btn-sm" title="Edit university">
+          <i class="bi bi-pencil"></i> Edit
         </a>
         <form method="POST" action="{{ url_for('admin.university_delete', univ_id=u.id) }}"
               onsubmit="return confirm('Delete {{ u.name|e }}? This cannot be undone.')">
@@ -193,8 +193,8 @@
               <a href="{{ url_for('admin.university_detail', univ_id=u.id) }}" class="btn btn-outline btn-sm">
                 <i class="bi bi-eye"></i> View
               </a>
-              <a href="{{ url_for('admin.university_edit', univ_id=u.id) }}" class="btn btn-outline btn-sm">
-                <i class="bi bi-pencil"></i>
+              <a href="{{ url_for('admin.university_detail', univ_id=u.id, edit=1) }}#tab-info" class="btn btn-outline btn-sm" title="Edit university">
+                <i class="bi bi-pencil"></i> Edit
               </a>
               <form method="POST" action="{{ url_for('admin.university_delete', univ_id=u.id) }}"
                     onsubmit="return confirm('Delete {{ u.name|e }}? This cannot be undone.')">

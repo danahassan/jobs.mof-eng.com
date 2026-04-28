@@ -2241,13 +2241,20 @@ def university_detail(univ_id):
         gpa_max_filter=request.args.get('gpa_max', '').strip(),
         assignable_students=assignable_students,
         available_coords=available_coords,
-        internship_count=internship_count)
+        internship_count=internship_count,
+        can_edit_university=True,
+        is_admin_user=True,
+        edit_open=(request.args.get('edit') in ('1', 'true', 'yes')))
 
 
-@admin_bp.route('/universities/<int:univ_id>/edit', methods=['POST'])
+@admin_bp.route('/universities/<int:univ_id>/edit', methods=['GET', 'POST'])
 @admin_required
 def university_edit(univ_id):
     univ = db.get_or_404(University, univ_id)
+    if request.method == 'GET':
+        # Unified entry point: send admins to the detail page with the inline
+        # edit panel auto-opened.
+        return redirect(url_for('admin.university_detail', univ_id=univ_id, edit=1) + '#tab-info')
     univ.name          = request.form.get('name', univ.name).strip()
     univ.description   = request.form.get('description', '').strip() or None
     univ.location      = request.form.get('location', '').strip() or None
@@ -2273,6 +2280,28 @@ def university_edit(univ_id):
     _audit('university.edit', univ.name)
     db.session.commit()
     flash('University updated.', 'success')
+    return redirect(url_for('admin.university_detail', univ_id=univ_id))
+
+
+@admin_bp.route('/universities/<int:univ_id>/verify', methods=['POST'])
+@admin_required
+def university_verify(univ_id):
+    """Admin marks a university as verified — locks it from coordinator edits."""
+    univ = db.get_or_404(University, univ_id)
+    action = (request.form.get('action') or 'verify').lower()
+    if action == 'unverify':
+        univ.is_verified = False
+        univ.verified_at = None
+        univ.verified_by_id = None
+        _audit('university.unverify', univ.name)
+        flash(f'{univ.name} marked as unverified — coordinator can edit again.', 'info')
+    else:
+        univ.is_verified = True
+        univ.verified_at = datetime.utcnow()
+        univ.verified_by_id = current_user.id
+        _audit('university.verify', univ.name)
+        flash(f'{univ.name} verified — coordinator edit access is now locked.', 'success')
+    db.session.commit()
     return redirect(url_for('admin.university_detail', univ_id=univ_id))
 
 
