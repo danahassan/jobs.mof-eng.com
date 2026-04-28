@@ -226,72 +226,92 @@ def apply(pos_id):
         site_url = current_app.config['SITE_URL']
 
         if requires_university_review:
-            # Notify only coordinators responsible for this student's scope.
-            coord_q = UniversityMember.query.filter_by(
-                university_id=current_user.university_id, role='coordinator')
-            if current_user.university_department_id:
-                coord_q = coord_q.filter(or_(
-                    UniversityMember.department_id.is_(None),
-                    UniversityMember.department_id == current_user.university_department_id,
-                ))
-            if current_user.university_class:
-                coord_q = coord_q.filter(or_(
-                    UniversityMember.class_scope.is_(None),
-                    UniversityMember.class_scope == current_user.university_class,
-                ))
-            coord_ids = [m.user_id for m in coord_q.all()]
-            coordinators = User.query.filter(
-                User.id.in_(coord_ids), User.is_active == True).all() if coord_ids else []
+            try:
+                # Notify only coordinators responsible for this student's scope.
+                coord_q = UniversityMember.query.filter_by(
+                    university_id=current_user.university_id, role='coordinator')
+                if current_user.university_department_id:
+                    coord_q = coord_q.filter(or_(
+                        UniversityMember.department_id.is_(None),
+                        UniversityMember.department_id == current_user.university_department_id,
+                    ))
+                if current_user.university_class:
+                    coord_q = coord_q.filter(or_(
+                        UniversityMember.class_scope.is_(None),
+                        UniversityMember.class_scope == current_user.university_class,
+                    ))
+                coord_ids = [m.user_id for m in coord_q.all()]
+                coordinators = User.query.filter(
+                    User.id.in_(coord_ids), User.is_active == True).all() if coord_ids else []
 
-            for coord in coordinators:
+                for coord in coordinators:
+                    try:
+                        push_notification(
+                            coord.id,
+                            f'New internship request from {current_user.full_name}: {pos.title}',
+                            url_for('university.application_detail', app_id=application.id),
+                        )
+                    except Exception as e:
+                        current_app.logger.warning(f'Coordinator push notification to {coord.id} failed: {e}')
+
+                for coord in coordinators:
+                    try:
+                        recipient_name = (coord.full_name or coord.email or '').split()[0] if (coord.full_name or coord.email) else 'Coordinator'
+                        html = render_template(
+                            'emails/application_notify_staff.html',
+                            app=application,
+                            pos=pos,
+                            recipient_name=recipient_name,
+                            review_url=site_url + url_for('university.application_detail', app_id=application.id),
+                            for_coordinator=True,
+                        )
+                        send_email(
+                            coord.email,
+                            f'Internship Approval Needed: {current_user.full_name} → {pos.title}',
+                            html,
+                            attachment_path=cv_path,
+                            attachment_name=application.cv_original,
+                        )
+                    except Exception as e:
+                        current_app.logger.warning(f'Coordinator notification email to {coord.email} failed: {e}')
+
                 try:
-                    push_notification(
-                        coord.id,
-                        f'New internship request from {current_user.full_name}: {pos.title}',
-                        url_for('university.application_detail', app_id=application.id),
-                    )
+                    html = render_template('emails/application_pending_university.html',
+                                           app=application, user=current_user, pos=pos, site_url=site_url)
+                    send_email(current_user.email,
+                               f'Internship request submitted for university approval — {pos.title}', html)
+                except Exception as e:
+                    current_app.logger.warning(f'Pending approval email failed: {e}')
+            except Exception as e:
+                # Never let notification failures break a successfully-saved application.
+                current_app.logger.exception(
+                    f'Post-commit internship notification block failed for application #{application.id}: {e}')
+                try:
+                    db.session.rollback()
                 except Exception:
                     pass
-
-            for coord in coordinators:
-                try:
-                    html = render_template(
-                        'emails/application_notify_staff.html',
-                        app=application,
-                        pos=pos,
-                        recipient_name=coord.full_name.split()[0],
-                        review_url=site_url + url_for('university.application_detail', app_id=application.id),
-                        for_coordinator=True,
-                    )
-                    send_email(
-                        coord.email,
-                        f'Internship Approval Needed: {current_user.full_name} → {pos.title}',
-                        html,
-                        attachment_path=cv_path,
-                        attachment_name=application.cv_original,
-                    )
-                except Exception as e:
-                    current_app.logger.warning(f'Coordinator notification email to {coord.email} failed: {e}')
-
-            try:
-                html = render_template('emails/application_pending_university.html',
-                                       app=application, user=current_user, pos=pos, site_url=site_url)
-                send_email(current_user.email,
-                           f'Internship request submitted for university approval — {pos.title}', html)
-            except Exception as e:
-                current_app.logger.warning(f'Pending approval email failed: {e}')
 
             flash(f'Your internship request for "{pos.title}" is pending university coordinator approval.', 'success')
             return redirect(url_for('user.my_applications'))
 
         # In-app notification for admin(s)
         from models import User, ROLE_ADMIN, ROLE_SUPERVISOR
-        admins = User.query.filter_by(role=ROLE_ADMIN, is_active=True).all()
-        for admin in admins:
-            push_notification(admin.id,
-                f'New application from {current_user.full_name} for {pos.title}',
-                url_for('admin.application_detail', app_id=application.id))
-        db.session.commit()
+        try:
+            admins = User.query.filter_by(role=ROLE_ADMIN, is_active=True).all()
+            for admin in admins:
+                try:
+                    push_notification(admin.id,
+                        f'New application from {current_user.full_name} for {pos.title}',
+                        url_for('admin.application_detail', app_id=application.id))
+                except Exception as e:
+                    current_app.logger.warning(f'Admin push notification to {admin.id} failed: {e}')
+            db.session.commit()
+        except Exception as e:
+            current_app.logger.exception(f'Admin notification commit failed for application #{application.id}: {e}')
+            try:
+                db.session.rollback()
+            except Exception:
+                pass
 
         # 1. Confirmation email to applicant
         try:
@@ -303,31 +323,35 @@ def apply(pos_id):
             current_app.logger.warning(f'Applicant confirmation email failed: {e}')
 
         # 2. Notification email to supervisors managing this company only
-        review_url = site_url + url_for('admin.application_detail', app_id=application.id)
-        if pos.company_id:
-            manager_ids = [m.user_id for m in CompanyMember.query.filter_by(
-                company_id=pos.company_id, role='manager').all()]
-            supervisors = User.query.filter(
-                User.id.in_(manager_ids), User.is_active == True).all() if manager_ids else []
-        else:
-            supervisors = []
-        staff_recipients = supervisors
-        for staff in staff_recipients:
-            staff_review_url = review_url
-            if staff.role == ROLE_SUPERVISOR:
-                staff_review_url = site_url + url_for('supervisor.application_detail', app_id=application.id)
-            try:
-                html = render_template('emails/application_notify_staff.html',
-                                       app=application, pos=pos,
-                                       recipient_name=staff.full_name.split()[0],
-                                       review_url=staff_review_url)
-                send_email(staff.email,
-                           f'New Application: {current_user.full_name} → {pos.title}',
-                           html,
-                           attachment_path=cv_path,
-                           attachment_name=application.cv_original)
-            except Exception as e:
-                current_app.logger.warning(f'Staff notification email to {staff.email} failed: {e}')
+        try:
+            review_url = site_url + url_for('admin.application_detail', app_id=application.id)
+            if pos.company_id:
+                manager_ids = [m.user_id for m in CompanyMember.query.filter_by(
+                    company_id=pos.company_id, role='manager').all()]
+                supervisors = User.query.filter(
+                    User.id.in_(manager_ids), User.is_active == True).all() if manager_ids else []
+            else:
+                supervisors = []
+            staff_recipients = supervisors
+            for staff in staff_recipients:
+                staff_review_url = review_url
+                if staff.role == ROLE_SUPERVISOR:
+                    staff_review_url = site_url + url_for('supervisor.application_detail', app_id=application.id)
+                try:
+                    recipient_name = (staff.full_name or staff.email or '').split()[0] if (staff.full_name or staff.email) else 'Team'
+                    html = render_template('emails/application_notify_staff.html',
+                                           app=application, pos=pos,
+                                           recipient_name=recipient_name,
+                                           review_url=staff_review_url)
+                    send_email(staff.email,
+                               f'New Application: {current_user.full_name} → {pos.title}',
+                               html,
+                               attachment_path=cv_path,
+                               attachment_name=application.cv_original)
+                except Exception as e:
+                    current_app.logger.warning(f'Staff notification email to {staff.email} failed: {e}')
+        except Exception as e:
+            current_app.logger.exception(f'Staff notification block failed for application #{application.id}: {e}')
 
         flash(f'Your application for "{pos.title}" has been submitted!', 'success')
         return redirect(url_for('user.my_applications'))
