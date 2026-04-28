@@ -584,6 +584,7 @@ html.dark select.form-control option{background:#1e293b}
         <div class="nav-section">Discover</div>
         <a href="{{ url_for('companies.listing') }}" class="nav-item {% if request.blueprint == 'companies' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-building"></i> Companies</a>
         <a href="{{ url_for('university.my_university') }}" class="nav-item {% if request.endpoint == 'university.my_university' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-mortarboard"></i> My University</a>
+        <a href="{{ url_for('university.my_coordinator') }}" class="nav-item {% if request.endpoint == 'university.my_coordinator' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-person-badge"></i> My Coordinator</a>
         <div class="nav-section">Other</div>
         <a href="{{ url_for('messages.inbox') }}" class="nav-item {% if request.blueprint == 'messages' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-chat-dots-fill"></i> Messages{% if unread_count %}<span class="nav-badge">{{ unread_count }}</span>{% endif %}</a>
 

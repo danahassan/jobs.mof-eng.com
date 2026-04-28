@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% block title %}My Coordinator — MOF Jobs{% endblock %}
+{% block page_title %}My Coordinator{% endblock %}
+
+{% block extra_css %}
+<style>
+.mc-page{display:flex;flex-direction:column;gap:14px;max-width:960px;margin:0 auto}
+.mc-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;box-shadow:var(--shadow-sm)}
+.mc-coord{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap}
+.mc-avatar{width:84px;height:84px;border-radius:50%;background:#0f7b52;color:#fff;font-size:30px;font-weight:800;display:flex;align-items:center;justify-content:center;object-fit:cover;flex-shrink:0;border:1px solid var(--border)}
+.mc-name{margin:0;font-size:18px;font-weight:800}
+.mc-role{font-size:12px;color:var(--text3);margin-top:2px}
+.mc-kv{display:grid;grid-template-columns:140px 1fr;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px}
+.mc-kv:last-child{border-bottom:none}
+.mc-k{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--text3)}
+.mc-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.mc-empty{padding:32px;text-align:center;color:var(--text3)}
+.mc-univ{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text3);margin-bottom:6px}
+@media(max-width:700px){.mc-kv{grid-template-columns:1fr}}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mc-page">
+
+  {% if not univ %}
+    <div class="mc-card mc-empty">
+      <i class="bi bi-person-badge" style="font-size:48px;color:var(--text3)"></i>
+      <h3 style="margin:12px 0 4px">No university linked</h3>
+      <p style="font-size:13px">You are not linked to a university yet, so we can't show your coordinator. Please contact a system administrator.</p>
+    </div>
+
+  {% elif not coordinators %}
+    <div class="mc-card mc-empty">
+      <i class="bi bi-person-x" style="font-size:48px;color:var(--text3)"></i>
+      <h3 style="margin:12px 0 4px">No coordinator assigned yet</h3>
+      <p style="font-size:13px">
+        <strong>{{ univ.name }}</strong> doesn't have a registered coordinator on the platform yet.
+        Please contact a system administrator if you need help.
+      </p>
+    </div>
+
+  {% else %}
+    <div class="mc-card">
+      <div class="mc-univ">
+        <i class="bi bi-mortarboard"></i>
+        <span>Coordinators for <strong>{{ univ.name }}</strong></span>
+      </div>
+
+      {% for m in coordinators %}
+        {% set u = m.user %}
+        <div class="mc-coord" style="{% if not loop.last %}border-bottom:1px solid var(--border);padding-bottom:14px;margin-bottom:14px{% endif %}">
+          {% if u.avatar_filename %}
+            <img src="{{ url_for('static', filename='uploads/avatars/' + u.avatar_filename) }}" alt="{{ u.full_name }}" class="mc-avatar">
+          {% else %}
+            <div class="mc-avatar">{{ (u.full_name or u.email)[0]|upper }}</div>
+          {% endif %}
+          <div style="flex:1;min-width:240px">
+            <h3 class="mc-name">{{ u.full_name or u.email }}</h3>
+            <div class="mc-role">
+              University Coordinator
+              {% if m.department %}· {{ m.department.name }}{% endif %}
+              {% if m.class_scope %}· {{ m.class_scope }}{% endif %}
+            </div>
+
+            <div style="margin-top:10px">
+              {% if u.headline %}
+                <div class="mc-kv"><div class="mc-k">Title</div><div>{{ u.headline }}</div></div>
+              {% endif %}
+              <div class="mc-kv"><div class="mc-k">Email</div><div><a href="mailto:{{ u.email }}">{{ u.email }}</a></div></div>
+              {% if u.phone %}
+                <div class="mc-kv"><div class="mc-k">Phone</div><div><a href="tel:{{ u.phone }}">{{ u.phone }}</a></div></div>
+              {% endif %}
+              {% if u.location_city %}
+                <div class="mc-kv"><div class="mc-k">Location</div><div>{{ u.location_city }}</div></div>
+              {% endif %}
+              {% if u.linkedin_url %}
+                <div class="mc-kv"><div class="mc-k">LinkedIn</div><div><a href="{{ u.linkedin_url }}" target="_blank" rel="noopener">{{ u.linkedin_url }}</a></div></div>
+              {% endif %}
+              {% if u.bio %}
+                <div class="mc-kv"><div class="mc-k">About</div><div style="white-space:pre-wrap">{{ u.bio }}</div></div>
+              {% endif %}
+            </div>
+
+            <div class="mc-actions">
+              <a href="mailto:{{ u.email }}" class="btn btn-outline btn-sm"><i class="bi bi-envelope"></i> Email</a>
+              <a href="{{ url_for('messages.thread', partner_id=u.id) }}" class="btn btn-primary btn-sm"><i class="bi bi-chat-dots"></i> Send Message</a>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

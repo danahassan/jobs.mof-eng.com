@@ -145,6 +145,36 @@ def my_university():
                            is_student=(role == ROLE_STUDENT))
 
 
+@university_bp.route('/my-coordinator')
+@login_required
+def my_coordinator():
+    """Student-facing page showing their university coordinator(s)."""
+    if getattr(current_user, 'role', None) != ROLE_STUDENT:
+        flash('My Coordinator is only available to students.', 'info')
+        return redirect(url_for('user.dashboard'))
+
+    univ = None
+    if getattr(current_user, 'university_id', None):
+        univ = db.session.get(University, current_user.university_id)
+
+    coordinators = []
+    if univ:
+        members = (UniversityMember.query
+                   .filter_by(university_id=univ.id)
+                   .join(User, UniversityMember.user_id == User.id)
+                   .filter(User.role == ROLE_UNIVERSITY_COORD, User.is_active == True)
+                   .all())
+        # Prefer coordinators in the student's department (if any), then others
+        my_dept = current_user.university_department_id
+        coordinators = sorted(members, key=lambda m: (
+            0 if (my_dept and m.department_id == my_dept) else 1,
+            (m.user.full_name or '').lower(),
+        ))
+
+    return render_template('university/my_coordinator.html',
+                           univ=univ, coordinators=coordinators)
+
+
 @university_bp.route('/profile/edit', methods=['GET', 'POST'])
 @university_coordinator_required
 def profile_edit():
