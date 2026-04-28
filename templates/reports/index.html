@@ -75,17 +75,11 @@
   <span class="text-muted text-sm">
     {% if role == 'student' %}Your submitted internship reports{% else %}Reports from your students{% endif %}
   </span>
-  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-    <div class="rep-view-toggle" role="group" aria-label="View mode">
-      <button type="button" id="rep-view-list" class="active" title="List view"><i class="bi bi-list-ul"></i> List</button>
-      <button type="button" id="rep-view-grid" title="Grid view"><i class="bi bi-grid-3x3-gap-fill"></i> Grid</button>
-    </div>
-    {% if role == 'student' %}
-    <a href="{{ url_for('reports.submit') }}" class="btn btn-primary btn-sm">
-      <i class="bi bi-cloud-upload-fill"></i> Submit New Report
-    </a>
-    {% endif %}
-  </div>
+  {% if role == 'student' %}
+  <a href="{{ url_for('reports.submit') }}" class="btn btn-primary btn-sm">
+    <i class="bi bi-cloud-upload-fill"></i> Submit New Report
+  </a>
+  {% endif %}
 </div>
 
 <!-- KPIs -->
@@ -134,6 +128,13 @@
 
 <!-- List -->
 {% if reports %}
+<div class="rep-results-bar" style="display:flex;justify-content:space-between;align-items:center;margin:6px 0 12px;gap:10px;flex-wrap:wrap">
+  <span class="text-muted text-sm">{{ reports|length }} report{{ 's' if reports|length != 1 }}</span>
+  <div class="rep-view-toggle" role="group" aria-label="View mode">
+    <button type="button" id="rep-view-list" class="active" title="List view"><i class="bi bi-list-ul"></i> List</button>
+    <button type="button" id="rep-view-grid" title="Grid view"><i class="bi bi-grid-3x3-gap-fill"></i> Cards</button>
+  </div>
+</div>
 <div class="rep-grid" id="rep-grid-view" style="display:none">
   {% for r in reports %}
   <div class="rep-card">
