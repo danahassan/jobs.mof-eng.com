@@ -521,6 +521,7 @@ html.dark select.form-control option{background:#1e293b}
         <div class="nav-section">Management</div>
         <a href="{{ url_for('admin.companies') }}" class="nav-item {% if request.blueprint == 'admin' and 'compan' in request.endpoint %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-building"></i> Companies</a>
         <a href="{{ url_for('admin.universities') }}" class="nav-item {% if request.blueprint == 'admin' and 'universit' in request.endpoint and 'request' not in request.endpoint %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-mortarboard"></i> Universities</a>
+        <a href="{{ url_for('admin.coordinators') }}" class="nav-item {% if request.endpoint == 'admin.coordinators' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-person-video3"></i> Coordinators</a>
         <a href="{{ url_for('admin.users') }}" class="nav-item {% if 'user' in request.endpoint and request.blueprint == 'admin' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-people-fill"></i> Users & Roles</a>
         <a href="{{ url_for('admin.supervisor_requests') }}" class="nav-item {% if request.endpoint == 'admin.supervisor_requests' or request.endpoint == 'admin.supervisor_request_detail' %}active{% endif %}" onclick="closeSidebar()">
           <i class="bi bi-person-badge-fill"></i> Sup. Requests

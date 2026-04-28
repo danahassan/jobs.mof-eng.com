@@ -703,7 +703,25 @@ def application_detail(app_id):
     is_internship = bool(app.position and app.position.type == 'Internship')
     assignee_role = ROLE_UNIVERSITY_COORD if is_internship else ROLE_SUPERVISOR
     assignee_label = 'Coordinator' if is_internship else 'Supervisor'
-    supervisors = User.query.filter_by(role=assignee_role, is_active=True).all()
+    if is_internship:
+        # Only allow coordinators that belong to the applicant's university.
+        applicant_univ_id = getattr(app.applicant, 'university_id', None)
+        if applicant_univ_id:
+            coord_ids = [m.user_id for m in UniversityMember.query
+                         .filter_by(university_id=applicant_univ_id, role='coordinator').all()]
+            if coord_ids:
+                supervisors = (User.query
+                               .filter(User.id.in_(coord_ids),
+                                       User.role == ROLE_UNIVERSITY_COORD,
+                                       User.is_active == True)
+                               .order_by(User.full_name).all())
+            else:
+                supervisors = []
+        else:
+            # Student not linked to any university — no valid coordinator can be assigned.
+            supervisors = []
+    else:
+        supervisors = User.query.filter_by(role=assignee_role, is_active=True).all()
     # Admins see all status changes + admin-authored entries (notes without status change)
     admin_ids = [u.id for u in User.query.filter_by(role=ROLE_ADMIN).with_entities(User.id).all()]
     history   = app.history.filter(
@@ -790,6 +808,20 @@ def application_update(app_id):
 
     if assign_to is not None:
         old_assignee = application.assigned_to_id
+        # Safety: for internships, only allow coordinators that belong to the
+        # applicant's university. Prevents misassignment via crafted form posts.
+        if assign_to:
+            is_internship = bool(application.position and application.position.type == 'Internship')
+            if is_internship:
+                applicant_univ_id = getattr(application.applicant, 'university_id', None)
+                if not applicant_univ_id:
+                    flash('Cannot assign a coordinator: this student is not linked to any university.', 'danger')
+                    return redirect(url_for('admin.application_detail', app_id=app_id))
+                allowed = UniversityMember.query.filter_by(
+                    university_id=applicant_univ_id, user_id=assign_to, role='coordinator').first()
+                if not allowed:
+                    flash('That coordinator does not belong to the student\'s university and cannot be assigned.', 'danger')
+                    return redirect(url_for('admin.application_detail', app_id=app_id))
         application.assigned_to_id = assign_to or None
         if assign_to and assign_to != old_assignee:
             supervisor = db.session.get(User, assign_to)
@@ -2150,6 +2182,54 @@ def university_request_edit(req_id):
 # ─────────────────────────────────────────────────────────────────────────────
 # UNIVERSITIES
 # ─────────────────────────────────────────────────────────────────────────────
+
+@admin_bp.route('/coordinators')
+@admin_required
+def coordinators():
+    """List all university coordinators with their universities."""
+    q_str = request.args.get('q', '').strip()
+    univ_f = request.args.get('university', type=int)
+    view = request.args.get('view', 'cards')
+    if view not in ('cards', 'list'):
+        view = 'cards'
+
+    # Base query: every coordinator user (active or not).
+    base = User.query.filter(User.role == ROLE_UNIVERSITY_COORD)
+    if q_str:
+        like = f'%{q_str}%'
+        base = base.filter(or_(User.full_name.ilike(like),
+                               User.email.ilike(like),
+                               User.phone.ilike(like)))
+    coords_users = base.order_by(User.full_name).all()
+
+    # Map user_id -> list of (UniversityMember, University) so we can show all
+    # university links for each coordinator (a coord may belong to >1 univ).
+    memberships = (UniversityMember.query
+                   .filter_by(role='coordinator')
+                   .join(User, UniversityMember.user_id == User.id)
+                   .filter(User.role == ROLE_UNIVERSITY_COORD)
+                   .all())
+    by_user = {}
+    for m in memberships:
+        by_user.setdefault(m.user_id, []).append(m)
+
+    rows = []
+    for u in coords_users:
+        ms = by_user.get(u.id, [])
+        if univ_f:
+            ms = [m for m in ms if m.university_id == univ_f]
+            if not ms:
+                continue
+        rows.append({'user': u, 'memberships': ms})
+
+    # Sidebar filter options
+    universities_list = University.query.order_by(University.name).all()
+
+    return render_template('admin/coordinators.html',
+                           rows=rows, view=view, q=q_str,
+                           univ_f=univ_f, universities_list=universities_list,
+                           total=len(rows))
+
 
 @admin_bp.route('/universities')
 @admin_required

@@ -311,6 +311,22 @@
               <option value="{{ sv.id }}" {% if app.assigned_to_id == sv.id %}selected{% endif %}>{{ sv.full_name }}</option>
             {% endfor %}
           </select>
+          {% if is_internship %}
+            {% if not supervisors %}
+              <div style="margin-top:6px;font-size:11px;padding:6px 8px;border-radius:6px;background:#fef3c7;color:#92400e;border:1px solid #fde68a">
+                <i class="bi bi-exclamation-triangle"></i>
+                {% if app.applicant.university_id %}
+                  No coordinator is registered for this student's university yet.
+                {% else %}
+                  This student is not linked to any university — no coordinator can be assigned.
+                {% endif %}
+              </div>
+            {% else %}
+              <div style="margin-top:6px;font-size:11px;color:var(--text3)">
+                <i class="bi bi-info-circle"></i> Only coordinators of the student's university are listed.
+              </div>
+            {% endif %}
+          {% endif %}
         </div>
         <div class="form-group">
           <label>Internal Note</label>

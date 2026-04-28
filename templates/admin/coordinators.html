@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+{% block title %}Coordinators — Admin — MOF Jobs{% endblock %}
+{% block page_title %}Coordinators{% endblock %}
+
+{% block extra_css %}
+<style>
+.ac-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:24px}
+.ac-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px;display:flex;flex-direction:column;gap:10px;transition:box-shadow .15s,transform .15s}
+.ac-card:hover{box-shadow:0 4px 18px rgba(0,0,0,.08);transform:translateY(-2px)}
+.ac-head{display:flex;gap:12px;align-items:center}
+.ac-avatar{width:54px;height:54px;border-radius:50%;background:#0f7b52;color:#fff;font-weight:800;font-size:20px;display:flex;align-items:center;justify-content:center;flex-shrink:0;object-fit:cover;border:1px solid var(--border)}
+.ac-name{font-size:15px;font-weight:700;margin:0}
+.ac-sub{font-size:12px;color:var(--text3)}
+.ac-univs{display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--border);padding-top:8px;font-size:13px}
+.ac-univ-pill{display:inline-flex;align-items:center;gap:6px;padding:3px 8px;border-radius:6px;background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;font-size:12px;font-weight:600;text-decoration:none}
+.ac-univ-pill:hover{background:#d1fae5}
+.ac-univ-none{color:#b45309;background:#fffbeb;border:1px solid #fde68a;padding:3px 8px;border-radius:6px;font-size:12px;font-weight:600;display:inline-block}
+.ac-actions{display:flex;gap:6px;border-top:1px solid var(--border);padding-top:8px}
+.ac-status-active{color:#0f7b52;font-weight:600}
+.ac-status-inactive{color:#b91c1c;font-weight:600}
+.view-toggle{display:flex;background:var(--bg2,#f1f5f9);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.view-toggle a{padding:6px 11px;color:var(--text3);text-decoration:none;font-size:14px;display:flex;align-items:center;transition:background .1s}
+.view-toggle a.active{background:var(--green);color:#fff}
+.view-toggle a:not(.active):hover{background:var(--border);color:var(--text)}
+@media(max-width:900px){.ac-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){.ac-grid{grid-template-columns:1fr}}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="section-header">
+  <h2><i class="bi bi-person-video3" style="color:var(--green)"></i> All Coordinators <span style="font-weight:500;color:var(--text3);font-size:14px">({{ total }})</span></h2>
+  <div class="d-flex gap-2 align-center">
+    <div class="view-toggle">
+      <a href="?q={{ q }}&university={{ univ_f or '' }}&view=cards" class="{% if view == 'cards' %}active{% endif %}" title="Cards"><i class="bi bi-grid-3x3-gap-fill"></i></a>
+      <a href="?q={{ q }}&university={{ univ_f or '' }}&view=list" class="{% if view == 'list' %}active{% endif %}" title="List"><i class="bi bi-list-ul"></i></a>
+    </div>
+  </div>
+</div>
+
+<form method="get" class="card" style="padding:12px;margin-bottom:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:end">
+  <div style="flex:1;min-width:200px">
+    <label class="form-label" style="font-size:11px">Search</label>
+    <input class="form-control" type="text" name="q" value="{{ q }}" placeholder="Name, email, phone…">
+  </div>
+  <div style="min-width:220px">
+    <label class="form-label" style="font-size:11px">University</label>
+    <select name="university" class="form-control">
+      <option value="">All universities</option>
+      {% for u in universities_list %}
+        <option value="{{ u.id }}" {% if univ_f == u.id %}selected{% endif %}>{{ u.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <input type="hidden" name="view" value="{{ view }}">
+  <div>
+    <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-funnel"></i> Filter</button>
+    {% if q or univ_f %}<a href="{{ url_for('admin.coordinators') }}" class="btn btn-outline btn-sm">Reset</a>{% endif %}
+  </div>
+</form>
+
+{% if not rows %}
+  <div class="card" style="padding:32px;text-align:center;color:var(--text3)">
+    <i class="bi bi-person-x" style="font-size:48px"></i>
+    <p style="margin-top:10px">No coordinators found.</p>
+  </div>
+
+{% elif view == 'cards' %}
+  <div class="ac-grid">
+    {% for r in rows %}
+      {% set u = r.user %}
+      <div class="ac-card">
+        <div class="ac-head">
+          {% if u.avatar_filename %}
+            <img src="{{ url_for('static', filename='uploads/avatars/' + u.avatar_filename) }}" alt="" class="ac-avatar">
+          {% else %}
+            <div class="ac-avatar">{{ (u.full_name or u.email)[0]|upper }}</div>
+          {% endif %}
+          <div style="flex:1;min-width:0">
+            <h3 class="ac-name">{{ u.full_name or '—' }}</h3>
+            <div class="ac-sub">{{ u.email }}</div>
+            <div class="ac-sub">
+              {% if u.is_active %}<span class="ac-status-active">● Active</span>
+              {% else %}<span class="ac-status-inactive">● Inactive</span>{% endif %}
+              {% if u.phone %}· {{ u.phone }}{% endif %}
+            </div>
+          </div>
+        </div>
+
+        <div class="ac-univs">
+          {% if r.memberships %}
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text3);letter-spacing:.03em">Universities</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px">
+              {% for m in r.memberships %}
+                <a href="{{ url_for('admin.university_detail', univ_id=m.university_id) }}" class="ac-univ-pill" title="View university">
+                  <i class="bi bi-mortarboard-fill"></i>
+                  {{ m.university.name }}
+                  {% if m.department %}<span style="opacity:.75">· {{ m.department.name }}</span>{% endif %}
+                </a>
+              {% endfor %}
+            </div>
+          {% else %}
+            <span class="ac-univ-none"><i class="bi bi-exclamation-triangle"></i> Not linked to any university</span>
+          {% endif %}
+        </div>
+
+        <div class="ac-actions">
+          <a href="{{ url_for('admin.user_detail', user_id=u.id) }}" class="btn btn-outline btn-sm" style="flex:1"><i class="bi bi-person-lines-fill"></i> Profile</a>
+          <a href="mailto:{{ u.email }}" class="btn btn-outline btn-sm"><i class="bi bi-envelope"></i></a>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+{% else %}
+  {# List view #}
+  <div class="card" style="padding:0;overflow:hidden">
+    <table class="table" style="margin:0">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>University / Department</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+          {% set u = r.user %}
+          <tr>
+            <td>
+              <div style="display:flex;gap:8px;align-items:center">
+                {% if u.avatar_filename %}
+                  <img src="{{ url_for('static', filename='uploads/avatars/' + u.avatar_filename) }}" alt="" style="width:32px;height:32px;border-radius:50%;object-fit:cover">
+                {% else %}
+                  <div style="width:32px;height:32px;border-radius:50%;background:#0f7b52;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px">{{ (u.full_name or u.email)[0]|upper }}</div>
+                {% endif %}
+                <div>
+                  <div style="font-weight:600">{{ u.full_name or '—' }}</div>
+                  {% if u.phone %}<div style="font-size:11px;color:var(--text3)">{{ u.phone }}</div>{% endif %}
+                </div>
+              </div>
+            </td>
+            <td><a href="mailto:{{ u.email }}">{{ u.email }}</a></td>
+            <td>
+              {% if r.memberships %}
+                {% for m in r.memberships %}
+                  <a href="{{ url_for('admin.university_detail', univ_id=m.university_id) }}" class="ac-univ-pill">
+                    <i class="bi bi-mortarboard-fill"></i> {{ m.university.name }}{% if m.department %} · {{ m.department.name }}{% endif %}
+                  </a>{% if not loop.last %} {% endif %}
+                {% endfor %}
+              {% else %}
+                <span class="ac-univ-none">Not linked</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if u.is_active %}<span class="ac-status-active">Active</span>
+              {% else %}<span class="ac-status-inactive">Inactive</span>{% endif %}
+            </td>
+            <td style="text-align:right">
+              <a href="{{ url_for('admin.user_detail', user_id=u.id) }}" class="btn btn-outline btn-sm"><i class="bi bi-person-lines-fill"></i> Profile</a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endif %}
+{% endblock %}
