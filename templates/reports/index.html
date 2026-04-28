@@ -33,6 +33,41 @@
 
 .rep-empty{background:var(--card);border:1px dashed var(--border);border-radius:var(--radius-lg);padding:48px 20px;text-align:center;color:var(--text3)}
 .rep-empty i{font-size:42px;display:block;margin-bottom:10px;opacity:.45}
+
+/* ── List (row) view ─────────────────────────────────────── */
+.rep-list{display:flex;flex-direction:column;gap:8px}
+.rep-row{display:grid;grid-template-columns:auto 1fr auto auto auto auto;align-items:center;gap:14px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 16px;box-shadow:var(--shadow);transition:border-color .15s,box-shadow .15s}
+.rep-row:hover{border-color:var(--green);box-shadow:0 4px 12px rgba(0,0,0,.06)}
+.rep-row-icon{width:40px;height:40px;border-radius:10px;background:var(--green-light);color:var(--green);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.rep-row-main{min-width:0}
+.rep-row-title{font-size:14.5px;font-weight:700;color:var(--text);text-decoration:none;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rep-row-title:hover{color:var(--green)}
+.rep-row-meta{display:flex;flex-wrap:wrap;gap:10px;font-size:11.5px;color:var(--text3);margin-top:3px}
+.rep-row-meta span{display:inline-flex;align-items:center;gap:3px}
+.rep-row-type{font-size:10px;font-weight:700;padding:3px 9px;border-radius:99px;background:var(--green-light);color:var(--green);text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
+.rep-row-status{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:99px;color:#fff;white-space:nowrap}
+.rep-row-grade{font-size:12.5px;font-weight:700;color:#16a34a;display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.rep-row-grade.warn{color:#ea580c}
+.rep-row-grade.danger{color:#dc2626}
+.rep-row-grade.muted{color:var(--text3);font-weight:600}
+.rep-row-person{font-size:12px;color:var(--text2);display:inline-flex;align-items:center;gap:6px;white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis}
+
+/* View toggle */
+.rep-view-toggle{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--card)}
+.rep-view-toggle button{background:transparent;border:0;padding:6px 12px;font-size:13px;color:var(--text2);cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.rep-view-toggle button.active{background:var(--green);color:#fff}
+.rep-view-toggle button:hover:not(.active){background:var(--green-light);color:var(--green)}
+
+@media(max-width:760px){
+  .rep-row{grid-template-columns:auto 1fr auto;grid-template-areas:"icon main status" "icon meta meta" "person person grade" "btn btn btn"}
+  .rep-row-icon{grid-area:icon}
+  .rep-row-main{grid-area:main}
+  .rep-row-status{grid-area:status;justify-self:end}
+  .rep-row-meta{grid-area:meta}
+  .rep-row-person{grid-area:person}
+  .rep-row-grade{grid-area:grade;justify-self:end}
+  .rep-row .btn{grid-area:btn;justify-self:stretch;justify-content:center}
+}
 </style>
 
 <!-- Header -->
@@ -40,11 +75,17 @@
   <span class="text-muted text-sm">
     {% if role == 'student' %}Your submitted internship reports{% else %}Reports from your students{% endif %}
   </span>
-  {% if role == 'student' %}
-  <a href="{{ url_for('reports.submit') }}" class="btn btn-primary btn-sm">
-    <i class="bi bi-cloud-upload-fill"></i> Submit New Report
-  </a>
-  {% endif %}
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+    <div class="rep-view-toggle" role="group" aria-label="View mode">
+      <button type="button" id="rep-view-list" class="active" title="List view"><i class="bi bi-list-ul"></i> List</button>
+      <button type="button" id="rep-view-grid" title="Grid view"><i class="bi bi-grid-3x3-gap-fill"></i> Grid</button>
+    </div>
+    {% if role == 'student' %}
+    <a href="{{ url_for('reports.submit') }}" class="btn btn-primary btn-sm">
+      <i class="bi bi-cloud-upload-fill"></i> Submit New Report
+    </a>
+    {% endif %}
+  </div>
 </div>
 
 <!-- KPIs -->
@@ -93,7 +134,7 @@
 
 <!-- List -->
 {% if reports %}
-<div class="rep-grid">
+<div class="rep-grid" id="rep-grid-view" style="display:none">
   {% for r in reports %}
   <div class="rep-card">
     <div class="rep-card-top">
@@ -132,6 +173,67 @@
   </div>
   {% endfor %}
 </div>
+
+<div class="rep-list" id="rep-list-view">
+  {% for r in reports %}
+  <div class="rep-row">
+    <div class="rep-row-icon"><i class="bi bi-file-earmark-text-fill"></i></div>
+    <div class="rep-row-main">
+      <a href="{{ url_for('reports.detail', report_id=r.id) }}" class="rep-row-title">{{ r.title }}</a>
+      <div class="rep-row-meta">
+        <span><i class="bi bi-paperclip"></i> {{ r.file_name }}</span>
+        <span><i class="bi bi-clock"></i> {{ (r.submitted_at | localdt).strftime('%b %d, %Y') }}</span>
+        {% if r.period_start and r.period_end %}
+        <span><i class="bi bi-calendar3"></i> {{ r.period_start.strftime('%b %d') }} – {{ r.period_end.strftime('%b %d') }}</span>
+        {% endif %}
+        {% if role == 'student' %}
+          {% if r.coordinator %}<span><i class="bi bi-mortarboard-fill"></i> {{ r.coordinator.full_name }}</span>{% else %}<span><em>Awaiting coordinator</em></span>{% endif %}
+        {% endif %}
+      </div>
+    </div>
+    <span class="rep-row-type">{{ r.type_label.split(' ')[0] }}</span>
+    <span class="rep-row-status" style="background:{{ r.status_color }}">{{ r.status }}</span>
+    {% if r.grade is not none %}
+      {% set rtone = 'rep-row-grade' if r.grade >= 70 else ('rep-row-grade warn' if r.grade >= 50 else 'rep-row-grade danger') %}
+      <span class="{{ rtone }}"><i class="bi bi-award-fill"></i> {{ r.grade }}/100</span>
+    {% else %}
+      <span class="rep-row-grade muted">—</span>
+    {% endif %}
+    <a href="{{ url_for('reports.detail', report_id=r.id) }}" class="btn btn-outline btn-sm">
+      {% if role == 'student' %}View{% else %}Review{% endif %}
+    </a>
+  </div>
+  {% endfor %}
+</div>
+
+<script>
+(function(){
+  var KEY='mof.reports.view';
+  var grid=document.getElementById('rep-grid-view');
+  var list=document.getElementById('rep-list-view');
+  var btnGrid=document.getElementById('rep-view-grid');
+  var btnList=document.getElementById('rep-view-list');
+  function apply(mode){
+    if(mode==='grid'){
+      grid.style.display='';
+      list.style.display='none';
+      btnGrid.classList.add('active');
+      btnList.classList.remove('active');
+    }else{
+      grid.style.display='none';
+      list.style.display='';
+      btnList.classList.add('active');
+      btnGrid.classList.remove('active');
+    }
+    try{localStorage.setItem(KEY,mode);}catch(e){}
+  }
+  var saved='list';
+  try{saved=localStorage.getItem(KEY)||'list';}catch(e){}
+  apply(saved);
+  btnGrid.addEventListener('click',function(){apply('grid');});
+  btnList.addEventListener('click',function(){apply('list');});
+})();
+</script>
 {% else %}
 <div class="rep-empty">
   <i class="bi bi-folder2-open"></i>
