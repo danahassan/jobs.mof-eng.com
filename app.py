@@ -263,7 +263,6 @@ def _migrate_db(app):
             _safe_add_column(conn, 'users', 'university_name', 'VARCHAR(200)')
             _safe_add_column(conn, 'users', 'university_class', 'VARCHAR(100)')
             _safe_add_column(conn, 'users', 'university_major', 'VARCHAR(200)')
-            _safe_add_column(conn, 'users', 'student_gpa', 'VARCHAR(20)')
             _safe_add_column(conn, 'users', 'graduation_year', 'INTEGER')
             _safe_add_column(conn, 'users', 'student_id_number', 'VARCHAR(50)')
             _safe_add_column(conn, 'universities', 'banner_filename', 'VARCHAR(200)')

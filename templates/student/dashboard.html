@@ -82,9 +82,6 @@
       {% if current_user.university_major %}
         <span><i class="bi bi-book"></i> {{ current_user.university_major }}</span>
       {% endif %}
-      {% if current_user.student_gpa %}
-        <span><i class="bi bi-star-fill"></i> GPA {{ current_user.student_gpa }}</span>
-      {% endif %}
       {% if current_user.graduation_year %}
         <span><i class="bi bi-calendar3"></i> Class of {{ current_user.graduation_year }}</span>
       {% endif %}

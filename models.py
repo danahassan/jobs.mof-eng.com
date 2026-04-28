@@ -99,7 +99,6 @@ class User(UserMixin, db.Model):
     university_name   = db.Column(db.String(200))   # free-text fallback if no university record
     university_class  = db.Column(db.String(100))
     university_major  = db.Column(db.String(200))
-    student_gpa       = db.Column(db.String(20))    # e.g. "3.8 / 4.0"
     graduation_year   = db.Column(db.Integer)
     student_id_number = db.Column(db.String(50))
 

@@ -477,7 +477,6 @@ def student_add():
             existing.university_department_id = dept_id
             existing.university_class = class_scope
             existing.university_major = request.form.get('university_major', '').strip() or existing.university_major
-            existing.student_gpa = request.form.get('student_gpa', '').strip() or existing.student_gpa
             existing.graduation_year = _parse_int(request.form.get('graduation_year', '')) or existing.graduation_year
             existing.student_id_number = request.form.get('student_id_number', '').strip() or existing.student_id_number
             log_audit('university.student_link', f'{existing.full_name} → {univ.name}', user_id=current_user.id)
@@ -502,7 +501,6 @@ def student_add():
             university_department_id=dept_id,
             university_class=class_scope,
             university_major=request.form.get('university_major', '').strip() or None,
-            student_gpa=request.form.get('student_gpa', '').strip() or None,
             graduation_year=_parse_int(request.form.get('graduation_year', '')),
             student_id_number=request.form.get('student_id_number', '').strip() or None,
         )
@@ -570,7 +568,6 @@ def student_edit(student_id):
         student.github_url = request.form.get('github_url', '').strip() or None
         student.portfolio_url = request.form.get('portfolio_url', '').strip() or None
         student.university_major = request.form.get('university_major', '').strip() or None
-        student.student_gpa = request.form.get('student_gpa', '').strip() or None
         student.graduation_year = _parse_int(request.form.get('graduation_year', ''))
         student.student_id_number = request.form.get('student_id_number', '').strip() or None
         new_pw = request.form.get('new_password', '').strip()
@@ -678,7 +675,6 @@ _STUDENT_COLS = [
     ('email',             'Email'),
     ('phone',             'Phone'),
     ('university_major',  'Major'),
-    ('student_gpa',       'GPA'),
     ('graduation_year',   'Graduation Year'),
 ]
 
@@ -737,7 +733,6 @@ def students_import_template():
         'email':             'ahmed@example.com',
         'phone':             '+96894123456',
         'university_major':  'Computer Science',
-        'student_gpa':       '3.75',
         'graduation_year':   '2025',
     }
     for ci, (attr, label) in enumerate(_STUDENT_COLS, 1):
@@ -823,7 +818,7 @@ def students_import():
                     existing.university_department_id = membership.department_id
                 if membership and membership.class_scope:
                     existing.university_class = membership.class_scope
-                for attr in ('university_major', 'student_gpa', 'student_id_number', 'phone'):
+                for attr in ('university_major', 'student_id_number', 'phone'):
                     if data.get(attr):
                         setattr(existing, attr, data[attr])
                 if data.get('graduation_year'):
@@ -846,7 +841,6 @@ def students_import():
             university_name   = univ.name,
             university_class  = membership.class_scope if membership else None,
             university_major  = data.get('university_major') or None,
-            student_gpa       = data.get('student_gpa') or None,
             graduation_year   = _parse_int(data.get('graduation_year', '')),
             student_id_number = data.get('student_id_number') or None,
         )

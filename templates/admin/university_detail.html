@@ -205,7 +205,7 @@
       <div class="ud-toolbar">
         <h3 class="ud-title" style="margin:0"><i class="bi bi-people"></i> Students <span style="font-size:12px;color:var(--text3)">({{ student_total }})</span></h3>
         <div class="ud-toolbar-right">
-          <a href="{{ url_for('admin.university_students_export', univ_id=univ.id, fmt='xlsx', q=q_str, department_id=department_filter, class_filter=class_filter, major_filter=major_filter, graduation_year=graduation_year_filter, gpa_min=gpa_min_filter, gpa_max=gpa_max_filter) }}" class="btn btn-outline btn-sm"><i class="bi bi-download"></i> Export</a>
+          <a href="{{ url_for('admin.university_students_export', univ_id=univ.id, fmt='xlsx', q=q_str, department_id=department_filter, class_filter=class_filter, major_filter=major_filter, graduation_year=graduation_year_filter) }}" class="btn btn-outline btn-sm"><i class="bi bi-download"></i> Export</a>
           <a href="{{ url_for('admin.university_students_import_template', univ_id=univ.id) }}" class="btn btn-outline btn-sm"><i class="bi bi-file-earmark-spreadsheet"></i> Template</a>
         </div>
       </div>
@@ -222,8 +222,6 @@
         <input type="text" name="class_filter" class="form-control" placeholder="Class" value="{{ class_filter }}">
         <input type="text" name="major_filter" class="form-control" placeholder="Major" value="{{ major_filter }}">
         <input type="number" name="graduation_year" class="form-control" placeholder="Grad year" value="{{ graduation_year_filter or '' }}">
-        <input type="number" step="0.01" name="gpa_min" class="form-control" placeholder="GPA min" value="{{ gpa_min_filter }}">
-        <input type="number" step="0.01" name="gpa_max" class="form-control" placeholder="GPA max" value="{{ gpa_max_filter }}">
         <button class="btn btn-primary btn-sm" type="submit"><i class="bi bi-funnel"></i> Filter</button>
         <a href="{{ url_for('admin.university_detail', univ_id=univ.id, tab='students') }}" class="btn btn-outline btn-sm"><i class="bi bi-arrow-counterclockwise"></i> Reset</a>
       </form>
@@ -262,7 +260,6 @@
               </select>
               <input type="text" name="university_class" class="form-control" placeholder="Class">
               <input type="text" name="university_major" class="form-control" placeholder="Major">
-              <input type="text" name="student_gpa" class="form-control" placeholder="GPA">
               <input type="number" name="graduation_year" class="form-control" placeholder="Grad year">
               <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Assign</button>
             </form>
@@ -279,8 +276,6 @@
               <input type="hidden" name="class_filter" value="{{ class_filter }}">
               <input type="hidden" name="major_filter" value="{{ major_filter }}">
               <input type="hidden" name="graduation_year" value="{{ graduation_year_filter or '' }}">
-              <input type="hidden" name="gpa_min" value="{{ gpa_min_filter }}">
-              <input type="hidden" name="gpa_max" value="{{ gpa_max_filter }}">
               <input type="hidden" name="page" value="{{ students.page }}">
               <select name="bulk_action" class="form-control" required>
                 <option value="">Bulk action</option>
@@ -308,7 +303,6 @@
               <th>Department</th>
               <th>Class</th>
               <th>Major</th>
-              <th>GPA</th>
               <th>Grad Year</th>
               <th>Student ID</th>
               <th style="width:280px">Actions</th>
@@ -330,24 +324,23 @@
               <td>{{ s.university_department.full_name() if s.university_department else '—' }}</td>
               <td>{{ s.university_class or '—' }}</td>
               <td>{{ s.university_major or '—' }}</td>
-              <td>{{ s.student_gpa or '—' }}</td>
               <td>{{ s.graduation_year or '—' }}</td>
               <td>{{ s.student_id_number or '—' }}</td>
               <td>
                 <div class="ud-row-actions">
                   <a href="{{ url_for('admin.user_detail', user_id=s.id) }}" class="btn btn-outline btn-sm">View</a>
                   <a href="{{ url_for('admin.user_edit', user_id=s.id) }}" class="btn btn-outline btn-sm">Edit</a>
-                  <form method="POST" action="{{ url_for('admin.university_student_unlink', univ_id=univ.id, student_id=s.id, tab='students', q=q_str, department_id=department_filter, class_filter=class_filter, major_filter=major_filter, graduation_year=graduation_year_filter, gpa_min=gpa_min_filter, gpa_max=gpa_max_filter, page=students.page) }}" onsubmit="return confirm('Unlink {{ s.full_name|e }} from {{ univ.name|e }}?')">
+                  <form method="POST" action="{{ url_for('admin.university_student_unlink', univ_id=univ.id, student_id=s.id, tab='students', q=q_str, department_id=department_filter, class_filter=class_filter, major_filter=major_filter, graduation_year=graduation_year_filter, page=students.page) }}" onsubmit="return confirm('Unlink {{ s.full_name|e }} from {{ univ.name|e }}?')">
                     <button type="submit" class="btn btn-outline btn-sm"><i class="bi bi-link-45deg"></i> Unlink</button>
                   </form>
-                  <form method="POST" action="{{ url_for('admin.university_student_delete', univ_id=univ.id, student_id=s.id, tab='students', q=q_str, department_id=department_filter, class_filter=class_filter, major_filter=major_filter, graduation_year=graduation_year_filter, gpa_min=gpa_min_filter, gpa_max=gpa_max_filter, page=students.page) }}" onsubmit="return confirm('Delete {{ s.full_name|e }} permanently? This removes the account and related records.')">
+                  <form method="POST" action="{{ url_for('admin.university_student_delete', univ_id=univ.id, student_id=s.id, tab='students', q=q_str, department_id=department_filter, class_filter=class_filter, major_filter=major_filter, graduation_year=graduation_year_filter, page=students.page) }}" onsubmit="return confirm('Delete {{ s.full_name|e }} permanently? This removes the account and related records.')">
                     <button type="submit" class="btn btn-sm" style="color:#dc2626;border-color:#fecaca;background:transparent"><i class="bi bi-trash"></i> Delete</button>
                   </form>
                 </div>
               </td>
             </tr>
             {% else %}
-            <tr><td colspan="9"><div class="empty-state"><i class="bi bi-people"></i> No students match current filters.</div></td></tr>
+            <tr><td colspan="8"><div class="empty-state"><i class="bi bi-people"></i> No students match current filters.</div></td></tr>
             {% endfor %}
           </tbody>
         </table>
@@ -367,17 +360,16 @@
             <div><strong>Dept:</strong> {{ s.university_department.full_name() if s.university_department else '—' }}</div>
             <div><strong>Class:</strong> {{ s.university_class or '—' }}</div>
             <div><strong>Major:</strong> {{ s.university_major or '—' }}</div>
-            <div><strong>GPA:</strong> {{ s.student_gpa or '—' }}</div>
             <div><strong>Grad:</strong> {{ s.graduation_year or '—' }}</div>
             <div><strong>ID:</strong> {{ s.student_id_number or '—' }}</div>
           </div>
           <div class="ud-row-actions" style="justify-content:flex-start">
             <a href="{{ url_for('admin.user_detail', user_id=s.id) }}" class="btn btn-outline btn-sm">View</a>
             <a href="{{ url_for('admin.user_edit', user_id=s.id) }}" class="btn btn-outline btn-sm">Edit</a>
-            <form method="POST" action="{{ url_for('admin.university_student_unlink', univ_id=univ.id, student_id=s.id, tab='students', q=q_str, department_id=department_filter, class_filter=class_filter, major_filter=major_filter, graduation_year=graduation_year_filter, gpa_min=gpa_min_filter, gpa_max=gpa_max_filter, page=students.page) }}" onsubmit="return confirm('Unlink {{ s.full_name|e }} from {{ univ.name|e }}?')">
+            <form method="POST" action="{{ url_for('admin.university_student_unlink', univ_id=univ.id, student_id=s.id, tab='students', q=q_str, department_id=department_filter, class_filter=class_filter, major_filter=major_filter, graduation_year=graduation_year_filter, page=students.page) }}" onsubmit="return confirm('Unlink {{ s.full_name|e }} from {{ univ.name|e }}?')">
               <button type="submit" class="btn btn-outline btn-sm">Unlink</button>
             </form>
-            <form method="POST" action="{{ url_for('admin.university_student_delete', univ_id=univ.id, student_id=s.id, tab='students', q=q_str, department_id=department_filter, class_filter=class_filter, major_filter=major_filter, graduation_year=graduation_year_filter, gpa_min=gpa_min_filter, gpa_max=gpa_max_filter, page=students.page) }}" onsubmit="return confirm('Delete {{ s.full_name|e }} permanently? This removes the account and related records.')">
+            <form method="POST" action="{{ url_for('admin.university_student_delete', univ_id=univ.id, student_id=s.id, tab='students', q=q_str, department_id=department_filter, class_filter=class_filter, major_filter=major_filter, graduation_year=graduation_year_filter, page=students.page) }}" onsubmit="return confirm('Delete {{ s.full_name|e }} permanently? This removes the account and related records.')">
               <button type="submit" class="btn btn-sm" style="color:#dc2626;border-color:#fecaca;background:transparent">Delete</button>
             </form>
           </div>
@@ -389,13 +381,13 @@
 
       {% if students.pages > 1 %}
       <div class="pagination" style="margin-top:14px">
-        <a href="{{ url_for('admin.university_detail', univ_id=univ.id, tab='students', page=students.prev_num, q=q_str, department_id=department_filter, class_filter=class_filter, major_filter=major_filter, graduation_year=graduation_year_filter, gpa_min=gpa_min_filter, gpa_max=gpa_max_filter) }}" class="page-link {% if not students.has_prev %}disabled{% endif %}"><i class="bi bi-chevron-left"></i></a>
+        <a href="{{ url_for('admin.university_detail', univ_id=univ.id, tab='students', page=students.prev_num, q=q_str, department_id=department_filter, class_filter=class_filter, major_filter=major_filter, graduation_year=graduation_year_filter) }}" class="page-link {% if not students.has_prev %}disabled{% endif %}"><i class="bi bi-chevron-left"></i></a>
         {% for p in students.iter_pages() %}
           {% if p %}
-            <a href="{{ url_for('admin.university_detail', univ_id=univ.id, tab='students', page=p, q=q_str, department_id=department_filter, class_filter=class_filter, major_filter=major_filter, graduation_year=graduation_year_filter, gpa_min=gpa_min_filter, gpa_max=gpa_max_filter) }}" class="page-link {% if p == students.page %}active{% endif %}">{{ p }}</a>
+            <a href="{{ url_for('admin.university_detail', univ_id=univ.id, tab='students', page=p, q=q_str, department_id=department_filter, class_filter=class_filter, major_filter=major_filter, graduation_year=graduation_year_filter) }}" class="page-link {% if p == students.page %}active{% endif %}">{{ p }}</a>
           {% else %}<span class="page-link">…</span>{% endif %}
         {% endfor %}
-        <a href="{{ url_for('admin.university_detail', univ_id=univ.id, tab='students', page=students.next_num, q=q_str, department_id=department_filter, class_filter=class_filter, major_filter=major_filter, graduation_year=graduation_year_filter, gpa_min=gpa_min_filter, gpa_max=gpa_max_filter) }}" class="page-link {% if not students.has_next %}disabled{% endif %}"><i class="bi bi-chevron-right"></i></a>
+        <a href="{{ url_for('admin.university_detail', univ_id=univ.id, tab='students', page=students.next_num, q=q_str, department_id=department_filter, class_filter=class_filter, major_filter=major_filter, graduation_year=graduation_year_filter) }}" class="page-link {% if not students.has_next %}disabled{% endif %}"><i class="bi bi-chevron-right"></i></a>
       </div>
       {% endif %}
     </div>

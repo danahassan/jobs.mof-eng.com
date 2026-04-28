@@ -14,7 +14,7 @@ from models import (db, User, Position, Application, ApplicationHistory,
                     Message, SupervisorRequest, University, UniversityDepartment, UniversityMember, UniversityRequest,
                     ROLE_ADMIN, ROLE_SUPERVISOR, ROLE_USER, ROLE_STUDENT, ROLE_UNIVERSITY_COORD,
                     LANG_LEVELS, ALL_STATUSES, SOURCES, STATUS_NEW, STATUS_UNIV_PENDING)
-from sqlalchemy import or_, and_, cast, Float
+from sqlalchemy import or_, and_
 from helpers import (admin_required, log_history, save_cv, allowed_file,
                      send_email, save_company_image, push_notification, log_audit,
                      get_site_settings, save_site_settings)
@@ -65,7 +65,6 @@ _ADMIN_UNIVERSITY_STUDENT_COLS = [
     ('department_name', 'Department'),
     ('university_class', 'Class'),
     ('university_major', 'Major'),
-    ('student_gpa', 'GPA'),
     ('graduation_year', 'Graduation Year'),
 ]
 
@@ -74,14 +73,7 @@ def _normalize_text(value):
     return ' '.join(str(value or '').strip().lower().split())
 
 
-def _parse_float(value):
-    try:
-        return float(str(value).strip()) if value is not None and str(value).strip() else None
-    except (ValueError, TypeError):
-        return None
-
-
-def _admin_university_students_query(univ_id, search='', department_id=None, class_filter='', major_filter='', graduation_year=None, gpa_min=None, gpa_max=None):
+def _admin_university_students_query(univ_id, search='', department_id=None, class_filter='', major_filter='', graduation_year=None):
     q = User.query.filter_by(university_id=univ_id, role=ROLE_STUDENT)
 
     if search:
@@ -100,17 +92,13 @@ def _admin_university_students_query(univ_id, search='', department_id=None, cla
         q = q.filter(User.university_major.ilike(f'%{major_filter}%'))
     if graduation_year:
         q = q.filter(User.graduation_year == graduation_year)
-    if gpa_min is not None:
-        q = q.filter(cast(User.student_gpa, Float) >= gpa_min)
-    if gpa_max is not None:
-        q = q.filter(cast(User.student_gpa, Float) <= gpa_max)
 
     return q
 
 
 def _admin_university_student_redirect(univ_id):
     params = {}
-    for key in ('tab', 'q', 'department_id', 'class_filter', 'major_filter', 'graduation_year', 'gpa_min', 'gpa_max', 'page'):
+    for key in ('tab', 'q', 'department_id', 'class_filter', 'major_filter', 'graduation_year', 'page'):
         value = request.values.get(key, '').strip() if key != 'page' else request.values.get(key, type=int)
         if value:
             params[key] = value
@@ -2429,7 +2417,7 @@ def coordinator_detail_export(user_id):
             apps_by_student.setdefault(a.applicant_id, []).append(a)
 
     header = ['Student ID', 'Full Name', 'Email', 'Phone', 'Student Number',
-              'University', 'Department', 'Major', 'Class', 'GPA',
+              'University', 'Department', 'Major', 'Class',
               'Graduation Year', 'Active', 'Created At', 'Last Login',
               'Total Applications', 'Pending', 'Hired', 'Rejected']
     rows = []
@@ -2444,7 +2432,7 @@ def coordinator_detail_export(user_id):
         rows.append([
             s.id, s.full_name, s.email, s.phone or '', s.student_id_number or '',
             uni, dept, s.university_major or '', s.university_class or '',
-            s.student_gpa or '', s.graduation_year or '',
+            s.graduation_year or '',
             'Yes' if s.is_active else 'No',
             s.created_at.isoformat(sep=' ', timespec='minutes') if s.created_at else '',
             s.last_login.isoformat(sep=' ', timespec='minutes') if s.last_login else '',
@@ -2494,8 +2482,6 @@ def university_detail(univ_id):
     class_filter = request.args.get('class_filter', '').strip()
     major_filter = request.args.get('major_filter', '').strip()
     graduation_year = request.args.get('graduation_year', type=int)
-    gpa_min = _parse_float(request.args.get('gpa_min', '').strip())
-    gpa_max = _parse_float(request.args.get('gpa_max', '').strip())
     departments = (UniversityDepartment.query
                    .filter_by(university_id=univ_id)
                    .order_by(UniversityDepartment.college.asc(), UniversityDepartment.name.asc())
@@ -2510,8 +2496,6 @@ def university_detail(univ_id):
         class_filter,
         major_filter,
         graduation_year,
-        gpa_min,
-        gpa_max,
     )
     students = students_q.order_by(User.full_name.asc()).paginate(page=page, per_page=20, error_out=False)
     student_total = User.query.filter_by(university_id=univ_id, role=ROLE_STUDENT).count()
@@ -2542,8 +2526,6 @@ def university_detail(univ_id):
         class_filter=class_filter,
         major_filter=major_filter,
         graduation_year_filter=graduation_year,
-        gpa_min_filter=request.args.get('gpa_min', '').strip(),
-        gpa_max_filter=request.args.get('gpa_max', '').strip(),
         assignable_students=assignable_students,
         available_coords=available_coords,
         internship_count=internship_count,
@@ -2829,9 +2811,7 @@ def university_students_export(univ_id):
     class_filter = request.args.get('class_filter', '').strip()
     major_filter = request.args.get('major_filter', '').strip()
     graduation_year = request.args.get('graduation_year', type=int)
-    gpa_min = _parse_float(request.args.get('gpa_min', '').strip())
-    gpa_max = _parse_float(request.args.get('gpa_max', '').strip())
-    rows = (_admin_university_students_query(univ_id, q_str, department_id, class_filter, major_filter, graduation_year, gpa_min, gpa_max)
+    rows = (_admin_university_students_query(univ_id, q_str, department_id, class_filter, major_filter, graduation_year)
             .order_by(User.full_name.asc())
             .all())
 
@@ -2846,7 +2826,6 @@ def university_students_export(univ_id):
             student.university_department.full_name() if student.university_department else '',
             student.university_class,
             student.university_major,
-            student.student_gpa,
             student.graduation_year,
         ])
     return _export(headers, data, f'university_{univ_id}_students', fmt)
@@ -2873,7 +2852,6 @@ def university_students_import_template(univ_id):
         'department_name': 'Engineering',
         'university_class': '2027',
         'university_major': 'Computer Engineering',
-        'student_gpa': '3.75',
         'graduation_year': '2027',
     }
     for ci, (attr, label) in enumerate(_ADMIN_UNIVERSITY_STUDENT_COLS, 1):
@@ -2975,7 +2953,7 @@ def university_students_import(univ_id):
             existing.university_name = univ.name
             existing.university_department_id = department.id if department else None
             existing.university_class = class_value
-            for attr in ('phone', 'university_major', 'student_gpa', 'student_id_number'):
+            for attr in ('phone', 'university_major', 'student_id_number'):
                 if data.get(attr):
                     setattr(existing, attr, data[attr])
             if data.get('graduation_year'):
@@ -2995,7 +2973,6 @@ def university_students_import(univ_id):
             university_department_id=department.id if department else None,
             university_class=class_value,
             university_major=data.get('university_major') or None,
-            student_gpa=data.get('student_gpa') or None,
             graduation_year=_parse_int(data.get('graduation_year', '')),
             student_id_number=data.get('student_id_number') or None,
         )
@@ -3019,7 +2996,6 @@ def university_student_assign(univ_id):
     department_id = request.form.get('department_id', type=int)
     class_value = request.form.get('university_class', '').strip() or None
     major = request.form.get('university_major', '').strip() or None
-    student_gpa = request.form.get('student_gpa', '').strip() or None
     graduation_year = _parse_int(request.form.get('graduation_year', ''))
 
     department = None
@@ -3059,8 +3035,6 @@ def university_student_assign(univ_id):
     student.university_class = class_value
     if major:
         student.university_major = major
-    if student_gpa:
-        student.student_gpa = student_gpa
     if graduation_year:
         student.graduation_year = graduation_year
 
@@ -3078,7 +3052,6 @@ def university_student_update(univ_id, student_id):
     department_id = request.form.get('department_id', type=int)
     class_value = request.form.get('university_class', '').strip() or None
     major = request.form.get('university_major', '').strip() or None
-    student_gpa = request.form.get('student_gpa', '').strip() or None
     graduation_year_raw = request.form.get('graduation_year', '').strip()
 
     department = None
@@ -3091,7 +3064,6 @@ def university_student_update(univ_id, student_id):
     student.university_department_id = department.id if department else None
     student.university_class = class_value
     student.university_major = major
-    student.student_gpa = student_gpa
     student.graduation_year = _parse_int(graduation_year_raw)
     _audit('university.student_update', f'{student.email} @ {univ.name}')
     db.session.commit()

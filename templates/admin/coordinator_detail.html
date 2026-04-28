@@ -63,7 +63,7 @@
 .cd-tag{font-size:11px;padding:2px 7px;border-radius:999px;background:#eef2ff;color:#3730a3;border:1px solid #c7d2fe;font-weight:600;display:inline-flex;align-items:center;gap:4px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cd-tag.major{background:#fef3c7;color:#92400e;border-color:#fde68a}
 .cd-tag.dept{background:#ecfdf5;color:#065f46;border-color:#a7f3d0}
-.cd-tag.gpa{background:#f5f3ff;color:#5b21b6;border-color:#ddd6fe}
+.cd-tag.class{background:#fee2e2;color:#991b1b;border-color:#fecaca}
 .cd-stats{display:flex;gap:8px;font-size:11px;color:var(--text3);flex-wrap:wrap}
 .cd-stat{display:inline-flex;align-items:center;gap:4px}
 .cd-stat .num{font-weight:800;color:var(--text);font-size:13px}
@@ -246,7 +246,6 @@
           <div class="cd-stu-tags">
             {% if s.university_major %}<span class="cd-tag major" title="Major"><i class="bi bi-book"></i> {{ s.university_major }}</span>{% endif %}
             {% if s.university_class %}<span class="cd-tag" title="Class"><i class="bi bi-people"></i> {{ s.university_class }}</span>{% endif %}
-            {% if s.student_gpa %}<span class="cd-tag gpa" title="GPA"><i class="bi bi-bar-chart"></i> {{ s.student_gpa }}</span>{% endif %}
             {% if s.graduation_year %}<span class="cd-tag" title="Graduation"><i class="bi bi-mortarboard"></i> {{ s.graduation_year }}</span>{% endif %}
           </div>
 
