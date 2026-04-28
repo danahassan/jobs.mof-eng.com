@@ -60,6 +60,9 @@
           {% endif %}
         </div>
       </div>
+      <div style="align-self:flex-start">
+        <a href="{{ url_for('university.my_university_export') }}" class="btn btn-outline btn-sm" title="Export to CSV"><i class="bi bi-download"></i> Export CSV</a>
+      </div>
     </div>
 
     {# Status banner — different message per role/state #}

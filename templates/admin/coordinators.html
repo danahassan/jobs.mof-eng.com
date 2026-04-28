@@ -131,9 +131,12 @@
   {# Header + view toggle #}
   <div class="ac-header">
     <h2><i class="bi bi-person-video3" style="color:var(--green)"></i> All Coordinators <span class="count">({{ total }})</span></h2>
-    <div class="view-toggle">
-      <a href="?q={{ q }}&university={{ univ_f or '' }}&view=cards" class="{% if view == 'cards' %}active{% endif %}" title="Cards"><i class="bi bi-grid-3x3-gap-fill"></i></a>
-      <a href="?q={{ q }}&university={{ univ_f or '' }}&view=list" class="{% if view == 'list' %}active{% endif %}" title="List"><i class="bi bi-list-ul"></i></a>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <a href="{{ url_for('admin.coordinators_export') }}?q={{ q }}&university={{ univ_f or '' }}" class="btn btn-outline btn-sm" title="Export to CSV"><i class="bi bi-download"></i> Export CSV</a>
+      <div class="view-toggle">
+        <a href="?q={{ q }}&university={{ univ_f or '' }}&view=cards" class="{% if view == 'cards' %}active{% endif %}" title="Cards"><i class="bi bi-grid-3x3-gap-fill"></i></a>
+        <a href="?q={{ q }}&university={{ univ_f or '' }}&view=list" class="{% if view == 'list' %}active{% endif %}" title="List"><i class="bi bi-list-ul"></i></a>
+      </div>
     </div>
   </div>
 

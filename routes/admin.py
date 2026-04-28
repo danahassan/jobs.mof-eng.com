@@ -2231,6 +2231,75 @@ def coordinators():
                            total=len(rows))
 
 
+def _csv_response(filename, header, rows):
+    """Build a UTF-8 CSV Response with BOM (so Excel opens it correctly)."""
+    buf = io.StringIO()
+    buf.write('\ufeff')  # BOM for Excel
+    w = csv.writer(buf, quoting=csv.QUOTE_MINIMAL)
+    w.writerow(header)
+    for r in rows:
+        w.writerow(['' if v is None else v for v in r])
+    resp = Response(buf.getvalue(), mimetype='text/csv; charset=utf-8')
+    resp.headers['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return resp
+
+
+@admin_bp.route('/coordinators/export.csv')
+@admin_required
+def coordinators_export():
+    """Export the coordinators directory (respects q + university filters)."""
+    q_str = request.args.get('q', '').strip()
+    univ_f = request.args.get('university', type=int)
+
+    base = User.query.filter(User.role == ROLE_UNIVERSITY_COORD)
+    if q_str:
+        like = f'%{q_str}%'
+        base = base.filter(or_(User.full_name.ilike(like),
+                               User.email.ilike(like),
+                               User.phone.ilike(like)))
+    coords_users = base.order_by(User.full_name).all()
+
+    memberships = (UniversityMember.query
+                   .filter_by(role='coordinator')
+                   .join(User, UniversityMember.user_id == User.id)
+                   .filter(User.role == ROLE_UNIVERSITY_COORD)
+                   .all())
+    by_user = {}
+    for m in memberships:
+        by_user.setdefault(m.user_id, []).append(m)
+
+    header = ['Coordinator ID', 'Full Name', 'Email', 'Phone', 'Active',
+              'University', 'Department', 'Class Scope', 'Joined At',
+              'Last Login', 'Bio']
+    rows = []
+    for u in coords_users:
+        ms = by_user.get(u.id, [])
+        if univ_f:
+            ms = [m for m in ms if m.university_id == univ_f]
+            if not ms:
+                continue
+        if not ms:
+            rows.append([u.id, u.full_name, u.email, u.phone or '',
+                         'Yes' if u.is_active else 'No',
+                         '', '', '', '',
+                         u.last_login.isoformat(sep=' ', timespec='minutes') if u.last_login else '',
+                         (u.bio or '').replace('\r', ' ').replace('\n', ' ')])
+            continue
+        for m in ms:
+            uni = m.university.name if m.university else ''
+            dept = m.department.name if getattr(m, 'department', None) else ''
+            cls = getattr(m, 'class_scope', '') or ''
+            joined = m.joined_at.isoformat(sep=' ', timespec='minutes') if getattr(m, 'joined_at', None) else ''
+            rows.append([u.id, u.full_name, u.email, u.phone or '',
+                         'Yes' if u.is_active else 'No',
+                         uni, dept, cls, joined,
+                         u.last_login.isoformat(sep=' ', timespec='minutes') if u.last_login else '',
+                         (u.bio or '').replace('\r', ' ').replace('\n', ' ')])
+
+    ts = datetime.utcnow().strftime('%Y%m%d-%H%M')
+    return _csv_response(f'coordinators-{ts}.csv', header, rows)
+
+
 @admin_bp.route('/coordinators/<int:user_id>')
 @admin_required
 def coordinator_detail(user_id):
@@ -2314,6 +2383,77 @@ def coordinator_detail(user_id):
                            students=students,
                            stats=stats_by_student,
                            view=view, q=q_str)
+
+
+@admin_bp.route('/coordinators/<int:user_id>/export.csv')
+@admin_required
+def coordinator_detail_export(user_id):
+    """Export the supervised-students list for one coordinator (with stats)."""
+    coord = db.get_or_404(User, user_id)
+    if coord.role != ROLE_UNIVERSITY_COORD:
+        abort(404)
+
+    q_str = request.args.get('q', '').strip()
+    memberships = (UniversityMember.query
+                   .filter_by(user_id=coord.id, role='coordinator')
+                   .all())
+
+    students = []
+    if memberships:
+        student_q = User.query.filter(User.role == ROLE_STUDENT, User.is_active == True)
+        scope_filters = []
+        for m in memberships:
+            if m.department_id:
+                scope_filters.append(and_(
+                    User.university_id == m.university_id,
+                    User.university_department_id == m.department_id,
+                ))
+            else:
+                scope_filters.append(User.university_id == m.university_id)
+        student_q = student_q.filter(or_(*scope_filters))
+        if q_str:
+            like = f'%{q_str}%'
+            student_q = student_q.filter(or_(
+                User.full_name.ilike(like),
+                User.email.ilike(like),
+                User.university_major.ilike(like),
+                User.university_class.ilike(like),
+                User.student_id_number.ilike(like),
+            ))
+        students = student_q.order_by(User.full_name).all()
+
+    student_ids = [s.id for s in students]
+    apps_by_student = {}
+    if student_ids:
+        for a in Application.query.filter(Application.applicant_id.in_(student_ids)).all():
+            apps_by_student.setdefault(a.applicant_id, []).append(a)
+
+    header = ['Student ID', 'Full Name', 'Email', 'Phone', 'Student Number',
+              'University', 'Department', 'Major', 'Class', 'GPA',
+              'Graduation Year', 'Active', 'Created At', 'Last Login',
+              'Total Applications', 'Pending', 'Hired', 'Rejected']
+    rows = []
+    for s in students:
+        apps = apps_by_student.get(s.id, [])
+        total = len(apps)
+        hired = sum(1 for a in apps if a.status == 'Hired')
+        rejected = sum(1 for a in apps if a.status == 'Rejected')
+        pending = sum(1 for a in apps if a.status not in ('Hired', 'Rejected'))
+        uni = s.university.name if getattr(s, 'university', None) else (s.university_name or '')
+        dept = s.university_department.name if getattr(s, 'university_department', None) else ''
+        rows.append([
+            s.id, s.full_name, s.email, s.phone or '', s.student_id_number or '',
+            uni, dept, s.university_major or '', s.university_class or '',
+            s.student_gpa or '', s.graduation_year or '',
+            'Yes' if s.is_active else 'No',
+            s.created_at.isoformat(sep=' ', timespec='minutes') if s.created_at else '',
+            s.last_login.isoformat(sep=' ', timespec='minutes') if s.last_login else '',
+            total, pending, hired, rejected,
+        ])
+
+    safe_name = ''.join(c for c in (coord.full_name or f'coord-{coord.id}') if c.isalnum() or c in ('-', '_', ' ')).strip().replace(' ', '_') or f'coord-{coord.id}'
+    ts = datetime.utcnow().strftime('%Y%m%d-%H%M')
+    return _csv_response(f'{safe_name}-students-{ts}.csv', header, rows)
 
 
 @admin_bp.route('/universities')

@@ -191,9 +191,12 @@
   {# Students section #}
   <div class="cd-section">
     <h2><i class="bi bi-people-fill" style="color:var(--green)"></i> Supervised Students <span class="count">({{ total_students }})</span></h2>
-    <div class="view-toggle">
-      <a href="?q={{ q }}&view=cards" class="{% if view == 'cards' %}active{% endif %}" title="Cards"><i class="bi bi-grid-3x3-gap-fill"></i></a>
-      <a href="?q={{ q }}&view=list" class="{% if view == 'list' %}active{% endif %}" title="List"><i class="bi bi-list-ul"></i></a>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <a href="{{ url_for('admin.coordinator_detail_export', user_id=coord.id) }}?q={{ q }}" class="btn btn-outline btn-sm" title="Export students to CSV"><i class="bi bi-download"></i> Export CSV</a>
+      <div class="view-toggle">
+        <a href="?q={{ q }}&view=cards" class="{% if view == 'cards' %}active{% endif %}" title="Cards"><i class="bi bi-grid-3x3-gap-fill"></i></a>
+        <a href="?q={{ q }}&view=list" class="{% if view == 'list' %}active{% endif %}" title="List"><i class="bi bi-list-ul"></i></a>
+      </div>
     </div>
   </div>
 

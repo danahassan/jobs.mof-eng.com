@@ -42,9 +42,9 @@
 
   {% else %}
     <div class="mc-card">
-      <div class="mc-univ">
-        <i class="bi bi-mortarboard"></i>
-        <span>Coordinators for <strong>{{ univ.name }}</strong></span>
+      <div class="mc-univ" style="display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap">
+        <span><i class="bi bi-mortarboard"></i> Coordinators for <strong>{{ univ.name }}</strong></span>
+        <a href="{{ url_for('university.my_coordinator_export') }}" class="btn btn-outline btn-sm" title="Export to CSV"><i class="bi bi-download"></i> Export CSV</a>
       </div>
 
       {% for m in coordinators %}

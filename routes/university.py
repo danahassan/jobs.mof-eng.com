@@ -175,6 +175,95 @@ def my_coordinator():
                            univ=univ, coordinators=coordinators)
 
 
+def _csv_response(filename, header, rows):
+    """Build a UTF-8 CSV Response (with BOM for Excel)."""
+    import csv as _csv
+    from flask import Response as _Resp
+    buf = io.StringIO()
+    buf.write('\ufeff')
+    w = _csv.writer(buf, quoting=_csv.QUOTE_MINIMAL)
+    w.writerow(header)
+    for r in rows:
+        w.writerow(['' if v is None else v for v in r])
+    resp = _Resp(buf.getvalue(), mimetype='text/csv; charset=utf-8')
+    resp.headers['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return resp
+
+
+@university_bp.route('/me/export.csv')
+@login_required
+def my_university_export():
+    """Export the current user's university details (students + coordinators)."""
+    role = getattr(current_user, 'role', None)
+    if role not in (ROLE_STUDENT, ROLE_UNIVERSITY_COORD):
+        abort(403)
+
+    univ = None
+    if role == ROLE_UNIVERSITY_COORD:
+        univ = _my_university()
+    if univ is None and getattr(current_user, 'university_id', None):
+        univ = db.session.get(University, current_user.university_id)
+    if univ is None:
+        abort(404)
+
+    header = ['Field', 'Value']
+    rows = [
+        ['ID', univ.id],
+        ['Name', univ.name],
+        ['Description', (univ.description or '').replace('\r', ' ').replace('\n', ' ')],
+        ['Location', univ.location or ''],
+        ['Website', univ.website or ''],
+        ['Contact Email', univ.contact_email or ''],
+        ['Contact Phone', univ.contact_phone or ''],
+        ['Verified', 'Yes' if getattr(univ, 'is_verified', False) else 'No'],
+        ['Active', 'Yes' if getattr(univ, 'is_active', True) else 'No'],
+        ['Created At', univ.created_at.isoformat(sep=' ', timespec='minutes') if getattr(univ, 'created_at', None) else ''],
+    ]
+    safe = ''.join(c for c in (univ.name or f'university-{univ.id}') if c.isalnum() or c in ('-', '_', ' ')).strip().replace(' ', '_') or f'university-{univ.id}'
+    ts = datetime.utcnow().strftime('%Y%m%d-%H%M')
+    return _csv_response(f'{safe}-{ts}.csv', header, rows)
+
+
+@university_bp.route('/my-coordinator/export.csv')
+@login_required
+def my_coordinator_export():
+    """Student-facing CSV of their university coordinator(s)."""
+    if getattr(current_user, 'role', None) != ROLE_STUDENT:
+        abort(403)
+
+    univ = None
+    if getattr(current_user, 'university_id', None):
+        univ = db.session.get(University, current_user.university_id)
+    if univ is None:
+        abort(404)
+
+    members = (UniversityMember.query
+               .filter_by(university_id=univ.id)
+               .join(User, UniversityMember.user_id == User.id)
+               .filter(User.role == ROLE_UNIVERSITY_COORD, User.is_active == True)
+               .all())
+    my_dept = current_user.university_department_id
+    members = sorted(members, key=lambda m: (
+        0 if (my_dept and m.department_id == my_dept) else 1,
+        (m.user.full_name or '').lower(),
+    ))
+
+    header = ['Coordinator', 'Email', 'Phone', 'Department', 'Class Scope',
+              'University', 'Bio']
+    rows = []
+    for m in members:
+        u = m.user
+        dept = m.department.name if getattr(m, 'department', None) else ''
+        cls = getattr(m, 'class_scope', '') or ''
+        rows.append([
+            u.full_name, u.email, u.phone or '', dept, cls,
+            univ.name,
+            (u.bio or '').replace('\r', ' ').replace('\n', ' '),
+        ])
+    ts = datetime.utcnow().strftime('%Y%m%d-%H%M')
+    return _csv_response(f'my-coordinators-{ts}.csv', header, rows)
+
+
 @university_bp.route('/profile/edit', methods=['GET', 'POST'])
 @university_coordinator_required
 def profile_edit():
