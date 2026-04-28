@@ -292,6 +292,18 @@ def _migrate_db(app):
             _safe_add_column(conn, 'ads', 'mobile_image_mime', 'VARCHAR(80)')
             # Ads — audience targeting (CSV of roles or 'all')
             _safe_add_column(conn, 'ads', 'audience', "VARCHAR(255) DEFAULT 'all'")
+            # University verification (admin lock-down). After adding the
+            # column, backfill all existing rows to verified=1 so admin-only
+            # behavior is preserved for them; only newly-approved universities
+            # will start unverified.
+            added_verified = _safe_add_column(conn, 'universities', 'is_verified', 'BOOLEAN DEFAULT 0')
+            _safe_add_column(conn, 'universities', 'verified_at', 'DATETIME')
+            _safe_add_column(conn, 'universities', 'verified_by_id', 'INTEGER')
+            if added_verified:
+                from sqlalchemy import text as _text
+                conn.execute(_text("UPDATE universities SET is_verified = 1 WHERE is_verified IS NULL OR is_verified = 0"))
+                conn.commit()
+                print('✓ Backfilled: existing universities marked verified')
 
 
 def _safe_add_column(conn, table, column, col_type):
@@ -303,6 +315,8 @@ def _safe_add_column(conn, table, column, col_type):
         conn.execute(text(f'ALTER TABLE {table} ADD COLUMN {column} {col_type}'))
         conn.commit()
         print(f'✓ Migrated: added {table}.{column}')
+        return True
+    return False
 
 
 # ─── HELPERS & DECORATORS (shared across routes) ──────────────────────────────

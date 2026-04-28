@@ -108,10 +108,25 @@
             <span><i class="bi bi-people-fill"></i> {{ student_total }} student(s)</span>
             <span><i class="bi bi-diagram-3-fill"></i> {{ departments|length }} department(s)</span>
             <span><i class="bi bi-person-video3"></i> {{ coords|length }} coordinator(s)</span>
+            {% if univ.is_verified %}
+              <span style="color:#0f7b52;font-weight:700" title="Verified by admin{% if univ.verified_at %} on {{ univ.verified_at.strftime('%Y-%m-%d') }}{% endif %}"><i class="bi bi-patch-check-fill"></i> Verified</span>
+            {% else %}
+              <span style="color:#b45309;font-weight:700" title="Coordinator can still edit university info until admin verifies"><i class="bi bi-hourglass-split"></i> Unverified</span>
+            {% endif %}
           </div>
         </div>
       </div>
       <div class="ud-top-actions">
+        {% if univ.is_verified %}
+          <form method="POST" action="{{ url_for('admin.university_verify', univ_id=univ.id) }}" onsubmit="return confirm('Unverify {{ univ.name|e }}? The coordinator will be able to edit university info again.')">
+            <input type="hidden" name="action" value="unverify">
+            <button type="submit" class="btn btn-outline btn-sm"><i class="bi bi-patch-question"></i> Unverify</button>
+          </form>
+        {% else %}
+          <form method="POST" action="{{ url_for('admin.university_verify', univ_id=univ.id) }}" onsubmit="return confirm('Verify {{ univ.name|e }}? The coordinator will no longer be able to edit university info.')">
+            <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-patch-check"></i> Verify University</button>
+          </form>
+        {% endif %}
         <a href="{{ url_for('admin.universities') }}" class="btn btn-outline btn-sm"><i class="bi bi-arrow-left"></i> Back</a>
       </div>
     </div>
@@ -140,7 +155,7 @@
         </div>
       </div>
 
-      <div class="ud-card is-hidden" id="univ-edit-panel">
+      <div class="ud-card{% if not edit_open %} is-hidden{% endif %}" id="univ-edit-panel">
         <h3 class="ud-title"><i class="bi bi-pencil-square"></i> Edit University</h3>
         <form method="POST" action="{{ url_for('admin.university_edit', univ_id=univ.id) }}" enctype="multipart/form-data" class="ud-form">
           <input class="form-control" name="name" value="{{ univ.name }}" placeholder="University name" required>
@@ -151,11 +166,21 @@
           <label style="display:flex;align-items:center;gap:8px;padding:8px 4px;font-size:13px"><input type="checkbox" name="is_active" value="1" {% if univ.is_active %}checked{% endif %}> Active</label>
           <div class="ud-full"><textarea class="form-control" name="description" rows="5" style="resize:vertical" placeholder="Description">{{ univ.description or '' }}</textarea></div>
           <div>
-            <label class="ud-small" style="display:block;margin-bottom:4px">University Logo</label>
+            <label class="ud-small" style="display:block;margin-bottom:4px">University Logo {% if univ.logo_filename %}<span style="color:#0f7b52">— currently set</span>{% else %}<span style="color:#b45309">— none uploaded</span>{% endif %}</label>
+            {% if univ.logo_filename %}
+              <div style="margin-bottom:6px;padding:6px;border:1px solid var(--border);border-radius:8px;display:inline-block;background:#fff">
+                <img src="{{ url_for('static', filename='uploads/company/' + univ.logo_filename) }}" alt="Current logo" style="max-height:60px;max-width:140px;object-fit:contain;display:block">
+              </div>
+            {% endif %}
             <input type="file" class="form-control" name="logo" accept=".png,.jpg,.jpeg,.webp">
           </div>
           <div>
-            <label class="ud-small" style="display:block;margin-bottom:4px">University Banner</label>
+            <label class="ud-small" style="display:block;margin-bottom:4px">University Banner {% if univ.banner_filename %}<span style="color:#0f7b52">— currently set</span>{% endif %}</label>
+            {% if univ.banner_filename %}
+              <div style="margin-bottom:6px;padding:6px;border:1px solid var(--border);border-radius:8px;display:inline-block;background:#fff">
+                <img src="{{ url_for('static', filename='uploads/company/' + univ.banner_filename) }}" alt="Current banner" style="max-height:60px;max-width:200px;object-fit:cover;display:block">
+              </div>
+            {% endif %}
             <input type="file" class="form-control" name="banner" accept=".png,.jpg,.jpeg,.webp">
           </div>
           <div class="ud-full ud-actions">
@@ -504,6 +529,16 @@
       }
     });
   });
+
+  // Auto-scroll to the edit panel when it was server-rendered open via ?edit=1
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('edit') === '1') {
+    activate('info');
+    const panel = document.getElementById('univ-edit-panel');
+    if (panel && !panel.classList.contains('is-hidden')) {
+      setTimeout(() => panel.scrollIntoView({behavior: 'smooth', block: 'start'}), 80);
+    }
+  }
 })();
 </script>
 {% endblock %}
