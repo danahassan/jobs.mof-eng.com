@@ -780,9 +780,6 @@ class University(db.Model):
     contact_email = db.Column(db.String(200))
     contact_phone = db.Column(db.String(100))
     is_active     = db.Column(db.Boolean, default=True)
-    is_verified   = db.Column(db.Boolean, default=False, nullable=False)
-    verified_at   = db.Column(db.DateTime)
-    verified_by_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     created_at    = db.Column(db.DateTime, default=datetime.utcnow)
     created_by    = db.Column(db.Integer, db.ForeignKey('users.id'))
 

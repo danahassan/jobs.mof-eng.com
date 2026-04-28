@@ -10,7 +10,7 @@ from models import (db, User, Application, Position, University, UniversityDepar
                     ROLE_STUDENT, ROLE_UNIVERSITY_COORD, ROLE_ADMIN,
                     ALL_STATUSES, STATUS_UNIV_PENDING, STATUS_NEW, STATUS_REVIEW, STATUS_INTERVIEW,
                     STATUS_OFFER, STATUS_HIRED, STATUS_REJECTED, SOURCES)
-from helpers import university_coordinator_required, log_audit, send_email, push_notification, save_company_image
+from helpers import university_coordinator_required, log_audit, send_email, push_notification
 
 university_bp = Blueprint('university', __name__)
 
@@ -69,59 +69,6 @@ def dashboard():
         status_counts=status_counts,
         cohort=cohort,
         ALL_STATUSES=ALL_STATUSES)
-
-
-@university_bp.route('/profile/edit', methods=['GET', 'POST'])
-@university_coordinator_required
-def profile_edit():
-    """Coordinator-only edit form for their own university.
-
-    Coordinators may only edit while the university has not yet been verified
-    by an admin. Once verified, the form is read-only and they're told to
-    contact an admin.
-    """
-    univ = _my_university()
-    if not univ:
-        flash('You are not linked to any university yet.', 'warning')
-        return redirect(url_for('university.dashboard'))
-
-    locked = bool(getattr(univ, 'is_verified', False))
-
-    if request.method == 'POST':
-        if locked:
-            flash('This university has been verified — only an admin can edit it now.', 'warning')
-            return redirect(url_for('university.profile_edit'))
-
-        univ.name          = (request.form.get('name') or univ.name).strip()
-        univ.description   = (request.form.get('description') or '').strip() or None
-        univ.location      = (request.form.get('location') or '').strip() or None
-        univ.website       = (request.form.get('website') or '').strip() or None
-        univ.contact_email = (request.form.get('contact_email') or '').strip() or None
-        univ.contact_phone = (request.form.get('contact_phone') or '').strip() or None
-
-        logo = request.files.get('logo')
-        if logo and logo.filename:
-            try:
-                univ.logo_filename = save_company_image(logo)
-            except ValueError as e:
-                flash(str(e), 'warning')
-
-        banner = request.files.get('banner')
-        if banner and banner.filename:
-            try:
-                univ.banner_filename = save_company_image(banner)
-            except ValueError as e:
-                flash(str(e), 'warning')
-
-        try:
-            log_audit('university.coordinator_edit', univ.name)
-        except Exception:
-            current_app.logger.exception('audit log failed for coordinator university edit')
-        db.session.commit()
-        flash('University profile updated.', 'success')
-        return redirect(url_for('university.profile_edit'))
-
-    return render_template('university/profile_edit.html', univ=univ, locked=locked)
 
 
 @university_bp.route('/students')
