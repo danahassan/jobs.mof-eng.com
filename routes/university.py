@@ -270,15 +270,16 @@ def my_coordinator_export():
         (m.user.full_name or '').lower(),
     ))
 
-    header = ['Coordinator', 'Email', 'Phone', 'Department', 'Class Scope',
+    header = ['Coordinator', 'Email', 'Phone', 'College', 'Department', 'Class Scope',
               'University', 'Bio']
     rows = []
     for m in members:
         u = m.user
         dept = m.department.name if getattr(m, 'department', None) else ''
+        college = m.department.college if getattr(m, 'department', None) else ''
         cls = getattr(m, 'class_scope', '') or ''
         rows.append([
-            u.full_name, u.email, u.phone or '', dept, cls,
+            u.full_name, u.email, u.phone or '', college or '', dept, cls,
             univ.name,
             (u.bio or '').replace('\r', ' ').replace('\n', ' '),
         ])

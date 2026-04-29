@@ -59,7 +59,11 @@
             <h3 class="mc-name">{{ u.full_name or u.email }}</h3>
             <div class="mc-role">
               University Coordinator
-              {% if m.department %}· {{ m.department.name }}{% endif %}
+              {% if m.department %}
+                · {% if m.department.college %}{{ m.department.college }} / {% endif %}{{ m.department.name }}
+              {% else %}
+                · All departments
+              {% endif %}
               {% if m.class_scope %}· {{ m.class_scope }}{% endif %}
             </div>
 
