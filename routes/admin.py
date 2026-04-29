@@ -2873,6 +2873,7 @@ def university_coordinator_add(univ_id):
 
     coord = db.get_or_404(User, user_id)
     existing = UniversityMember.query.filter_by(university_id=univ_id, user_id=user_id).first()
+    is_new_link = existing is None
     if existing:
         existing.department_id = department_id
         existing.class_scope = class_scope
@@ -2888,6 +2889,24 @@ def university_coordinator_add(univ_id):
     coord.university_id = univ_id
     _audit('university.coordinator_add', f'{coord.full_name} → {univ.name}')
     db.session.commit()
+
+    if is_new_link:
+        try:
+            dept_obj = (UniversityDepartment.query
+                        .filter_by(id=department_id, university_id=univ_id).first()
+                        if department_id else None)
+            html = render_template('emails/coordinator_assignment.html',
+                                   user=coord,
+                                   university=univ,
+                                   department=dept_obj,
+                                   class_scope=class_scope)
+            send_email(coord.email,
+                       f'You have been linked as coordinator at {univ.name}',
+                       html)
+        except Exception as ex:
+            current_app.logger.warning(
+                f'Coordinator-add notification email failed for {coord.email}: {ex}')
+
     flash(f'{coord.full_name} added as coordinator.', 'success')
     return redirect(url_for('admin.university_detail', univ_id=univ_id))
 
@@ -3088,7 +3107,8 @@ def university_coordinators_import(univ_id):
                 skipped += 1
                 continue
             # Promote a generic user to coordinator on import.
-            if existing.role == ROLE_USER:
+            was_promoted = existing.role == ROLE_USER
+            if was_promoted:
                 existing.role = ROLE_UNIVERSITY_COORD
             existing.is_active = True
             existing.university_id = univ.id
@@ -3104,6 +3124,7 @@ def university_coordinators_import(univ_id):
                 member.department_id = department.id if department else None
                 member.class_scope = class_scope
                 updated += 1
+                was_new_link = False
             else:
                 db.session.add(UniversityMember(
                     university_id=univ.id,
@@ -3113,6 +3134,41 @@ def university_coordinators_import(univ_id):
                     class_scope=class_scope,
                 ))
                 linked += 1
+                was_new_link = True
+
+            # Email the existing user so they know they've been added/updated.
+            if was_promoted:
+                # Promoted user has no password they remember in this role —
+                # reset to a fresh temporary one and send credentials.
+                temp_pw = secrets.token_urlsafe(10)
+                existing.set_password(temp_pw)
+                try:
+                    html = render_template('emails/welcome_supervisor.html',
+                                           user=existing,
+                                           temp_password=temp_pw,
+                                           is_admin=False,
+                                           is_coordinator=True)
+                    send_email(existing.email,
+                               'Your MOF Jobs University Coordinator Account is Ready',
+                               html)
+                except Exception as ex:
+                    current_app.logger.warning(
+                        f'Coordinator-import promotion email failed for {existing.email}: {ex}')
+            elif was_new_link:
+                try:
+                    html = render_template(
+                        'emails/coordinator_assignment.html',
+                        user=existing,
+                        university=univ,
+                        department=department,
+                        class_scope=class_scope,
+                    )
+                    send_email(existing.email,
+                               f'You have been linked as coordinator at {univ.name}',
+                               html)
+                except Exception as ex:
+                    current_app.logger.warning(
+                        f'Coordinator-import link email failed for {existing.email}: {ex}')
             continue
 
         temp_pw = secrets.token_urlsafe(10)

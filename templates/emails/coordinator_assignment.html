@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Coordinator Assignment — MOF Jobs</title>
+<style>
+  body{margin:0;padding:0;background:#f0f4f8;font-family:Arial,sans-serif}
+  .wrapper{max-width:580px;margin:32px auto;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #dde3ea;box-shadow:0 4px 16px rgba(0,0,0,.07)}
+  .header{background:linear-gradient(135deg,#1a2332 0%,#198754 100%);padding:28px 36px;color:#fff}
+  .header-logo{font-size:20px;font-weight:700}
+  .header-tagline{color:rgba(255,255,255,.65);font-size:13px;margin-top:4px}
+  .hero-banner{background:#e8f5ee;border-left:4px solid #198754;padding:18px 24px}
+  .hero-icon{font-size:32px;margin-bottom:6px}
+  .hero-title{font-size:20px;font-weight:700;color:#1a2332;margin:0}
+  .body{padding:24px 36px;color:#1a2332}
+  .text{font-size:14px;color:#4a5568;line-height:1.6;margin:12px 0}
+  .info-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px 18px;margin:18px 0}
+  .info-row{display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-bottom:1px solid #edf2f7}
+  .info-row:last-child{border:none}
+  .info-label{color:#718096;font-weight:500}
+  .info-value{color:#1a2332;font-weight:600;text-align:right}
+  .cta-btn{display:inline-block;background:#198754;color:#fff;text-decoration:none;padding:12px 24px;border-radius:7px;font-weight:600;font-size:14px;margin:8px 0}
+  .footer{background:#f8fafc;padding:14px 36px;border-top:1px solid #e2e8f0;font-size:11px;color:#a0aec0;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="header">
+    <div class="header-logo">MOF Engineering — Careers Administration</div>
+    <div class="header-tagline">Managing Of Future Engineering Company · Slemani, Iraq</div>
+  </div>
+  <div class="hero-banner">
+    <div class="hero-icon">🎓</div>
+    <div class="hero-title">You're now a University Coordinator</div>
+  </div>
+  <div class="body">
+    <p class="text">Dear <strong>{{ user.full_name }}</strong>,</p>
+    <p class="text">
+      The MOF Jobs administrator has linked your existing account as a
+      <strong>University Coordinator</strong> for the institution below.
+      You can sign in with your existing email and password to access the coordinator dashboard.
+    </p>
+
+    <div class="info-box">
+      <div class="info-row">
+        <span class="info-label">University</span>
+        <span class="info-value">{{ university.name }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Department</span>
+        <span class="info-value">{{ department.full_name() if department else 'All departments' }}</span>
+      </div>
+      {% if class_scope %}
+      <div class="info-row">
+        <span class="info-label">Class Scope</span>
+        <span class="info-value">{{ class_scope }}</span>
+      </div>
+      {% endif %}
+      <div class="info-row">
+        <span class="info-label">Email / Username</span>
+        <span class="info-value">{{ user.email }}</span>
+      </div>
+    </div>
+
+    <p class="text">
+      As a coordinator you can review your students' internship applications,
+      approve or return weekly reports, and track placements with companies.
+    </p>
+
+    <div style="text-align:center;margin:20px 0">
+      <a href="https://jobs.mof-eng.com/login" class="cta-btn">Log In to Coordinator Dashboard →</a>
+    </div>
+
+    <p class="text" style="font-size:12px;color:#718096">
+      If you don't remember your password, use the
+      <a href="https://jobs.mof-eng.com/auth/forgot-password">Forgot Password</a> link on the login page.
+      If you didn't expect this assignment, contact <a href="mailto:admin@mof-eng.com">admin@mof-eng.com</a>.
+    </p>
+  </div>
+  <div class="footer">
+    MOF Engineering Company · Slemani, Iraq · <a href="https://mof-eng.com">mof-eng.com</a>
+  </div>
+</div>
+</body>
+</html>
