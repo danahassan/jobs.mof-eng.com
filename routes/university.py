@@ -159,13 +159,26 @@ def my_coordinator():
 
     coordinators = []
     if univ:
+        my_dept = current_user.university_department_id
+        my_class = current_user.university_class
+        # Only show coordinators whose scope covers this student:
+        #   - department_id NULL on membership = "all departments" (always visible)
+        #   - department_id matches student's department
+        # Same rule applied to class_scope.
         members = (UniversityMember.query
                    .filter_by(university_id=univ.id)
                    .join(User, UniversityMember.user_id == User.id)
                    .filter(User.role == ROLE_UNIVERSITY_COORD, User.is_active == True)
+                   .filter(or_(
+                       UniversityMember.department_id.is_(None),
+                       UniversityMember.department_id == my_dept,
+                   ))
+                   .filter(or_(
+                       UniversityMember.class_scope.is_(None),
+                       UniversityMember.class_scope == my_class,
+                   ))
                    .all())
         # Prefer coordinators in the student's department (if any), then others
-        my_dept = current_user.university_department_id
         coordinators = sorted(members, key=lambda m: (
             0 if (my_dept and m.department_id == my_dept) else 1,
             (m.user.full_name or '').lower(),
@@ -237,12 +250,21 @@ def my_coordinator_export():
     if univ is None:
         abort(404)
 
+    my_dept = current_user.university_department_id
+    my_class = current_user.university_class
     members = (UniversityMember.query
                .filter_by(university_id=univ.id)
                .join(User, UniversityMember.user_id == User.id)
                .filter(User.role == ROLE_UNIVERSITY_COORD, User.is_active == True)
+               .filter(or_(
+                   UniversityMember.department_id.is_(None),
+                   UniversityMember.department_id == my_dept,
+               ))
+               .filter(or_(
+                   UniversityMember.class_scope.is_(None),
+                   UniversityMember.class_scope == my_class,
+               ))
                .all())
-    my_dept = current_user.university_department_id
     members = sorted(members, key=lambda m: (
         0 if (my_dept and m.department_id == my_dept) else 1,
         (m.user.full_name or '').lower(),
