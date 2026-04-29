@@ -2801,6 +2801,213 @@ def university_coordinator_remove(univ_id, user_id):
     return redirect(url_for('admin.university_detail', univ_id=univ_id))
 
 
+_ADMIN_UNIVERSITY_COORD_COLS = [
+    ('full_name', 'Full Name'),
+    ('email', 'Email'),
+    ('phone', 'Phone'),
+    ('department_name', 'Department'),
+    ('class_scope', 'Class Scope'),
+]
+
+
+@admin_bp.route('/universities/<int:univ_id>/coordinators/export')
+@admin_required
+def university_coordinators_export(univ_id):
+    db.get_or_404(University, univ_id)
+    fmt = request.args.get('fmt', 'xlsx').lower()
+    members = (UniversityMember.query
+               .filter_by(university_id=univ_id, role='coordinator')
+               .all())
+
+    headers = [label for _, label in _ADMIN_UNIVERSITY_COORD_COLS]
+    data = []
+    for m in members:
+        if not m.user:
+            continue
+        data.append([
+            m.user.full_name,
+            m.user.email,
+            m.user.phone,
+            m.department.full_name() if m.department else '',
+            m.class_scope or '',
+        ])
+    return _export(headers, data, f'university_{univ_id}_coordinators', fmt)
+
+
+@admin_bp.route('/universities/<int:univ_id>/coordinators/import-template')
+@admin_required
+def university_coordinators_import_template(univ_id):
+    db.get_or_404(University, univ_id)
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = 'Coordinators'
+
+    header_fill = PatternFill('solid', fgColor='1a5c38')
+    header_font = Font(color='FFFFFF', bold=True)
+    example_data = {
+        'full_name': 'Sara Al-Hassan',
+        'email': 'sara.coordinator@example.com',
+        'phone': '+9647501234567',
+        'department_name': 'Engineering',
+        'class_scope': '',
+    }
+    for ci, (attr, label) in enumerate(_ADMIN_UNIVERSITY_COORD_COLS, 1):
+        cell = ws.cell(row=1, column=ci, value=label)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal='center')
+        ws.column_dimensions[cell.column_letter].width = max(len(label) + 4, 20)
+        ws.cell(row=2, column=ci, value=example_data.get(attr, ''))
+
+    example_fill = PatternFill('solid', fgColor='F3F4F6')
+    for ci in range(1, len(_ADMIN_UNIVERSITY_COORD_COLS) + 1):
+        ws.cell(row=2, column=ci).fill = example_fill
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return send_file(buf, as_attachment=True,
+                     download_name='coordinators_import_template.xlsx',
+                     mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+
+@admin_bp.route('/universities/<int:univ_id>/coordinators/import', methods=['POST'])
+@admin_required
+def university_coordinators_import(univ_id):
+    univ = db.get_or_404(University, univ_id)
+    import openpyxl
+
+    upload = request.files.get('file')
+    default_department_id = request.form.get('default_department_id', type=int)
+    default_class_scope = request.form.get('default_class_scope', '').strip() or None
+
+    if default_department_id and not _resolve_university_department(univ_id, department_id=default_department_id):
+        flash('Invalid default department selected.', 'danger')
+        return redirect(url_for('admin.university_detail', univ_id=univ_id))
+    if not upload or not upload.filename:
+        flash('No file selected.', 'danger')
+        return redirect(url_for('admin.university_detail', univ_id=univ_id))
+    if not upload.filename.lower().endswith(('.xlsx', '.xls')):
+        flash('Please upload an Excel file (.xlsx or .xls).', 'danger')
+        return redirect(url_for('admin.university_detail', univ_id=univ_id))
+
+    try:
+        wb = openpyxl.load_workbook(io.BytesIO(upload.read()), data_only=True)
+        ws = wb.active
+    except Exception:
+        flash('Could not read the uploaded file. Make sure it is a valid Excel workbook.', 'danger')
+        return redirect(url_for('admin.university_detail', univ_id=univ_id))
+
+    headers = [str(cell.value or '').strip() for cell in ws[1]]
+    label_to_attr = {label: attr for attr, label in _ADMIN_UNIVERSITY_COORD_COLS}
+    col_map = {}
+    for ci, header in enumerate(headers):
+        if header in label_to_attr:
+            col_map[ci] = label_to_attr[header]
+
+    if 'email' not in col_map.values() or 'full_name' not in col_map.values():
+        flash('Import failed: the file must have "Email" and "Full Name" columns.', 'danger')
+        return redirect(url_for('admin.university_detail', univ_id=univ_id))
+
+    departments = UniversityDepartment.query.filter_by(university_id=univ_id).all()
+    department_lookup = {}
+    for department in departments:
+        department_lookup[_normalize_text(department.name)] = department
+        department_lookup[_normalize_text(department.full_name())] = department
+
+    created = linked = updated = skipped = 0
+
+    for row in ws.iter_rows(min_row=2, values_only=True):
+        if all(value is None for value in row):
+            continue
+
+        data = {}
+        for ci, attr in col_map.items():
+            value = row[ci] if ci < len(row) else None
+            data[attr] = str(value).strip() if value is not None else ''
+
+        email = data.get('email', '').lower()
+        full_name = data.get('full_name', '').strip()
+        if not email or not full_name:
+            skipped += 1
+            continue
+
+        department = None
+        if data.get('department_name'):
+            department = department_lookup.get(_normalize_text(data['department_name']))
+            if not department:
+                skipped += 1
+                continue
+        elif default_department_id:
+            department = _resolve_university_department(univ_id, department_id=default_department_id)
+
+        class_scope = data.get('class_scope', '').strip() or default_class_scope
+
+        existing = User.query.filter_by(email=email).first()
+        if existing:
+            if existing.role not in (ROLE_UNIVERSITY_COORD, ROLE_USER):
+                skipped += 1
+                continue
+            # Promote a generic user to coordinator on import.
+            if existing.role == ROLE_USER:
+                existing.role = ROLE_UNIVERSITY_COORD
+            existing.is_active = True
+            existing.university_id = univ.id
+            if data.get('phone'):
+                existing.phone = data['phone']
+            if not existing.full_name:
+                existing.full_name = full_name
+
+            member = UniversityMember.query.filter_by(
+                university_id=univ.id, user_id=existing.id).first()
+            if member:
+                member.role = 'coordinator'
+                member.department_id = department.id if department else None
+                member.class_scope = class_scope
+                updated += 1
+            else:
+                db.session.add(UniversityMember(
+                    university_id=univ.id,
+                    user_id=existing.id,
+                    role='coordinator',
+                    department_id=department.id if department else None,
+                    class_scope=class_scope,
+                ))
+                linked += 1
+            continue
+
+        temp_pw = secrets.token_urlsafe(10)
+        coord = User(
+            full_name=full_name,
+            email=email,
+            phone=data.get('phone') or None,
+            role=ROLE_UNIVERSITY_COORD,
+            is_active=True,
+            university_id=univ.id,
+            university_name=univ.name,
+        )
+        coord.set_password(temp_pw)
+        db.session.add(coord)
+        db.session.flush()
+        db.session.add(UniversityMember(
+            university_id=univ.id,
+            user_id=coord.id,
+            role='coordinator',
+            department_id=department.id if department else None,
+            class_scope=class_scope,
+        ))
+        created += 1
+
+    _audit('university.coordinators_import',
+           f'{univ.name} created={created} linked={linked} updated={updated} skipped={skipped}')
+    db.session.commit()
+    flash(f'Import complete. Created: {created}, linked: {linked}, updated: {updated}, skipped: {skipped}.', 'success')
+    return redirect(url_for('admin.university_detail', univ_id=univ_id) + '#coordinators')
+
+
 @admin_bp.route('/universities/<int:univ_id>/students/export')
 @admin_required
 def university_students_export(univ_id):

@@ -433,7 +433,30 @@
 
   <section class="ud-pane" id="tab-coordinators">
     <div class="ud-card">
-      <h3 class="ud-title"><i class="bi bi-person-video3"></i> Coordinators</h3>
+      <div class="ud-toolbar">
+        <h3 class="ud-title" style="margin:0"><i class="bi bi-person-video3"></i> Coordinators <span style="font-size:12px;color:var(--text3)">({{ coords|length }})</span></h3>
+        <div class="ud-toolbar-right">
+          <a href="{{ url_for('admin.university_coordinators_export', univ_id=univ.id, fmt='xlsx') }}" class="btn btn-outline btn-sm"><i class="bi bi-download"></i> Export</a>
+          <a href="{{ url_for('admin.university_coordinators_import_template', univ_id=univ.id) }}" class="btn btn-outline btn-sm"><i class="bi bi-file-earmark-spreadsheet"></i> Template</a>
+        </div>
+      </div>
+
+      <details class="ud-accordion" style="margin-bottom:12px">
+        <summary style="cursor:pointer;padding:8px 10px;border:1px dashed var(--border);border-radius:10px;background:#fafbfc;font-weight:700;font-size:13px;color:var(--text2)"><i class="bi bi-upload"></i> Bulk Import Coordinators</summary>
+        <div style="padding-top:10px">
+          <form method="POST" action="{{ url_for('admin.university_coordinators_import', univ_id=univ.id) }}" enctype="multipart/form-data" class="ud-import">
+            <input type="file" name="file" class="form-control" accept=".xlsx,.xls" required>
+            <select name="default_department_id" class="form-control">
+              <option value="">Default department</option>
+              {% for d in departments %}<option value="{{ d.id }}">{{ d.full_name() }}</option>{% endfor %}
+            </select>
+            <input type="text" name="default_class_scope" class="form-control" placeholder="Default class scope">
+            <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-upload"></i> Import</button>
+          </form>
+          <div style="font-size:11px;color:var(--text3);margin-top:6px">Tip: download the template to see the expected column format. New coordinators receive a temporary password and must reset it on first login.</div>
+        </div>
+      </details>
+
       {% for m in coords %}
       <div class="ud-item">
         <div style="width:34px;height:34px;border-radius:50%;background:var(--green-light);color:var(--green);display:flex;align-items:center;justify-content:center;font-weight:700">{{ m.user.initials if m.user else '?' }}</div>
