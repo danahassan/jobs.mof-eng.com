@@ -256,7 +256,7 @@
               <input type="email" name="email" class="form-control" placeholder="Student email">
               <select name="department_id" class="form-control">
                 <option value="">Department</option>
-                {% for d in departments %}<option value="{{ d.id }}">{{ d.name }}</option>{% endfor %}
+                {% for d in departments %}<option value="{{ d.id }}">{{ d.full_name() }}</option>{% endfor %}
               </select>
               <input type="text" name="university_class" class="form-control" placeholder="Class">
               <input type="text" name="university_major" class="form-control" placeholder="Major">
