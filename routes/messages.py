@@ -378,3 +378,36 @@ def delete_message(msg_id):
     if next_url:
         return redirect(next_url)
     return redirect(url_for('messages.thread', partner_id=partner_id))
+
+
+@messages_bp.route('/thread/<int:partner_id>/delete', methods=['POST'])
+@login_required
+def delete_conversation(partner_id):
+    """Soft-delete the entire conversation between current_user and partner_id
+    from the current user's perspective only. The other side keeps their copy."""
+    partner = db.get_or_404(User, partner_id)
+    msgs = (Message.query
+            .filter(or_(
+                and_(Message.sender_id == current_user.id, Message.receiver_id == partner.id),
+                and_(Message.sender_id == partner.id, Message.receiver_id == current_user.id),
+            ))
+            .all())
+    affected = 0
+    for m in msgs:
+        if m.sender_id == current_user.id and not m.deleted_by_sender:
+            m.deleted_by_sender = True
+            affected += 1
+        elif m.receiver_id == current_user.id and not m.deleted_by_receiver:
+            m.deleted_by_receiver = True
+            affected += 1
+    if affected:
+        db.session.commit()
+        try:
+            log_audit('messages.delete_conversation',
+                      target=f'partner={partner.id} count={affected}')
+        except Exception:
+            pass
+        flash(f'Conversation with {partner.full_name or partner.email} deleted ({affected} messages).', 'success')
+    else:
+        flash('No messages to delete in this conversation.', 'info')
+    return redirect(url_for('messages.inbox'))

@@ -38,35 +38,44 @@
 {% if conversations %}
 <div class="card" style="padding:0;overflow:hidden">
   {% for conv in conversations %}
-  <a href="{{ url_for('messages.thread', partner_id=conv.partner.id) }}"
-     style="display:flex;align-items:center;gap:14px;padding:16px 20px;border-bottom:1px solid var(--border);text-decoration:none;transition:background 0.15s;{% if conv.unread %}background:#f8fffe;{% endif %}"
-     onmouseover="this.style.background='#f3faf5'" onmouseout="this.style.background='{% if conv.unread %}#f8fffe{% else %}#fff{% endif %}'">
-    <div class="avatar" style="flex-shrink:0;{% if conv.unread %}border-color:var(--green){% endif %}">
-      {{ conv.partner.initials }}
-    </div>
-    <div style="flex:1;min-width:0">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:3px">
-        <span style="font-size:14px;font-weight:{% if conv.unread %}700{% else %}500{% endif %};color:var(--text)">
-          {{ conv.partner.full_name }}
-          <span class="badge badge-{{ conv.partner.role }} ml-1" style="font-size:10px">{{ conv.partner.role|capitalize }}</span>
-        </span>
-        <span style="font-size:11px;color:var(--text3);white-space:nowrap">
-          {{ (conv.last_msg.created_at | localdt).strftime('%b %d, %H:%M') if conv.last_msg else '' }}
-        </span>
+  <div style="display:flex;align-items:stretch;border-bottom:1px solid var(--border);{% if conv.unread %}background:#f8fffe;{% endif %}">
+    <a href="{{ url_for('messages.thread', partner_id=conv.partner.id) }}"
+       style="flex:1;display:flex;align-items:center;gap:14px;padding:16px 20px;text-decoration:none;transition:background 0.15s;min-width:0"
+       onmouseover="this.style.background='#f3faf5'" onmouseout="this.style.background='transparent'">
+      <div class="avatar" style="flex-shrink:0;{% if conv.unread %}border-color:var(--green){% endif %}">
+        {{ conv.partner.initials }}
       </div>
-      <div style="font-size:13px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:400px">
-        {% if conv.last_msg %}
-          {% if conv.last_msg.sender_id == current_user.id %}<span style="color:var(--text3)">You: </span>{% endif %}
-          {{ conv.last_msg.body[:80] }}{% if conv.last_msg.body|length > 80 %}…{% endif %}
-        {% endif %}
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:3px">
+          <span style="font-size:14px;font-weight:{% if conv.unread %}700{% else %}500{% endif %};color:var(--text)">
+            {{ conv.partner.full_name }}
+            <span class="badge badge-{{ conv.partner.role }} ml-1" style="font-size:10px">{{ conv.partner.role|capitalize }}</span>
+          </span>
+          <span style="font-size:11px;color:var(--text3);white-space:nowrap">
+            {{ (conv.last_msg.created_at | localdt).strftime('%b %d, %H:%M') if conv.last_msg else '' }}
+          </span>
+        </div>
+        <div style="font-size:13px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:400px">
+          {% if conv.last_msg %}
+            {% if conv.last_msg.sender_id == current_user.id %}<span style="color:var(--text3)">You: </span>{% endif %}
+            {{ conv.last_msg.body[:80] }}{% if conv.last_msg.body|length > 80 %}…{% endif %}
+          {% endif %}
+        </div>
       </div>
-    </div>
-    {% if conv.unread %}
-    <div style="background:var(--green);color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">
-      {{ conv.unread }}
-    </div>
-    {% endif %}
-  </a>
+      {% if conv.unread %}
+      <div style="background:var(--green);color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">
+        {{ conv.unread }}
+      </div>
+      {% endif %}
+    </a>
+    <form method="POST" action="{{ url_for('messages.delete_conversation', partner_id=conv.partner.id) }}"
+          onsubmit="return confirm('Delete the entire conversation with {{ conv.partner.full_name|e }}? Only your copy is removed.')"
+          style="margin:0;display:flex;align-items:center;padding:0 14px">
+      <button type="submit" class="btn btn-outline btn-sm" style="color:#dc2626;border-color:#fecaca" title="Delete conversation for me">
+        <i class="bi bi-trash3"></i>
+      </button>
+    </form>
+  </div>
   {% endfor %}
 </div>
 {% else %}
