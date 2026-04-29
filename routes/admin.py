@@ -2685,9 +2685,10 @@ def university_department_add(univ_id):
         flash('Department name is required.', 'danger')
         return redirect(url_for('admin.university_detail', univ_id=univ_id))
 
-    exists = UniversityDepartment.query.filter_by(university_id=univ_id, name=name).first()
+    exists = UniversityDepartment.query.filter_by(
+        university_id=univ_id, name=name, college=college).first()
     if exists:
-        flash('This department already exists for the university.', 'warning')
+        flash('This department already exists for the university (same name and college).', 'warning')
         return redirect(url_for('admin.university_detail', univ_id=univ_id))
 
     db.session.add(UniversityDepartment(
@@ -2717,10 +2718,11 @@ def university_department_edit(univ_id, dept_id):
     exists = (UniversityDepartment.query
               .filter(UniversityDepartment.university_id == univ_id,
                       UniversityDepartment.name == name,
+                      UniversityDepartment.college.is_(college) if college is None else UniversityDepartment.college == college,
                       UniversityDepartment.id != dept_id)
               .first())
     if exists:
-        flash('Another department with this name already exists.', 'warning')
+        flash('Another department with this name and college already exists.', 'warning')
         return redirect(url_for('admin.university_detail', univ_id=univ_id))
 
     dept.name = name
@@ -2836,8 +2838,8 @@ def university_departments_import(univ_id):
         flash('Import failed: the file must have a "Department Name" column.', 'danger')
         return redirect(url_for('admin.university_detail', univ_id=univ_id) + '#departments')
 
-    existing = {_normalize_text(d.name): d for d in
-                UniversityDepartment.query.filter_by(university_id=univ_id).all()}
+    existing = {(_normalize_text(d.name), _normalize_text(d.college or '')): d
+                for d in UniversityDepartment.query.filter_by(university_id=univ_id).all()}
     created = updated = skipped = 0
 
     for row in ws.iter_rows(min_row=2, values_only=True):
@@ -2854,13 +2856,11 @@ def university_departments_import(univ_id):
             skipped += 1
             continue
 
-        match = existing.get(_normalize_text(name))
+        key = (_normalize_text(name), _normalize_text(college or ''))
+        match = existing.get(key)
         if match:
-            if (match.college or None) != college:
-                match.college = college
-                updated += 1
-            else:
-                skipped += 1
+            # Exact (name + college) duplicate — nothing to update.
+            skipped += 1
             continue
 
         dept = UniversityDepartment(
@@ -2870,7 +2870,7 @@ def university_departments_import(univ_id):
             is_active=True,
         )
         db.session.add(dept)
-        existing[_normalize_text(name)] = dept
+        existing[key] = dept
         created += 1
 
     _audit('university.departments_import',

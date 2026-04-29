@@ -304,6 +304,20 @@ def _migrate_db(app):
                 conn.commit()
                 print('✓ Backfilled: existing universities marked verified')
 
+            # Department uniqueness now spans (university_id, name, college).
+            # Drop the legacy (university_id, name)-only unique index if present
+            # and ensure the new composite index exists.
+            try:
+                from sqlalchemy import text as _text
+                conn.execute(_text('DROP INDEX IF EXISTS uq_university_department_name'))
+                conn.execute(_text(
+                    'CREATE UNIQUE INDEX IF NOT EXISTS uq_university_department_name_college '
+                    'ON university_departments(university_id, name, college)'
+                ))
+                conn.commit()
+            except Exception as ex:
+                print(f'  ! department index migration skipped: {ex}')
+
 
 def _safe_add_column(conn, table, column, col_type):
     """Add a column to a table if it doesn't already exist (SQLite safe)."""

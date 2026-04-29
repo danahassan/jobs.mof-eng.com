@@ -834,7 +834,7 @@ class UniversityDepartment(db.Model):
     is_active     = db.Column(db.Boolean, default=True)
     created_at    = db.Column(db.DateTime, default=datetime.utcnow)
 
-    __table_args__ = (db.UniqueConstraint('university_id', 'name', name='uq_university_department_name'),)
+    __table_args__ = (db.UniqueConstraint('university_id', 'name', 'college', name='uq_university_department_name_college'),)
 
     university = db.relationship('University', back_populates='departments')
     members    = db.relationship('UniversityMember', back_populates='department', lazy='dynamic')
