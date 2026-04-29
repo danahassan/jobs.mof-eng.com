@@ -692,11 +692,25 @@ def application_detail(app_id):
     assignee_role = ROLE_UNIVERSITY_COORD if is_internship else ROLE_SUPERVISOR
     assignee_label = 'Coordinator' if is_internship else 'Supervisor'
     if is_internship:
-        # Only allow coordinators that belong to the applicant's university.
+        # Only allow coordinators that belong to the applicant's university,
+        # AND whose department/class scope covers this student.
         applicant_univ_id = getattr(app.applicant, 'university_id', None)
+        applicant_dept_id = getattr(app.applicant, 'university_department_id', None)
+        applicant_class = getattr(app.applicant, 'university_class', None)
         if applicant_univ_id:
-            coord_ids = [m.user_id for m in UniversityMember.query
-                         .filter_by(university_id=applicant_univ_id, role='coordinator').all()]
+            mq = UniversityMember.query.filter_by(
+                university_id=applicant_univ_id, role='coordinator')
+            # Department scope: NULL on the membership = "all departments".
+            mq = mq.filter(or_(
+                UniversityMember.department_id.is_(None),
+                UniversityMember.department_id == applicant_dept_id,
+            ))
+            # Class scope: NULL on the membership = "all classes".
+            mq = mq.filter(or_(
+                UniversityMember.class_scope.is_(None),
+                UniversityMember.class_scope == applicant_class,
+            ))
+            coord_ids = [m.user_id for m in mq.all()]
             if coord_ids:
                 supervisors = (User.query
                                .filter(User.id.in_(coord_ids),
@@ -805,10 +819,23 @@ def application_update(app_id):
                 if not applicant_univ_id:
                     flash('Cannot assign a coordinator: this student is not linked to any university.', 'danger')
                     return redirect(url_for('admin.application_detail', app_id=app_id))
-                allowed = UniversityMember.query.filter_by(
-                    university_id=applicant_univ_id, user_id=assign_to, role='coordinator').first()
+                applicant_dept_id = getattr(application.applicant, 'university_department_id', None)
+                applicant_class = getattr(application.applicant, 'university_class', None)
+                allowed = (UniversityMember.query
+                           .filter_by(university_id=applicant_univ_id,
+                                      user_id=assign_to,
+                                      role='coordinator')
+                           .filter(or_(
+                               UniversityMember.department_id.is_(None),
+                               UniversityMember.department_id == applicant_dept_id,
+                           ))
+                           .filter(or_(
+                               UniversityMember.class_scope.is_(None),
+                               UniversityMember.class_scope == applicant_class,
+                           ))
+                           .first())
                 if not allowed:
-                    flash('That coordinator does not belong to the student\'s university and cannot be assigned.', 'danger')
+                    flash("That coordinator is not in this student's department/class scope and cannot be assigned.", 'danger')
                     return redirect(url_for('admin.application_detail', app_id=app_id))
         application.assigned_to_id = assign_to or None
         if assign_to and assign_to != old_assignee:

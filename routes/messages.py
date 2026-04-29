@@ -112,9 +112,21 @@ def _can_message(sender, receiver):
             Position.company_id.in_(company_ids),
         ).first() is not None
 
-    # Student/university coordinator messaging within same university
-    if sender.role in (ROLE_STUDENT, ROLE_UNIVERSITY_COORD) and receiver.role in (ROLE_STUDENT, ROLE_UNIVERSITY_COORD):
+    # Student/university coordinator messaging within same university.
+    # Coordinator ↔ coordinator: any pair within the same university.
+    # Student ↔ student: any pair within the same university.
+    # Coordinator ↔ student: only when the student falls within the
+    # coordinator's department/class scope. A coordinator linked to "all
+    # departments" (no department_id) and no class_scope can still reach all
+    # students of the university — that's the explicit "global" scope.
+    if sender.role == ROLE_UNIVERSITY_COORD and receiver.role == ROLE_UNIVERSITY_COORD:
         return bool(_user_university_ids(sender) & _user_university_ids(receiver))
+    if sender.role == ROLE_STUDENT and receiver.role == ROLE_STUDENT:
+        return bool(_user_university_ids(sender) & _user_university_ids(receiver))
+    if sender.role == ROLE_UNIVERSITY_COORD and receiver.role == ROLE_STUDENT:
+        return receiver.id in _coordinator_student_ids(sender)
+    if sender.role == ROLE_STUDENT and receiver.role == ROLE_UNIVERSITY_COORD:
+        return sender.id in _coordinator_student_ids(receiver)
 
     # University coordinator ↔ supervisor — only if the supervisor has hired
     # / been assigned an application from one of the coordinator's students.
