@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{% if is_admin %}Admin{% else %}Supervisor{% endif %} Account — MOF Jobs</title>
+<title>{% if is_admin %}Admin{% elif is_coordinator %}University Coordinator{% else %}Supervisor{% endif %} Account — MOF Jobs</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
@@ -66,16 +66,16 @@
 
   <!-- Hero -->
   <div class="hero-banner">
-    <div class="hero-icon">{% if is_admin %}🛡️{% else %}🔐{% endif %}</div>
-    <div class="hero-title">Your {% if is_admin %}Admin{% else %}Supervisor{% endif %} Account is Active</div>
+    <div class="hero-icon">{% if is_admin %}🛡️{% elif is_coordinator %}🎓{% else %}🔐{% endif %}</div>
+    <div class="hero-title">Your {% if is_admin %}Admin{% elif is_coordinator %}University Coordinator{% else %}Supervisor{% endif %} Account is Active</div>
   </div>
 
   <!-- Body -->
   <div class="body">
     <p class="greeting">Dear <strong>{{ user.full_name }}</strong>,</p>
     <p class="text">
-      Your <strong>{% if is_admin %}Administrator{% else %}Supervisor{% endif %}</strong> account on the MOF Engineering Jobs Portal has been created by the system administrator.
-      {% if is_admin %}You have full administrative access to manage users, positions, applications, system settings, and all portal operations.{% else %}You now have access to the recruitment management dashboard where you can review applications, conduct candidate evaluations, and coordinate hiring decisions.{% endif %}
+      Your <strong>{% if is_admin %}Administrator{% elif is_coordinator %}University Coordinator{% else %}Supervisor{% endif %}</strong> account on the MOF Engineering Jobs Portal has been created by the system administrator.
+      {% if is_admin %}You have full administrative access to manage users, positions, applications, system settings, and all portal operations.{% elif is_coordinator %}You can now review your students' internship applications, monitor their progress, approve weekly reports, and coordinate placements with companies.{% else %}You now have access to the recruitment management dashboard where you can review applications, conduct candidate evaluations, and coordinate hiring decisions.{% endif %}
     </p>
 
     <!-- Credentials -->
@@ -102,7 +102,7 @@
     </div>
 
     <!-- Permissions -->
-    <p class="text" style="font-weight:600;color:#1a2332;margin-bottom:8px">As {% if is_admin %}an administrator{% else %}a supervisor{% endif %}, you can:</p>
+    <p class="text" style="font-weight:600;color:#1a2332;margin-bottom:8px">As {% if is_admin %}an administrator{% elif is_coordinator %}a university coordinator{% else %}a supervisor{% endif %}, you can:</p>
     <ul class="perm-list">
       {% if is_admin %}
       <li>Manage all users, roles, and account permissions</li>
@@ -110,6 +110,12 @@
       <li>Access full application pipeline and audit trail</li>
       <li>Configure system settings and email notifications</li>
       <li>View analytics, reports, and platform activity</li>
+      {% elif is_coordinator %}
+      <li>Review internship applications submitted by your students</li>
+      <li>Approve or return weekly internship reports</li>
+      <li>Track student placements and progress in real time</li>
+      <li>Receive a weekly digest of pending items needing attention</li>
+      <li>Communicate directly with students through the portal</li>
       {% else %}
       <li>Review and evaluate job applications assigned to you</li>
       <li>Update application statuses and leave internal notes</li>
@@ -120,7 +126,7 @@
     </ul>
 
     <div style="text-align:center;margin:24px 0">
-      <a href="https://jobs.mof-eng.com/login" class="cta-btn">{% if is_admin %}Log In to Admin Panel →{% else %}Log In to Your Dashboard →{% endif %}</a>
+      <a href="https://jobs.mof-eng.com/login" class="cta-btn">{% if is_admin %}Log In to Admin Panel →{% elif is_coordinator %}Log In to Coordinator Dashboard →{% else %}Log In to Your Dashboard →{% endif %}</a>
     </div>
 
     <div class="divider"></div>

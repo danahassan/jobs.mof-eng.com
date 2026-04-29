@@ -987,12 +987,18 @@ def user_new():
         # Send welcome email based on role
         try:
             temp_pw = request.form.get('password', 'ChangeMe@123')
-            if user.role in (ROLE_SUPERVISOR, ROLE_ADMIN):
+            if user.role in (ROLE_SUPERVISOR, ROLE_ADMIN, ROLE_UNIVERSITY_COORD):
                 html = render_template('emails/welcome_supervisor.html',
                                        user=user,
                                        temp_password=temp_pw,
-                                       is_admin=(user.role == ROLE_ADMIN))
-                subject = 'Your MOF Jobs Admin Account is Ready' if user.role == ROLE_ADMIN else 'Your MOF Jobs Supervisor Account is Ready'
+                                       is_admin=(user.role == ROLE_ADMIN),
+                                       is_coordinator=(user.role == ROLE_UNIVERSITY_COORD))
+                if user.role == ROLE_ADMIN:
+                    subject = 'Your MOF Jobs Admin Account is Ready'
+                elif user.role == ROLE_UNIVERSITY_COORD:
+                    subject = 'Your MOF Jobs University Coordinator Account is Ready'
+                else:
+                    subject = 'Your MOF Jobs Supervisor Account is Ready'
                 send_email(user.email, subject, html)
             else:
                 html = render_template('emails/welcome_user.html', user=user)
@@ -2717,6 +2723,136 @@ def university_department_delete(univ_id, dept_id):
     return redirect(url_for('admin.university_detail', univ_id=univ_id))
 
 
+_ADMIN_UNIVERSITY_DEPT_COLS = [
+    ('name', 'Department Name'),
+    ('college', 'College'),
+]
+
+
+@admin_bp.route('/universities/<int:univ_id>/departments/export')
+@admin_required
+def university_departments_export(univ_id):
+    db.get_or_404(University, univ_id)
+    fmt = request.args.get('fmt', 'xlsx').lower()
+    rows = (UniversityDepartment.query
+            .filter_by(university_id=univ_id)
+            .order_by(UniversityDepartment.college.asc(), UniversityDepartment.name.asc())
+            .all())
+    headers = [label for _, label in _ADMIN_UNIVERSITY_DEPT_COLS]
+    data = [[d.name, d.college or ''] for d in rows]
+    return _export(headers, data, f'university_{univ_id}_departments', fmt)
+
+
+@admin_bp.route('/universities/<int:univ_id>/departments/import-template')
+@admin_required
+def university_departments_import_template(univ_id):
+    db.get_or_404(University, univ_id)
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = 'Departments'
+
+    header_fill = PatternFill('solid', fgColor='1a5c38')
+    header_font = Font(color='FFFFFF', bold=True)
+    example_data = {
+        'name': 'Computer Engineering',
+        'college': 'College of Engineering',
+    }
+    for ci, (attr, label) in enumerate(_ADMIN_UNIVERSITY_DEPT_COLS, 1):
+        cell = ws.cell(row=1, column=ci, value=label)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal='center')
+        ws.column_dimensions[cell.column_letter].width = max(len(label) + 4, 24)
+        ws.cell(row=2, column=ci, value=example_data.get(attr, ''))
+
+    example_fill = PatternFill('solid', fgColor='F3F4F6')
+    for ci in range(1, len(_ADMIN_UNIVERSITY_DEPT_COLS) + 1):
+        ws.cell(row=2, column=ci).fill = example_fill
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return send_file(buf, as_attachment=True,
+                     download_name='departments_import_template.xlsx',
+                     mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+
+@admin_bp.route('/universities/<int:univ_id>/departments/import', methods=['POST'])
+@admin_required
+def university_departments_import(univ_id):
+    univ = db.get_or_404(University, univ_id)
+    import openpyxl
+
+    upload = request.files.get('file')
+    if not upload or not upload.filename:
+        flash('No file selected.', 'danger')
+        return redirect(url_for('admin.university_detail', univ_id=univ_id) + '#departments')
+    if not upload.filename.lower().endswith(('.xlsx', '.xls')):
+        flash('Please upload an Excel file (.xlsx or .xls).', 'danger')
+        return redirect(url_for('admin.university_detail', univ_id=univ_id) + '#departments')
+
+    try:
+        wb = openpyxl.load_workbook(io.BytesIO(upload.read()), data_only=True)
+        ws = wb.active
+    except Exception:
+        flash('Could not read the uploaded file. Make sure it is a valid Excel workbook.', 'danger')
+        return redirect(url_for('admin.university_detail', univ_id=univ_id) + '#departments')
+
+    headers = [str(cell.value or '').strip() for cell in ws[1]]
+    label_to_attr = {label: attr for attr, label in _ADMIN_UNIVERSITY_DEPT_COLS}
+    col_map = {ci: label_to_attr[h] for ci, h in enumerate(headers) if h in label_to_attr}
+
+    if 'name' not in col_map.values():
+        flash('Import failed: the file must have a "Department Name" column.', 'danger')
+        return redirect(url_for('admin.university_detail', univ_id=univ_id) + '#departments')
+
+    existing = {_normalize_text(d.name): d for d in
+                UniversityDepartment.query.filter_by(university_id=univ_id).all()}
+    created = updated = skipped = 0
+
+    for row in ws.iter_rows(min_row=2, values_only=True):
+        if all(value is None for value in row):
+            continue
+        data = {}
+        for ci, attr in col_map.items():
+            value = row[ci] if ci < len(row) else None
+            data[attr] = str(value).strip() if value is not None else ''
+
+        name = data.get('name', '').strip()
+        college = data.get('college', '').strip() or None
+        if not name:
+            skipped += 1
+            continue
+
+        match = existing.get(_normalize_text(name))
+        if match:
+            if (match.college or None) != college:
+                match.college = college
+                updated += 1
+            else:
+                skipped += 1
+            continue
+
+        dept = UniversityDepartment(
+            university_id=univ_id,
+            name=name,
+            college=college,
+            is_active=True,
+        )
+        db.session.add(dept)
+        existing[_normalize_text(name)] = dept
+        created += 1
+
+    _audit('university.departments_import',
+           f'{univ.name} created={created} updated={updated} skipped={skipped}')
+    db.session.commit()
+    flash(f'Import complete. Created: {created}, updated: {updated}, skipped: {skipped}.', 'success')
+    return redirect(url_for('admin.university_detail', univ_id=univ_id) + '#departments')
+
+
 @admin_bp.route('/universities/<int:univ_id>/coordinators/add', methods=['POST'])
 @admin_required
 def university_coordinator_add(univ_id):
@@ -2999,6 +3135,18 @@ def university_coordinators_import(univ_id):
             department_id=department.id if department else None,
             class_scope=class_scope,
         ))
+        try:
+            html = render_template('emails/welcome_supervisor.html',
+                                   user=coord,
+                                   temp_password=temp_pw,
+                                   is_admin=False,
+                                   is_coordinator=True)
+            send_email(coord.email,
+                       'Your MOF Jobs University Coordinator Account is Ready',
+                       html)
+        except Exception as ex:
+            current_app.logger.warning(
+                f'Coordinator-import welcome email failed for {coord.email}: {ex}')
         created += 1
 
     _audit('university.coordinators_import',
