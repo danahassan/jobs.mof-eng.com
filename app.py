@@ -305,11 +305,68 @@ def _migrate_db(app):
                 print('✓ Backfilled: existing universities marked verified')
 
             # Department uniqueness now spans (university_id, name, college).
-            # Drop the legacy (university_id, name)-only unique index if present
-            # and ensure the new composite index exists.
+            # The original CREATE TABLE baked a (university_id, name)-only
+            # UNIQUE constraint into the table definition; in SQLite that
+            # cannot be dropped with DROP INDEX/CONSTRAINT — the table must
+            # be rebuilt. Detect and rebuild idempotently.
             try:
-                from sqlalchemy import text as _text
+                from sqlalchemy import text as _text, inspect as _inspect
+                # Drop any leftover legacy index name (no-op if absent).
                 conn.execute(_text('DROP INDEX IF EXISTS uq_university_department_name'))
+                conn.commit()
+
+                inspector = _inspect(conn)
+                tables = inspector.get_table_names()
+                if 'university_departments' in tables:
+                    # Read CREATE TABLE SQL to detect the legacy 2-column UNIQUE.
+                    res = conn.execute(_text(
+                        "SELECT sql FROM sqlite_master "
+                        "WHERE type='table' AND name='university_departments'"
+                    )).fetchone()
+                    create_sql = (res[0] or '') if res else ''
+                    needs_rebuild = (
+                        'uq_university_department_name' in create_sql
+                        and 'uq_university_department_name_college' not in create_sql
+                    )
+                    if needs_rebuild:
+                        print('• Rebuilding university_departments to relax UNIQUE constraint …')
+                        conn.execute(_text('PRAGMA foreign_keys=OFF'))
+                        conn.execute(_text('BEGIN'))
+                        try:
+                            conn.execute(_text('''
+                                CREATE TABLE university_departments__new (
+                                    id INTEGER PRIMARY KEY,
+                                    university_id INTEGER NOT NULL,
+                                    name VARCHAR(200) NOT NULL,
+                                    college VARCHAR(200),
+                                    is_active BOOLEAN,
+                                    created_at DATETIME,
+                                    FOREIGN KEY(university_id) REFERENCES universities(id),
+                                    CONSTRAINT uq_university_department_name_college
+                                        UNIQUE (university_id, name, college)
+                                )
+                            '''))
+                            conn.execute(_text('''
+                                INSERT INTO university_departments__new
+                                    (id, university_id, name, college, is_active, created_at)
+                                SELECT id, university_id, name, college, is_active, created_at
+                                FROM university_departments
+                            '''))
+                            conn.execute(_text('DROP TABLE university_departments'))
+                            conn.execute(_text(
+                                'ALTER TABLE university_departments__new '
+                                'RENAME TO university_departments'
+                            ))
+                            conn.execute(_text('COMMIT'))
+                            print('  ✓ university_departments rebuilt')
+                        except Exception as rebuild_err:
+                            conn.execute(_text('ROLLBACK'))
+                            raise rebuild_err
+                        finally:
+                            conn.execute(_text('PRAGMA foreign_keys=ON'))
+                            conn.commit()
+
+                # Make sure the new composite unique index exists either way.
                 conn.execute(_text(
                     'CREATE UNIQUE INDEX IF NOT EXISTS uq_university_department_name_college '
                     'ON university_departments(university_id, name, college)'
