@@ -20,4 +20,3 @@ itsdangerous>=2.1.2
 pywebpush>=2.0.0
 pdfminer.six>=20221105
 sentry-sdk[flask]>=2.0.0
-Flask-Migrate>=4.0.7

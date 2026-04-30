@@ -5,7 +5,6 @@ from flask import (Flask, render_template, redirect, url_for, flash,
                    request, abort, send_from_directory, current_app, make_response)
 from flask_login import (LoginManager, login_user, logout_user,
                          login_required, current_user)
-from flask_migrate import Migrate
 
 from config import config
 
@@ -48,7 +47,6 @@ def create_app(config_name=None):
         app.config['MAIL_DEFAULT_SENDER'] = f'{_name} <{_addr}>'
 
     db.init_app(app)
-    Migrate(app, db)   # enables `flask db init/migrate/upgrade` commands
 
     # Inject SITE_URL into every template so emails never use request.host
     @app.context_processor
