@@ -192,6 +192,7 @@
         </form>
       </div>
 
+      {% if current_user.role == ROLE_ADMIN %}
       <div class="ud-card" style="border-color:#fecaca">
         <h3 class="ud-title" style="color:#dc2626"><i class="bi bi-exclamation-triangle-fill"></i> Danger Zone</h3>
         <p style="font-size:13px;color:var(--text2)">Permanently deletes this university. Students will be unlinked and this cannot be undone.</p>
@@ -199,6 +200,7 @@
           <button type="submit" class="btn" style="background:#dc2626;color:#fff;border-color:#dc2626"><i class="bi bi-trash3-fill"></i> Delete University</button>
         </form>
       </div>
+      {% endif %}
     </div>
   </section>
 
