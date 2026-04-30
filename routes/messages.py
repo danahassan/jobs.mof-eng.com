@@ -294,12 +294,82 @@ def send():
 def compose():
     preset_receiver = request.args.get('to', type=int)
     recipients = _get_allowed_recipients(current_user)
+    # Enrich each recipient with display details so the sender can clearly
+    # identify who they're messaging (university, department, company, etc.)
+    enriched = [_enrich_recipient(u) for u in recipients]
+    # Sort: same role first, then by group label, then by name
+    enriched.sort(key=lambda r: (r['group'], r['name'].lower()))
     preset_user = None
     if preset_receiver:
         preset_user = db.session.get(User, preset_receiver)
     return render_template('messages/compose.html',
-                           recipients=recipients,
+                           recipients=enriched,
                            preset_user=preset_user)
+
+
+def _enrich_recipient(u):
+    """Build a display-friendly dict for the compose recipient dropdown.
+
+    Includes role-specific context:
+      - Students:      university name + department + class
+      - Coordinators:  university name + department scope (or 'all')
+      - Supervisors:   company name(s)
+    """
+    role_label = {
+        ROLE_ADMIN: 'Admin',
+        ROLE_SUPERVISOR: 'Supervisor',
+        ROLE_USER: 'User',
+        ROLE_STUDENT: 'Student',
+        ROLE_UNIVERSITY_COORD: 'Coordinator',
+    }.get(u.role, u.role.capitalize())
+
+    extras = []
+    group = role_label
+
+    if u.role == ROLE_STUDENT:
+        if u.university:
+            extras.append(u.university.name)
+            group = u.university.name
+        if u.university_department_id:
+            from models import UniversityDepartment
+            dept = db.session.get(UniversityDepartment, u.university_department_id)
+            if dept:
+                extras.append(dept.name)
+        if u.university_class:
+            extras.append(u.university_class)
+
+    elif u.role == ROLE_UNIVERSITY_COORD:
+        m = UniversityMember.query.filter_by(user_id=u.id).first()
+        if m:
+            from models import University, UniversityDepartment
+            univ = db.session.get(University, m.university_id)
+            if univ:
+                extras.append(univ.name)
+                group = univ.name
+            if m.department_id:
+                dept = db.session.get(UniversityDepartment, m.department_id)
+                if dept:
+                    extras.append(dept.name)
+            else:
+                extras.append('all departments')
+
+    elif u.role == ROLE_SUPERVISOR:
+        from models import Company
+        company_ids = _supervisor_company_ids(u.id)
+        if company_ids:
+            names = [c.name for c in Company.query.filter(Company.id.in_(company_ids)).all()]
+            if names:
+                extras.append(', '.join(names[:2]))
+                group = names[0]
+
+    return {
+        'id': u.id,
+        'name': u.full_name,
+        'role_label': role_label,
+        'extras': ' • '.join(extras),
+        'email': u.email,
+        'group': group,
+    }
 
 
 @messages_bp.route('/export')

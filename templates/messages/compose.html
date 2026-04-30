@@ -16,14 +16,34 @@
     <form method="POST" action="{{ url_for('messages.send') }}">
       <div class="form-group">
         <label>To</label>
-        <select name="receiver_id" class="form-control" required>
+        <select name="receiver_id" id="recipientSelect" class="form-control" required onchange="updateRecipientPreview()">
           <option value="">— Select recipient —</option>
-          {% for u in recipients %}
-          <option value="{{ u.id }}" {% if preset_user and preset_user.id == u.id %}selected{% endif %}>
-            {{ u.full_name }} ({{ u.role|capitalize }})
-          </option>
+          {% set ns = namespace(prev_group='') %}
+          {% for r in recipients %}
+            {% if r.group != ns.prev_group %}
+              {% if ns.prev_group %}</optgroup>{% endif %}
+              <optgroup label="{{ r.group }}">
+              {% set ns.prev_group = r.group %}
+            {% endif %}
+            <option value="{{ r.id }}"
+                    data-role="{{ r.role_label }}"
+                    data-extras="{{ r.extras }}"
+                    data-email="{{ r.email }}"
+                    {% if preset_user and preset_user.id == r.id %}selected{% endif %}>
+              {{ r.name }} — {{ r.role_label }}{% if r.extras %} · {{ r.extras }}{% endif %}
+            </option>
           {% endfor %}
+          {% if recipients %}</optgroup>{% endif %}
         </select>
+        <div id="recipientPreview" style="margin-top:8px;padding:10px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;display:none">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <i class="bi bi-person-circle" style="color:var(--green);font-size:16px"></i>
+            <strong id="rpName"></strong>
+            <span id="rpRole" style="background:#e0f2fe;color:#075985;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600"></span>
+          </div>
+          <div id="rpExtras" style="color:var(--text2);margin-top:4px;font-size:12px"></div>
+          <div id="rpEmail" style="color:var(--text3);margin-top:2px;font-size:11px;font-family:monospace"></div>
+        </div>
       </div>
       <div class="form-group">
         <label>Subject <span class="text-muted">(optional)</span></label>
@@ -35,6 +55,20 @@
       </div>
       <button type="submit" class="btn btn-primary"><i class="bi bi-send-fill"></i> Send Message</button>
     </form>
+    <script>
+      function updateRecipientPreview() {
+        const sel = document.getElementById('recipientSelect');
+        const opt = sel.options[sel.selectedIndex];
+        const preview = document.getElementById('recipientPreview');
+        if (!opt || !opt.value) { preview.style.display = 'none'; return; }
+        document.getElementById('rpName').textContent = opt.textContent.split(' — ')[0];
+        document.getElementById('rpRole').textContent = opt.dataset.role || '';
+        document.getElementById('rpExtras').textContent = opt.dataset.extras || '';
+        document.getElementById('rpEmail').textContent = opt.dataset.email || '';
+        preview.style.display = 'block';
+      }
+      document.addEventListener('DOMContentLoaded', updateRecipientPreview);
+    </script>
     {% else %}
     <div class="empty-state" style="padding:30px 0">
       <i class="bi bi-person-x" style="font-size:36px;color:var(--text3)"></i>
