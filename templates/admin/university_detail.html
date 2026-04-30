@@ -117,17 +117,19 @@
         </div>
       </div>
       <div class="ud-top-actions">
-        {% if univ.is_verified %}
-          <form method="POST" action="{{ url_for('admin.university_verify', univ_id=univ.id) }}" onsubmit="return confirm('Unverify {{ univ.name|e }}? The coordinator will be able to edit university info again.')">
-            <input type="hidden" name="action" value="unverify">
-            <button type="submit" class="btn btn-outline btn-sm"><i class="bi bi-patch-question"></i> Unverify</button>
-          </form>
-        {% else %}
-          <form method="POST" action="{{ url_for('admin.university_verify', univ_id=univ.id) }}" onsubmit="return confirm('Verify {{ univ.name|e }}? The coordinator will no longer be able to edit university info.')">
-            <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-patch-check"></i> Verify University</button>
-          </form>
+        {% if current_user.role == ROLE_ADMIN %}
+          {% if univ.is_verified %}
+            <form method="POST" action="{{ url_for('admin.university_verify', univ_id=univ.id) }}" onsubmit="return confirm('Unverify {{ univ.name|e }}? The coordinator will be able to edit university info again.')">
+              <input type="hidden" name="action" value="unverify">
+              <button type="submit" class="btn btn-outline btn-sm"><i class="bi bi-patch-question"></i> Unverify</button>
+            </form>
+          {% else %}
+            <form method="POST" action="{{ url_for('admin.university_verify', univ_id=univ.id) }}" onsubmit="return confirm('Verify {{ univ.name|e }}? The coordinator will no longer be able to edit university info.')">
+              <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-patch-check"></i> Verify University</button>
+            </form>
+          {% endif %}
         {% endif %}
-        <a href="{{ url_for('admin.universities') }}" class="btn btn-outline btn-sm"><i class="bi bi-arrow-left"></i> Back</a>
+        <a href="{% if current_user.role == ROLE_ADMIN %}{{ url_for('admin.universities') }}{% else %}{{ url_for('university.dashboard') }}{% endif %}" class="btn btn-outline btn-sm"><i class="bi bi-arrow-left"></i> Back</a>
       </div>
     </div>
   </div>

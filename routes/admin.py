@@ -2605,6 +2605,8 @@ def university_edit(univ_id):
 @admin_required
 def university_verify(univ_id):
     """Admin marks a university as verified — locks coordinator out of edits."""
+    if current_user.role != ROLE_ADMIN:
+        abort(403)
     univ = db.get_or_404(University, univ_id)
     action = (request.form.get('action') or 'verify').lower()
     if action == 'unverify':
@@ -2626,6 +2628,8 @@ def university_verify(univ_id):
 @admin_bp.route('/universities/<int:univ_id>/delete', methods=['POST'])
 @admin_required
 def university_delete(univ_id):
+    if current_user.role != ROLE_ADMIN:
+        abort(403)
     univ = db.get_or_404(University, univ_id)
     name = univ.name
     # Unlink students

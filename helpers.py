@@ -165,13 +165,51 @@ def log_history(application, changed_by, new_status=None, note=None, is_internal
 
 
 def admin_required(f):
+    """Allow site admins, OR full-scope university coordinators when the
+    requested route targets their own university (uses ``univ_id`` kwarg).
+
+    A full-scope coordinator is one whose ``UniversityMember`` row has
+    ``department_id IS NULL`` AND ``class_scope IS NULL`` — meaning the
+    site admin granted them oversight of the entire university.  They get
+    admin-equivalent access to the university management surface (departments,
+    sub-coordinators, students) for *their own* university only.
+    """
     @wraps(f)
     @login_required
     def decorated(*args, **kwargs):
-        if current_user.role != ROLE_ADMIN:
-            abort(403)
-        return f(*args, **kwargs)
+        if current_user.role == ROLE_ADMIN:
+            return f(*args, **kwargs)
+        # Fallback: full-scope coordinator for the targeted university
+        if current_user.role == ROLE_UNIVERSITY_COORD:
+            target_univ_id = kwargs.get('univ_id')
+            if target_univ_id is not None:
+                full_univ_id = full_scope_coordinator_university_id(current_user)
+                if full_univ_id is not None and int(target_univ_id) == int(full_univ_id):
+                    return f(*args, **kwargs)
+        abort(403)
     return decorated
+
+
+def full_scope_coordinator_university_id(user):
+    """Return the university_id this user has *full-scope* coordinator access to,
+    or ``None`` if they don't.
+
+    Full scope = a UniversityMember row with both ``department_id`` and
+    ``class_scope`` set to NULL.  If the user has multiple memberships, we
+    return the first full-scope one (consistent ordering by university_id).
+    """
+    if not user or not user.is_authenticated:
+        return None
+    if user.role != ROLE_UNIVERSITY_COORD:
+        return None
+    from models import UniversityMember
+    m = (UniversityMember.query
+         .filter_by(user_id=user.id)
+         .filter(UniversityMember.department_id.is_(None))
+         .filter(UniversityMember.class_scope.is_(None))
+         .order_by(UniversityMember.university_id.asc())
+         .first())
+    return m.university_id if m else None
 
 
 def supervisor_or_admin_required(f):

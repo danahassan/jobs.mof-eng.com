@@ -568,6 +568,9 @@ html.dark select.form-control option{background:#1e293b}
         <a href="{{ url_for('university.students') }}" class="nav-item {% if request.endpoint == 'university.students' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-people-fill"></i> Students</a>
         <a href="{{ url_for('university.applications') }}" class="nav-item {% if request.blueprint == 'university' and 'application' in request.endpoint %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-collection-fill"></i> Internship Apps</a>
         <a href="{{ url_for('reports.index') }}" class="nav-item {% if request.blueprint == 'reports' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-file-earmark-text-fill"></i> Reports</a>
+        {% if coord_full_scope_univ_id %}
+        <a href="{{ url_for('admin.university_detail', univ_id=coord_full_scope_univ_id) }}" class="nav-item {% if request.endpoint == 'admin.university_detail' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-sliders"></i> Manage University</a>
+        {% endif %}
         <div class="nav-section">Discover</div>
         <a href="{{ url_for('companies.listing') }}" class="nav-item {% if request.blueprint == 'companies' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-building"></i> Companies</a>
         <a href="{{ url_for('university.my_university') }}" class="nav-item {% if request.endpoint == 'university.my_university' %}active{% endif %}" onclick="closeSidebar()"><i class="bi bi-mortarboard"></i> My University</a>

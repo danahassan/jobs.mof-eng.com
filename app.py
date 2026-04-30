@@ -53,6 +53,16 @@ def create_app(config_name=None):
     def inject_site_url():
         return {'site_url': app.config['SITE_URL']}
 
+    # Expose full-scope university coordinator status to all templates so the
+    # sidebar can show a "Manage University" admin shortcut when applicable.
+    @app.context_processor
+    def inject_coord_full_scope():
+        try:
+            from helpers import full_scope_coordinator_university_id
+            return {'coord_full_scope_univ_id': full_scope_coordinator_university_id(current_user)}
+        except Exception:
+            return {'coord_full_scope_univ_id': None}
+
     # CORS — only allow the React dev server in development
     from flask_cors import CORS
     if app.debug:
