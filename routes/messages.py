@@ -19,10 +19,16 @@ def _supervisor_company_ids(supervisor_id):
 
 
 def _user_university_ids(user):
+    """
+    Return the set of university IDs where the user is currently a member (coordinator or student).
+    For coordinators, only include universities where they have an active UniversityMember row.
+    For students, use user.university_id.
+    """
     ids = set()
-    if user.university_id:
+    if user.role == ROLE_UNIVERSITY_COORD:
+        ids.update(m.university_id for m in UniversityMember.query.filter_by(user_id=user.id).all())
+    elif user.university_id:
         ids.add(user.university_id)
-    ids.update(m.university_id for m in UniversityMember.query.filter_by(user_id=user.id).all())
     return ids
 
 
@@ -141,6 +147,20 @@ def _can_message(sender, receiver):
 def _get_allowed_recipients(user):
     """Return list of users that this user is allowed to message."""
     all_users = User.query.filter(User.id != user.id, User.is_active == True).all()
+    # For coordinators, only allow messaging other coordinators with a current UniversityMember row for the same university
+    if user.role == ROLE_UNIVERSITY_COORD:
+        my_univ_ids = _user_university_ids(user)
+        filtered = []
+        for u in all_users:
+            if u.role == ROLE_UNIVERSITY_COORD:
+                # Only include if they share a university (active membership)
+                their_univ_ids = _user_university_ids(u)
+                if my_univ_ids & their_univ_ids:
+                    filtered.append(u)
+            else:
+                if _can_message(user, u):
+                    filtered.append(u)
+        return filtered
     return [u for u in all_users if _can_message(user, u)]
 
 
