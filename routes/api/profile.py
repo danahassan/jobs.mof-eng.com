@@ -1,9 +1,26 @@
 """API profile endpoints."""
-from flask import request, jsonify
+import os
+from flask import request, jsonify, current_app
 from flask_login import login_required, current_user
 from models import db, UserSkill, UserExperience, UserEducation
 
 from . import api_bp
+
+# Common tech/soft skills to match against CV text (case-insensitive).
+# Extend this list as needed — it drives the suggestion quality.
+_SKILL_VOCABULARY = [
+    'Python', 'JavaScript', 'TypeScript', 'Java', 'C#', 'C++', 'Go', 'Rust', 'PHP', 'Ruby',
+    'Swift', 'Kotlin', 'Dart', 'Flutter', 'React', 'Vue', 'Angular', 'Next.js', 'Node.js',
+    'Django', 'Flask', 'FastAPI', 'Spring', 'Laravel', 'Express', 'PostgreSQL', 'MySQL',
+    'SQLite', 'MongoDB', 'Redis', 'Elasticsearch', 'Docker', 'Kubernetes', 'AWS', 'Azure',
+    'Google Cloud', 'Terraform', 'Ansible', 'CI/CD', 'Git', 'GitHub', 'Linux', 'Bash',
+    'REST API', 'GraphQL', 'Microservices', 'Machine Learning', 'Deep Learning', 'PyTorch',
+    'TensorFlow', 'Pandas', 'NumPy', 'Scikit-learn', 'Data Analysis', 'Power BI', 'Tableau',
+    'Excel', 'SQL', 'HTML', 'CSS', 'Tailwind', 'Bootstrap', 'Figma', 'Photoshop',
+    'AutoCAD', 'MATLAB', 'R', 'Scala', 'Hadoop', 'Spark', 'Kafka',
+    'Communication', 'Teamwork', 'Leadership', 'Problem Solving', 'Project Management',
+    'Agile', 'Scrum', 'Research', 'Writing', 'Presentation', 'Arabic', 'Kurdish', 'English',
+]
 
 
 @api_bp.route('/profile')
@@ -85,3 +102,58 @@ def _portfolio_dict(p):
         'url': p.url,
         'file_url': f'/static/uploads/portfolio/{p.filename}' if p.filename else None,
     }
+
+
+# ─── CV skill extraction ──────────────────────────────────────────────────────
+
+@api_bp.route('/profile/cv-skills')
+@login_required
+def cv_skills():
+    """Extract skill suggestions from the current user's uploaded CV.
+
+    Reads the stored PDF, extracts plain text using pdfminer.six, then
+    matches against a vocabulary of known skills.  Returns JSON:
+        { "ok": true, "skills": ["Python", "Django", ...], "already_added": ["Python"] }
+
+    Returns {"ok": false, "error": "..."} if no CV is uploaded or pdfminer
+    is not available (soft-fail — never crashes the profile page).
+    """
+    u = current_user
+    upload_folder = current_app.config.get('UPLOAD_FOLDER', '')
+    if not getattr(u, 'cv_filename', None):
+        # Check latest application CV as fallback
+        from models import Application
+        latest = (Application.query
+                  .filter_by(applicant_id=u.id)
+                  .filter(Application.cv_filename.isnot(None))
+                  .order_by(Application.applied_at.desc())
+                  .first())
+        cv_path = os.path.join(upload_folder, latest.cv_filename) if latest else None
+    else:
+        cv_path = os.path.join(upload_folder, u.cv_filename)
+
+    if not cv_path or not os.path.isfile(cv_path):
+        return jsonify({'ok': False, 'error': 'No CV found. Upload your CV via My Applications first.'})
+
+    # Extract text — gracefully degrade if pdfminer not installed
+    try:
+        from pdfminer.high_level import extract_text as _extract
+        text = _extract(cv_path)
+    except ImportError:
+        return jsonify({'ok': False, 'error': 'PDF parsing library not available on this server.'})
+    except Exception as ex:
+        current_app.logger.warning('cv_skills: pdfminer failed for %s: %s', cv_path, ex)
+        return jsonify({'ok': False, 'error': 'Could not read PDF. Ensure it is a valid PDF file.'})
+
+    text_lower = text.lower()
+    matched = [s for s in _SKILL_VOCABULARY if s.lower() in text_lower]
+
+    existing = {sk.name.lower() for sk in UserSkill.query.filter_by(user_id=u.id).all()}
+    already_added = [s for s in matched if s.lower() in existing]
+    new_suggestions = [s for s in matched if s.lower() not in existing]
+
+    return jsonify({
+        'ok': True,
+        'skills': new_suggestions[:20],
+        'already_added': already_added,
+    })

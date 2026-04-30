@@ -22,9 +22,14 @@
 <!-- Header -->
 <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px">
   <div style="font-size:18px;font-weight:700;color:var(--text)">Internship Applications</div>
-  <a href="{{ url_for('university.application_new') }}" class="btn btn-primary btn-sm">
-    <i class="bi bi-plus-lg"></i> Submit Application
-  </a>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <a href="{{ url_for('university.applications_export') }}" class="btn btn-outline btn-sm">
+      <i class="bi bi-download"></i> Export Excel
+    </a>
+    <a href="{{ url_for('university.application_new') }}" class="btn btn-primary btn-sm">
+      <i class="bi bi-plus-lg"></i> Submit Application
+    </a>
+  </div>
 </div>
 
 <!-- KPI Strip -->

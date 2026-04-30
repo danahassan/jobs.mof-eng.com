@@ -16,6 +16,9 @@ Configure cPanel cron jobs (server time):
     # Weekly Monday 9AM — coordinator cohort digest (pending approvals + at-risk students)
     0 9 * * 1   curl -fsS -H "X-Cron-Token: SECRET" https://jobs.mof-eng.com/api/v1/cron/coordinator-weekly-digest >/dev/null
 
+    # Hourly — 24-hour interview reminder for applicants
+    0 * * * *   curl -fsS -H "X-Cron-Token: SECRET" https://jobs.mof-eng.com/api/v1/cron/interview-reminders >/dev/null
+
 All endpoints are idempotent within their period (day/week): they track
 `*_last_sent` on the user record and skip recipients already processed,
 so duplicate cron firings are safe.
@@ -24,9 +27,9 @@ from datetime import datetime, date, timedelta
 import os
 
 from flask import current_app, jsonify, render_template, request
-
 from models import (db, User, Application, Position, Company, CompanyMember,
                     University, UniversityMember, UniversityDepartment, UserSkill,
+                    Interview,
                     ROLE_SUPERVISOR, ROLE_STUDENT, ROLE_UNIVERSITY_COORD,
                     STATUS_NEW, STATUS_UNIV_PENDING, STATUS_INTERVIEW,
                     STATUS_OFFER, STATUS_HIRED)
@@ -422,6 +425,80 @@ def coordinator_weekly_digest():
         'sent': sent,
         'skipped_recent': skipped_recent,
         'skipped_no_scope': skipped_no_scope,
+        'failed': failed,
+        'details': details,
+    })
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  24-hour interview reminders for APPLICANTS
+# ─────────────────────────────────────────────────────────────────────────────
+
+@api_bp.route('/cron/interview-reminders', methods=['GET', 'POST'])
+def interview_reminders():
+    """Send a reminder email to applicants whose interview is in the next 24–26 hours.
+
+    Run this cron every hour:
+        0 * * * *  curl -fsS -H "X-Cron-Token: SECRET" https://jobs.mof-eng.com/api/v1/cron/interview-reminders >/dev/null
+
+    Idempotent: `reminder_sent_at` is stamped on the Interview row so
+    duplicate cron firings within the window send nothing twice.
+    """
+    err = _check_token()
+    if err:
+        return err
+
+    now = datetime.utcnow()
+    site_url = _site_url()
+
+    # Window: interviews scheduled between now+24h and now+26h
+    window_start = now + timedelta(hours=24)
+    window_end   = now + timedelta(hours=26)
+
+    upcoming = (Interview.query
+                .filter(Interview.scheduled_at >= window_start)
+                .filter(Interview.scheduled_at <= window_end)
+                .filter(Interview.reminder_sent_at.is_(None))
+                .filter(Interview.result.is_(None))   # skip already-concluded interviews
+                .all())
+
+    sent = skipped = failed = 0
+    details = []
+
+    for iv in upcoming:
+        app = iv.application
+        if not app or not app.applicant:
+            skipped += 1
+            continue
+        applicant = app.applicant
+        pos = app.position
+        try:
+            html = render_template(
+                'emails/interview_reminder.html',
+                applicant=applicant,
+                interview=iv,
+                position=pos,
+                company=pos.company if pos else None,
+                site_url=site_url,
+            )
+            subject = f'Interview Reminder: {pos.title if pos else "Your Interview"} — Tomorrow'
+            send_email(applicant.email, subject, html)
+            iv.reminder_sent_at = now
+            sent += 1
+            details.append({'applicant': applicant.email, 'scheduled_at': iv.scheduled_at.isoformat(), 'sent': True})
+        except Exception as ex:
+            current_app.logger.exception('cron: interview reminder failed for iv %s: %s', iv.id, ex)
+            failed += 1
+            details.append({'applicant': applicant.email, 'error': str(ex)})
+
+    db.session.commit()
+    return jsonify({
+        'ok': True,
+        'date': now.isoformat(),
+        'window': f'{window_start.isoformat()} – {window_end.isoformat()}',
+        'considered': len(upcoming),
+        'sent': sent,
+        'skipped': skipped,
         'failed': failed,
         'details': details,
     })

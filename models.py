@@ -324,6 +324,7 @@ class Interview(db.Model):
     interviewer_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     notes          = db.Column(db.Text)
     result         = db.Column(db.String(30))       # Pass / Fail / No-show
+    reminder_sent_at = db.Column(db.DateTime)       # populated when 24-hour reminder email is sent
     created_at     = db.Column(db.DateTime, default=datetime.utcnow)
 
     application = db.relationship('Application', back_populates='interviews')

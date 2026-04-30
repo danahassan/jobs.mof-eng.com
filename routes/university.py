@@ -738,6 +738,57 @@ def students_export():
                      mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
 
+@university_bp.route('/applications/export')
+@university_coordinator_required
+def applications_export():
+    """Export all internship applications for this coordinator's cohort to Excel."""
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment
+    univ = _my_university()
+    membership = _my_membership()
+    student_ids = _student_ids(univ, membership)
+    apps = (_internship_apps(student_ids)
+            .order_by(Application.applied_at.desc()).all()) if student_ids else []
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = 'Applications'
+
+    headers = ['Student Name', 'Student Email', 'Student ID', 'Major',
+               'Position', 'Company', 'Applied On', 'Status',
+               'Duration', 'Credit Required']
+    header_fill = PatternFill('solid', fgColor='1a5c38')
+    header_font = Font(color='FFFFFF', bold=True)
+    for ci, h in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=ci, value=h)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal='center')
+        ws.column_dimensions[cell.column_letter].width = max(len(h) + 4, 18)
+
+    for ri, a in enumerate(apps, 2):
+        applicant = a.applicant
+        pos = a.position
+        ws.cell(row=ri, column=1, value=applicant.full_name if applicant else '')
+        ws.cell(row=ri, column=2, value=applicant.email if applicant else '')
+        ws.cell(row=ri, column=3, value=applicant.student_id_number if applicant else '')
+        ws.cell(row=ri, column=4, value=applicant.university_major if applicant else '')
+        ws.cell(row=ri, column=5, value=pos.title if pos else '')
+        ws.cell(row=ri, column=6, value=pos.company.name if pos and pos.company else '')
+        ws.cell(row=ri, column=7, value=a.applied_at.strftime('%Y-%m-%d') if a.applied_at else '')
+        ws.cell(row=ri, column=8, value=a.status)
+        ws.cell(row=ri, column=9, value=a.internship_duration or '')
+        ws.cell(row=ri, column=10, value='Yes' if a.academic_credit_required else 'No')
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    ts = datetime.utcnow().strftime('%Y%m%d')
+    name = f"{univ.name.replace(' ','_')}_applications_{ts}.xlsx" if univ else f'applications_{ts}.xlsx'
+    return send_file(buf, as_attachment=True, download_name=name,
+                     mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+
 @university_bp.route('/students/import-template')
 @university_coordinator_required
 def students_import_template():

@@ -5,8 +5,21 @@ from flask import (Flask, render_template, redirect, url_for, flash,
                    request, abort, send_from_directory, current_app, make_response)
 from flask_login import (LoginManager, login_user, logout_user,
                          login_required, current_user)
+from flask_migrate import Migrate
 
 from config import config
+
+# ─── SENTRY (optional — no-op when SENTRY_DSN is not set) ────────────────────
+_sentry_dsn = os.environ.get('SENTRY_DSN', '').strip()
+if _sentry_dsn:
+    import sentry_sdk
+    from sentry_sdk.integrations.flask import FlaskIntegration
+    sentry_sdk.init(
+        dsn=_sentry_dsn,
+        integrations=[FlaskIntegration()],
+        traces_sample_rate=0.1,   # capture 10 % of requests for performance tracing
+        send_default_pii=False,   # do NOT attach user PII to events
+    )
 from models import (db, User, Message, Notification, Position, Application, ApplicationHistory,
                     Interview, CompanyMember, SupervisorRequest, UniversityRequest,
                     ROLE_ADMIN, ROLE_SUPERVISOR, ROLE_USER, ROLE_EMPLOYER,
@@ -35,6 +48,7 @@ def create_app(config_name=None):
         app.config['MAIL_DEFAULT_SENDER'] = f'{_name} <{_addr}>'
 
     db.init_app(app)
+    Migrate(app, db)   # enables `flask db init/migrate/upgrade` commands
 
     # Inject SITE_URL into every template so emails never use request.host
     @app.context_processor
@@ -291,6 +305,8 @@ def _migrate_db(app):
             _safe_add_column(conn, 'ads', 'mobile_image_mime', 'VARCHAR(80)')
             # Ads — audience targeting (CSV of roles or 'all')
             _safe_add_column(conn, 'ads', 'audience', "VARCHAR(255) DEFAULT 'all'")
+            # Interview 24-hour reminder tracking
+            _safe_add_column(conn, 'interviews', 'reminder_sent_at', 'DATETIME')
             # University verification (admin lock-down). After adding the
             # column, backfill all existing rows to verified=1 so admin-only
             # behavior is preserved for them; only newly-approved universities
@@ -374,6 +390,17 @@ def _migrate_db(app):
                 conn.commit()
             except Exception as ex:
                 print(f'  ! department index migration skipped: {ex}')
+
+            # Deduplicate job_alerts — prevent the same search being saved twice.
+            try:
+                from sqlalchemy import text as _text
+                conn.execute(_text(
+                    'CREATE UNIQUE INDEX IF NOT EXISTS uq_job_alert_user_keywords_type_location '
+                    'ON job_alerts(user_id, COALESCE(keywords,""), COALESCE(job_type,""), COALESCE(location,""))'
+                ))
+                conn.commit()
+            except Exception as ex:
+                print(f'  ! job_alerts dedup index skipped: {ex}')
 
 
 def _safe_add_column(conn, table, column, col_type):

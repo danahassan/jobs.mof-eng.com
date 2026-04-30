@@ -231,6 +231,14 @@
         </a>
       </div>
       {% endif %}
+      {% if avg_response_days is not none %}
+      <div class="cp-info-row" style="border-bottom:none">
+        <span class="cp-info-lbl"><i class="bi bi-reply-all" style="color:var(--green)"></i> Responds in</span>
+        <span class="cp-info-val" style="color:var(--green)">
+          {% if avg_response_days <= 3 %}~{{ avg_response_days }}d ⚡{% elif avg_response_days <= 14 %}~{{ avg_response_days }}d{% else %}>2 weeks{% endif %}
+        </span>
+      </div>
+      {% endif %}
     </div>
   </div>
 

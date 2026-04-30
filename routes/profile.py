@@ -268,12 +268,28 @@ def delete_portfolio(item_id):
 @profile_bp.route('/alerts', methods=['POST'])
 @login_required
 def add_alert():
+    keywords = request.form.get('keywords', '').strip()
+    location = request.form.get('location', '').strip()
+    job_type = request.form.get('job_type', '').strip()
+    is_remote = bool(request.form.get('is_remote'))
+
+    # Prevent identical duplicates for the same user
+    existing = JobAlert.query.filter_by(
+        user_id=current_user.id,
+        keywords=keywords or None,
+        location=location or None,
+        job_type=job_type or None,
+    ).first()
+    if existing:
+        flash('You already have an identical job alert.', 'info')
+        return redirect(url_for('profile.view', mode='edit', tab='alerts'))
+
     alert = JobAlert(
         user_id=current_user.id,
-        keywords  = request.form.get('keywords', '').strip(),
-        location  = request.form.get('location', '').strip(),
-        job_type  = request.form.get('job_type', '').strip(),
-        is_remote = bool(request.form.get('is_remote')),
+        keywords=keywords or None,
+        location=location or None,
+        job_type=job_type or None,
+        is_remote=is_remote,
     )
     db.session.add(alert)
     db.session.commit()

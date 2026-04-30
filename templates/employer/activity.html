@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% block title %}Application Activity — {{ company.name }}{% endblock %}
+{% block page_title %}Application Activity{% endblock %}
+{% block page_breadcrumb %}{{ company.name }} / Activity Log{% endblock %}
+
+{% block content %}
+<style>
+.ev-row{display:flex;align-items:flex-start;gap:14px;padding:14px 0;border-bottom:1px solid var(--border)}
+.ev-row:last-child{border:none}
+.ev-dot{width:32px;height:32px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;margin-top:2px}
+.ev-body{flex:1;min-width:0}
+.ev-title{font-size:14px;font-weight:600;color:var(--text)}
+.ev-meta{font-size:12px;color:var(--text3);margin-top:3px;display:flex;gap:10px;flex-wrap:wrap}
+.ev-note{font-size:12px;color:var(--text2);background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:7px 10px;margin-top:8px;line-height:1.5}
+.badge-new{background:#ede9fe;color:#7c3aed}
+.badge-underreview{background:#dbeafe;color:#1d4ed8}
+.badge-interview{background:#fff7ed;color:#c2410c}
+.badge-offer{background:#f0fdf4;color:#166534}
+.badge-hired{background:#dcfce7;color:#15803d}
+.badge-rejected{background:#fee2e2;color:#dc2626}
+.badge-futureconsideration{background:#f1f5f9;color:#475569}
+</style>
+
+<!-- Page header with filter -->
+<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:18px">
+  <div>
+    <div style="font-size:18px;font-weight:700;color:var(--text)">Application Activity Log</div>
+    <div style="font-size:13px;color:var(--text3);margin-top:2px">
+      Status changes for all applicants — internal notes are hidden from this view.
+    </div>
+  </div>
+  <a href="{{ url_for('employer.dashboard') }}" class="btn btn-outline btn-sm">
+    <i class="bi bi-arrow-left"></i> Dashboard
+  </a>
+</div>
+
+<!-- Job filter -->
+<form method="GET" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px">
+  <select name="job" class="form-control" style="max-width:300px" onchange="this.form.submit()">
+    <option value="">All Positions</option>
+    {% for j in all_jobs %}
+    <option value="{{ j.id }}" {% if job_filter == j.id %}selected{% endif %}>
+      {{ j.title }}{% if not j.is_active %} (paused){% endif %}
+    </option>
+    {% endfor %}
+  </select>
+  {% if job_filter %}
+  <a href="{{ url_for('employer.activity') }}" class="btn btn-outline btn-sm">Clear</a>
+  {% endif %}
+</form>
+
+<!-- Events list -->
+{% if events.items %}
+<div class="card" style="padding:20px 24px">
+  {% for ev in events.items %}
+  {% set status = ev.new_status or '' %}
+  {% set css_key = status.lower().replace(' ','') %}
+  <div class="ev-row">
+    <div class="ev-dot badge-{{ css_key }}" style="background:
+      {% if status == 'Hired' %}#dcfce7{% elif status == 'Interview' %}#fff7ed
+      {% elif status == 'Offer' %}#f0fdf4{% elif status == 'Rejected' %}#fee2e2
+      {% elif status == 'Under Review' %}#dbeafe{% else %}#ede9fe{% endif %};
+      color:{% if status == 'Hired' %}#15803d{% elif status == 'Interview' %}#c2410c
+      {% elif status == 'Offer' %}#166534{% elif status == 'Rejected' %}#dc2626
+      {% elif status == 'Under Review' %}#1d4ed8{% else %}#7c3aed{% endif %}">
+      <i class="bi bi-{% if status == 'Hired' %}patch-check-fill{% elif status == 'Interview' %}camera-video{% elif status == 'Offer' %}envelope-open{% elif status == 'Rejected' %}x-circle{% elif status == 'Under Review' %}eye{% else %}arrow-right{% endif %}"></i>
+    </div>
+    <div class="ev-body">
+      <div class="ev-title">
+        {% if ev.application and ev.application.applicant %}
+          <a href="{{ url_for('employer.applicant_detail', app_id=ev.application_id) }}" style="color:var(--text);text-decoration:none">
+            {{ ev.application.applicant.full_name }}
+          </a>
+        {% else %}
+          <span style="color:var(--text3)">Unknown applicant</span>
+        {% endif %}
+        {% if ev.old_status and ev.new_status %}
+          <span style="font-weight:400;color:var(--text3)">
+            · {{ ev.old_status }} → <strong>{{ ev.new_status }}</strong>
+          </span>
+        {% elif ev.new_status %}
+          <span style="font-weight:400;color:var(--text3)">· Status set to <strong>{{ ev.new_status }}</strong></span>
+        {% endif %}
+      </div>
+      <div class="ev-meta">
+        {% if ev.application and ev.application.position %}
+          <span><i class="bi bi-briefcase"></i> {{ ev.application.position.title }}</span>
+        {% endif %}
+        <span><i class="bi bi-calendar3"></i> {{ (ev.created_at | localdt).strftime('%b %d, %Y %H:%M') }}</span>
+        {% if ev.changed_by %}
+          <span><i class="bi bi-person"></i> {{ ev.changed_by.full_name }}</span>
+        {% endif %}
+      </div>
+      {% if ev.note %}
+      <div class="ev-note"><i class="bi bi-chat-text" style="margin-right:5px;color:var(--text3)"></i>{{ ev.note }}</div>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if events.pages > 1 %}
+<div style="display:flex;gap:8px;justify-content:center;margin-top:20px;flex-wrap:wrap">
+  {% if events.has_prev %}
+  <a href="{{ url_for('employer.activity', page=events.prev_num, job=job_filter or '') }}" class="btn btn-outline btn-sm">
+    <i class="bi bi-chevron-left"></i> Previous
+  </a>
+  {% endif %}
+  <span style="align-self:center;font-size:13px;color:var(--text3)">Page {{ events.page }} of {{ events.pages }}</span>
+  {% if events.has_next %}
+  <a href="{{ url_for('employer.activity', page=events.next_num, job=job_filter or '') }}" class="btn btn-outline btn-sm">
+    Next <i class="bi bi-chevron-right"></i>
+  </a>
+  {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<div class="card" style="padding:48px;text-align:center;color:var(--text3)">
+  <i class="bi bi-clock-history" style="font-size:36px;margin-bottom:12px;display:block"></i>
+  <h3 style="margin:0 0 8px;font-size:16px">No activity yet</h3>
+  <p style="margin:0;font-size:14px">Status changes will appear here once you start reviewing applications.</p>
+</div>
+{% endif %}
+{% endblock %}

@@ -4,7 +4,7 @@ from flask import (Blueprint, render_template, redirect, url_for,
                    flash, request, abort, jsonify)
 from flask_login import login_required, current_user
 
-from models import db, Company, CompanyFollow, CompanyPhoto, Position, ROLE_USER, ROLE_STUDENT
+from models import db, Company, CompanyFollow, CompanyPhoto, Position, Application, ApplicationHistory, ROLE_USER, ROLE_STUDENT
 from sqlalchemy import func
 from helpers import log_audit
 
@@ -94,8 +94,37 @@ def profile(slug):
     if current_user.is_authenticated:
         following = CompanyFollow.query.filter_by(
             user_id=current_user.id, company_id=company.id).first() is not None
+
+    # Compute average days to first response (status change) — employer response rate badge
+    avg_response_days = None
+    try:
+        pos_ids = [p.id for p in Position.query.filter_by(company_id=company.id).all()]
+        if pos_ids:
+            app_ids = [a.id for a in Application.query.filter(
+                Application.position_id.in_(pos_ids)).all()]
+            if app_ids:
+                rows = (db.session.query(
+                            Application.id,
+                            Application.applied_at,
+                            func.min(ApplicationHistory.created_at))
+                        .join(ApplicationHistory,
+                              ApplicationHistory.application_id == Application.id)
+                        .filter(Application.id.in_(app_ids))
+                        .filter(ApplicationHistory.new_status.isnot(None))
+                        .group_by(Application.id, Application.applied_at)
+                        .all())
+                diffs = []
+                for _aid, applied_at, first_change in rows:
+                    if applied_at and first_change and first_change > applied_at:
+                        diffs.append((first_change - applied_at).total_seconds() / 86400.0)
+                if diffs:
+                    avg_response_days = round(sum(diffs) / len(diffs))
+    except Exception:
+        pass  # non-critical metric — silently skip on error
+
     return render_template('companies/profile.html',
-        company=company, open_jobs=jobs, following=following, photos=photos)
+        company=company, open_jobs=jobs, following=following, photos=photos,
+        avg_response_days=avg_response_days)
 
 
 @company_bp.route('/<int:company_id>/follow', methods=['POST'])

@@ -80,22 +80,35 @@ def listing():
         saved_ids = {sj.position_id for sj in
                      SavedJob.query.filter_by(user_id=current_user.id).all()}
 
-    # Smart recommendations (skills match)
+    # Smart recommendations (skills match) — SQL-driven, no full-table scan
     recommended = []
     if current_user.is_authenticated and not q:
-        my_skills = {s.name.lower() for s in
-                     UserSkill.query.filter_by(user_id=current_user.id).all()}
+        my_skills = [s.name.strip() for s in
+                     UserSkill.query.filter_by(user_id=current_user.id).all() if s.name.strip()]
         if my_skills:
-            all_jobs = Position.query.filter_by(is_active=True).limit(100).all()
-            def skill_score(pos):
+            # Build a filter: position must mention at least one of the user's skills
+            from sqlalchemy import or_ as _or_
+            skill_filters = _or_(*[
+                Position.skills_required.ilike(f'%{sk}%')
+                for sk in my_skills[:15]   # cap at 15 skill clauses to keep query fast
+            ])
+            rec_q = (Position.query
+                     .filter_by(is_active=True)
+                     .filter(Position.skills_required.isnot(None))
+                     .filter(skill_filters))
+            if is_student:
+                rec_q = rec_q.filter(Position.type == 'Internship')
+            elif not current_user.is_authenticated or current_user.role == ROLE_USER:
+                rec_q = rec_q.filter(Position.type != 'Internship')
+            all_rec = rec_q.order_by(Position.created_at.desc()).limit(30).all()
+            # Score in Python only over the small result set
+            my_skill_set = {s.lower() for s in my_skills}
+            def _score(pos):
                 if not pos.skills_required:
                     return 0
-                req = set(s.strip().lower() for s in pos.skills_required.split(','))
-                return len(my_skills & req)
-            recommended = sorted(
-                [p for p in all_jobs if skill_score(p) > 0],
-                key=skill_score, reverse=True
-            )[:5]
+                req = {s.strip().lower() for s in pos.skills_required.split(',') if s.strip()}
+                return len(my_skill_set & req)
+            recommended = sorted(all_rec, key=_score, reverse=True)[:5]
 
     # KPI counts (always unfiltered)
     kpi_remote   = Position.query.filter_by(is_active=True, is_remote=True).count()

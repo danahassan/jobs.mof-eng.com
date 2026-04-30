@@ -3,7 +3,7 @@ from datetime import datetime
 from flask import (Blueprint, render_template, redirect, url_for,
                    flash, request, abort, current_app, jsonify, send_from_directory)
 from flask_login import login_required, current_user
-from sqlalchemy import func
+from sqlalchemy import func, false as sql_false
 
 from models import (db, User, Company, CompanyMember, CompanyFollow, Position,
                     Application, ApplicationHistory, Interview, Notification,
@@ -369,6 +369,47 @@ def download_cv(filename):
     return send_from_directory(current_app.config['UPLOAD_FOLDER'], filename)
 
 
+# ─── Application Activity Log ─────────────────────────────────────────────────
+
+@employer_bp.route('/activity')
+@employer_required
+def activity():
+    """Simplified, employer-visible changelog of application status movements.
+
+    Shows ApplicationHistory entries for the company's positions, filtering
+    out internal-only notes so this is safe to review with candidates present.
+    """
+    company = get_employer_company()
+    if not company:
+        return redirect(url_for('employer.company_setup'))
+
+    page = request.args.get('page', 1, type=int)
+    job_filter = request.args.get('job', type=int)
+
+    # Application IDs belonging to this company
+    pos_q = Position.query.filter_by(company_id=company.id)
+    if job_filter:
+        pos_q = pos_q.filter_by(id=job_filter)
+    pos_ids = [p.id for p in pos_q.all()]
+
+    if not pos_ids:
+        events = ApplicationHistory.query.filter(sql_false()).paginate(
+            page=page, per_page=30, error_out=False)
+    else:
+        app_ids = [a.id for a in
+                   Application.query.filter(Application.position_id.in_(pos_ids)).all()]
+        events_q = (ApplicationHistory.query
+                    .filter(ApplicationHistory.application_id.in_(app_ids))
+                    .filter(ApplicationHistory.is_internal == False)  # noqa: E712 — hide internal notes
+                    .order_by(ApplicationHistory.created_at.desc()))
+        events = events_q.paginate(page=page, per_page=30, error_out=False)
+
+    all_jobs = Position.query.filter_by(company_id=company.id).order_by(Position.title).all()
+    return render_template('employer/activity.html',
+        company=company, events=events, all_jobs=all_jobs,
+        job_filter=job_filter)
+
+
 # ─── Helpers ─────────────────────────────────────────────────────────────────
 
 def _get_employer_job(job_id):
@@ -420,31 +461,56 @@ def _build_position_from_form(form, company, pos=None):
 def _dispatch_job_alerts(pos):
     """Notify users about a new position.
     - Internships: notify all university coordinators + students who follow the company.
-    - Regular jobs: notify users whose saved job alerts match.
+    - Regular jobs: notify users whose saved job alerts match (push + email).
     """
     if pos.type == 'Internship':
         _dispatch_internship_alerts(pos)
         return
     from models import JobAlert
+    from datetime import datetime as _dt
+    site_url = current_app.config.get('SITE_URL', '').rstrip('/')
     alerts = JobAlert.query.filter_by(is_active=True).all()
-    count = 0
+    notified_user_ids = set()
     for alert in alerts:
+        if alert.user_id in notified_user_ids:
+            continue  # one notification per user per job posting
         match = True
-        if alert.keywords and alert.keywords.lower() not in pos.title.lower():
+        if alert.keywords:
+            kw = alert.keywords.lower()
+            haystack = ' '.join(filter(None, [pos.title or '', pos.skills_required or '',
+                                               pos.description or ''])).lower()
+            if kw not in haystack:
+                match = False
+        if match and alert.job_type and alert.job_type != pos.type:
             match = False
-        if alert.job_type and alert.job_type != pos.type:
+        if match and alert.location:
+            if alert.location.lower() not in (pos.location or '').lower():
+                match = False
+        if match and alert.is_remote is not None and alert.is_remote != pos.is_remote:
             match = False
-        if alert.is_remote is not None and alert.is_remote != pos.is_remote:
-            match = False
-        if match:
-            push_notification(
-                alert.user_id,
-                f'New job matching your alert: <b>{pos.title}</b>',
-                url_for('jobs.detail', job_id=pos.id),
-                icon='bi-bell-fill'
-            )
-            count += 1
-    if count:
+        if not match:
+            continue
+        push_notification(
+            alert.user_id,
+            f'New job matching your alert: <b>{pos.title}</b>',
+            url_for('jobs.detail', job_id=pos.id),
+            icon='bi-bell-fill'
+        )
+        # Also send email
+        try:
+            recipient = User.query.get(alert.user_id)
+            if recipient and recipient.email:
+                job_url = site_url + url_for('jobs.detail', job_id=pos.id)
+                html = render_template('emails/new_job_alert.html',
+                                       user=recipient, pos=pos,
+                                       job_url=job_url, site_url=site_url)
+                send_email(recipient.email,
+                           f'New job matching your alert: {pos.title}', html)
+        except Exception as ex:
+            current_app.logger.warning('job alert email failed for user %s: %s', alert.user_id, ex)
+        alert.last_sent = _dt.utcnow()
+        notified_user_ids.add(alert.user_id)
+    if notified_user_ids:
         db.session.commit()
 
 

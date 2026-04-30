@@ -391,7 +391,13 @@
     <div class="ap-grid">
       <div class="ap-stack">
         <div class="ap-card">
-          <div class="ap-card-title"><i class="bi bi-stars"></i> My Skills</div>
+          <div class="ap-card-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+            <span><i class="bi bi-stars"></i> My Skills</span>
+            <button id="cvScanBtn" type="button" class="btn btn-outline btn-sm" onclick="scanCVSkills()" title="Extract skill suggestions from your uploaded CV">
+              <i class="bi bi-file-earmark-person"></i> Scan CV for Skills
+            </button>
+          </div>
+          <div id="cvScanResult" style="display:none;margin-bottom:12px"></div>
           {% if skills_list %}
             <div class="ap-pills" style="margin-bottom:16px">
               {% for s in skills_list %}
@@ -406,9 +412,9 @@
         </div>
         <div class="ap-card">
           <div class="ap-card-title"><i class="bi bi-plus-circle-fill"></i> Add Skill</div>
-          <form method="POST" action="{{ url_for('auth.skill_add') }}">
+          <form method="POST" action="{{ url_for('auth.skill_add') }}" id="addSkillForm">
             <div class="ap-form-grid">
-              <div class="ap-form-group"><label class="ap-form-label">Skill Name</label><input type="text" name="name" class="form-control" placeholder="e.g. AutoCAD, Project Management" required></div>
+              <div class="ap-form-group"><label class="ap-form-label">Skill Name</label><input type="text" name="name" id="skillNameInput" class="form-control" placeholder="e.g. AutoCAD, Project Management" required></div>
               <div class="ap-form-group"><label class="ap-form-label">Proficiency Level</label><select name="proficiency" class="form-control"><option value="beginner">Beginner</option><option value="intermediate" selected>Intermediate</option><option value="expert">Expert</option></select></div>
             </div>
             <div style="margin-top:16px"><button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Add Skill</button></div>
@@ -424,6 +430,42 @@
         </div>
       </div>
     </div>
+<script>
+async function scanCVSkills() {
+  const btn = document.getElementById('cvScanBtn');
+  const result = document.getElementById('cvScanResult');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Scanning…';
+  result.style.display = 'none';
+  try {
+    const resp = await fetch('/api/v1/profile/cv-skills', {credentials: 'include'});
+    const data = await resp.json();
+    if (!data.ok) {
+      result.innerHTML = `<div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;padding:10px 14px;font-size:13px;color:#991b1b"><i class="bi bi-exclamation-circle"></i> ${data.error}</div>`;
+    } else if (data.skills.length === 0) {
+      result.innerHTML = `<div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:10px 14px;font-size:13px;color:#166534"><i class="bi bi-check-circle"></i> No new skills found in your CV — you may already have them all added!</div>`;
+    } else {
+      const pills = data.skills.map(s =>
+        `<button type="button" onclick="quickAddSkill('${s.replace(/'/g,"\\'")}',this)" style="background:#e8f5ee;border:1px solid #86efac;color:#166534;padding:4px 12px;border-radius:99px;font-size:12px;font-weight:600;cursor:pointer;margin:3px">${s} <i class="bi bi-plus"></i></button>`
+      ).join('');
+      result.innerHTML = `<div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:12px 14px"><div style="font-size:13px;font-weight:600;color:#166534;margin-bottom:8px"><i class="bi bi-stars"></i> ${data.skills.length} skill suggestion${data.skills.length !== 1 ? 's' : ''} found in your CV — click to add:</div><div>${pills}</div></div>`;
+    }
+    result.style.display = 'block';
+  } catch(e) {
+    result.innerHTML = `<div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;padding:10px 14px;font-size:13px;color:#991b1b"><i class="bi bi-exclamation-circle"></i> Could not reach the server. Please try again.</div>`;
+    result.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-file-earmark-person"></i> Scan CV for Skills';
+  }
+}
+function quickAddSkill(name, btn) {
+  document.getElementById('skillNameInput').value = name;
+  btn.disabled = true;
+  btn.style.opacity = '0.5';
+  document.getElementById('addSkillForm').submit();
+}
+</script>
 
     {% elif tab == 'experience' %}
     <div class="ap-grid">
